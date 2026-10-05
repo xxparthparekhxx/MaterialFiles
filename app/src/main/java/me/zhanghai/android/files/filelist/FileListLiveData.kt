@@ -30,11 +30,12 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
     private var isChangedWhileInactive = false
 
     init {
-        loadValue()
         observer = PathObserver(path) { onChangeObserved() }
+        loadValue()
     }
 
     fun loadValue() {
+        observer.observe()
         future?.cancel(true)
         value = Loading(value?.value)
         future = (AsyncTask.THREAD_POOL_EXECUTOR as ExecutorService).submit<Unit> {
@@ -73,6 +74,8 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
         if (isChangedWhileInactive) {
             loadValue()
             isChangedWhileInactive = false
+        } else {
+            observer.observe()
         }
     }
 
