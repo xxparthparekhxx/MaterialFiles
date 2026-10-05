@@ -52,6 +52,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.leinardi.android.speeddial.SpeedDialView
+import java8.nio.file.NoSuchFileException
+import java8.nio.file.NotDirectoryException
 import java8.nio.file.Path
 import java8.nio.file.Paths
 import kotlin.math.roundToInt
@@ -725,6 +727,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.progress.fadeToVisibilityUnsafe(stateful is Loading && !(hasFiles || isSearching))
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
+        if (throwable != null && !isSearching && throwable.isMissingDirectory() &&
+            viewModel.navigateUp()
+        ) {
+            return
+        }
         if (throwable != null) {
             throwable.printStackTrace()
             val error = throwable.toString()
@@ -1827,6 +1834,17 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 )
             }
         }
+    }
+
+    private fun Throwable.isMissingDirectory(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            if (current is NoSuchFileException || current is NotDirectoryException) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
     }
 
     private class MenuBinding private constructor(

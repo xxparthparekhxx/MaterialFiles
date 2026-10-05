@@ -70,7 +70,14 @@ object ArchiveReader {
                     tree.getOrPut(path) { mutableListOf() }
                 }
                 tree.getOrPut(parentPath) { mutableListOf() }.add(path)
-                if (entries.containsKey(parentPath)) {
+                val parentEntry = entries[parentPath]
+                if (parentEntry != null) {
+                    // A 0-byte file entry can occupy the same path as a directory (common when a
+                    // zip stores "name/" plus "name/file"). Keep the directory so it can be opened.
+                    if (!parentEntry.isDirectory) {
+                        entries[parentPath] = createDirectoryEntry(parentEntry.name.trimEnd('/'))
+                        tree.getOrPut(parentPath) { mutableListOf() }
+                    }
                     break
                 }
                 entries[parentPath] = createDirectoryEntry(parentPath.toString())

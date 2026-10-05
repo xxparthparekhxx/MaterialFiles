@@ -300,8 +300,13 @@ object WebDavFileSystemProvider : FileSystemProvider(), PathObservableProvider, 
     @Throws(IOException::class)
     override fun delete(path: Path) {
         path as? WebDavPath ?: throw ProviderMismatchException(path.toString())
+        val directory = try {
+            readAttributes(path, BasicFileAttributes::class.java).isDirectory
+        } catch (e: IOException) {
+            false
+        }
         try {
-            Client.delete(path)
+            Client.delete(path, directory)
         } catch (e: DavException) {
             throw e.toFileSystemException(path.toString())
         }
