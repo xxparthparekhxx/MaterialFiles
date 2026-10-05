@@ -115,6 +115,10 @@
     </plurals>
     <string name="file_job_transfer_size_notification_text_one_format">%1$s / %2$s</string>
     <string name="file_job_transfer_size_notification_text_multiple_format">%1$,d / %2$,d</string>
+    <string name="file_job_transfer_speed_format">%1$s/s</string>
+    <string name="file_job_transfer_size_speed_notification_text_format">%1$s / %2$s · %3$s</string>
+    <string name="file_job_transfer_count_size_notification_text_format">%1$,d / %2$,d · %3$s / %4$s</string>
+    <string name="file_job_transfer_count_size_speed_notification_text_format">%1$,d / %2$,d · %3$s / %4$s · %5$s</string>
     <plurals name="file_job_delete_scan_notification_title_format">
         <item quantity="one">Preparing to delete %1$,d file</item>
         <item quantity="other">Preparing to delete %1$,d files</item>

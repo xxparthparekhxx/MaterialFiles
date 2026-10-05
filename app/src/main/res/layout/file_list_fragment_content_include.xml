@@ -63,5 +63,32 @@
                 android:fitsSystemWindows="true"
                 tools:listitem="@layout/file_item_list" />
         </androidx.swiperefreshlayout.widget.ThemedSwipeRefreshLayout>
+
+        <LinearLayout
+            android:id="@+id/fileJobProgressLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@drawable/file_job_progress_background"
+            android:clipToOutline="true"
+            android:elevation="16dp"
+            android:orientation="vertical"
+            android:outlineProvider="background"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:background="?colorPrimary" />
+
+            <LinearLayout
+                android:id="@+id/fileJobProgressCards"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:divider="?android:attr/listDivider"
+                android:orientation="vertical"
+                android:showDividers="middle" />
+        </LinearLayout>
     </me.zhanghai.android.files.ui.CoordinatorScrollingFrameLayout>
 </merge>

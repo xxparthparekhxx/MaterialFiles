@@ -22,6 +22,7 @@ import com.hierynomus.mssmb2.messages.SMB2ChangeNotifyResponse
 import com.hierynomus.protocol.commons.EnumWithValue
 import com.hierynomus.smbj.ProgressListener
 import com.hierynomus.smbj.SMBClient
+import com.hierynomus.smbj.SmbConfig
 import com.hierynomus.smbj.auth.AuthenticationContext
 import com.hierynomus.smbj.common.SMBRuntimeException
 import com.hierynomus.smbj.session.Session
@@ -50,10 +51,23 @@ import java.util.WeakHashMap
 import java.util.concurrent.Future
 
 object Client {
+    // smbj's default buffer is 1 MiB. Each read keeps that packet and a second copy of the
+    // payload until the chunk is consumed, and a long transfer allocates those arrays continuously.
+    // On Android the heap fragments and the next 1 MiB allocation fails, which kills the process.
+    // 128 KiB chunks stay small enough to collect. Several of them stay in flight so a Wi-Fi
+    // round trip does not stall the copy after every chunk.
+    internal const val SMB_IO_BUFFER_SIZE = 128 * 1024
+    internal const val SMB_READ_AHEAD = 16
+
     @Volatile
     lateinit var authenticator: Authenticator
 
-    private val client = SMBClient()
+    private val client = SMBClient(
+        SmbConfig.builder()
+            .withReadBufferSize(SMB_IO_BUFFER_SIZE)
+            .withWriteBufferSize(SMB_IO_BUFFER_SIZE)
+            .build()
+    )
 
     private val sessions = mutableMapOf<Authority, Session>()
 
