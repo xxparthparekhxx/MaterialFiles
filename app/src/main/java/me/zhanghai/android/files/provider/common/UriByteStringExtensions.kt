@@ -106,6 +106,56 @@ private fun getAsciiCharacterAt(string: String, index: Int): Byte {
     return char.code.toByte()
 }
 
+/**
+ * [URI.getHost] is null for a registry-based authority. A host name containing `_` is the usual
+ * case: the URI parses, but host, user info, and port are all missing.
+ */
+fun URI.parsedAuthority(): ParsedUriAuthority {
+    val parsedHost = host
+    if (parsedHost != null) {
+        return ParsedUriAuthority(userInfo, parsedHost, port)
+    }
+    val raw = rawAuthority?.takeIf { it.isNotEmpty() }
+        ?: throw IllegalArgumentException("URI must have an authority")
+    var rest = raw
+    val userInfo = if ('@' in rest) {
+        val info = rest.substringBeforeLast('@')
+        rest = rest.substringAfterLast('@')
+        decode(info).toString().takeIf { it.isNotEmpty() }
+    } else {
+        null
+    }
+    val (parsedHostFromRaw, parsedPort) = splitHostPort(decode(rest).toString())
+    return ParsedUriAuthority(userInfo, parsedHostFromRaw, parsedPort)
+}
+
+data class ParsedUriAuthority(
+    val userInfo: String?,
+    val host: String,
+    val port: Int
+)
+
+private fun splitHostPort(hostPort: String): Pair<String, Int> {
+    if (hostPort.startsWith("[")) {
+        val end = hostPort.indexOf(']')
+        require(end > 1) { "URI host is invalid" }
+        val host = hostPort.substring(1, end)
+        val suffix = hostPort.substring(end + 1)
+        val port = if (suffix.startsWith(":") && suffix.length > 1) {
+            suffix.substring(1).toInt()
+        } else {
+            -1
+        }
+        return host to port
+    }
+    val colon = hostPort.lastIndexOf(':')
+    if (colon > 0 && hostPort.substring(colon + 1).all { it.isDigit() }) {
+        return hostPort.substring(0, colon) to hostPort.substring(colon + 1).toInt()
+    }
+    require(hostPort.isNotEmpty()) { "URI must have a host" }
+    return hostPort to -1
+}
+
 private fun decodeHexCharacter(hexCharacter: Byte): Byte =
     when (hexCharacter) {
         in '0'.code.toByte()..'9'.code.toByte() -> (hexCharacter.toInt().toChar() - '0').toByte()

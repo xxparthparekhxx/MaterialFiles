@@ -49,6 +49,38 @@ class TrailData private constructor(
         return TrailData(trail, states, newIndex)
     }
 
+    /** Drop the current path and anything after it, leaving its parent. */
+    fun dropFromCurrent(): TrailData? {
+        if (currentIndex == 0) {
+            return null
+        }
+        return TrailData(
+            trail.subList(0, currentIndex).toMutableList(),
+            states.subList(0, currentIndex).toMutableList(),
+            currentIndex - 1
+        )
+    }
+
+    /**
+     * Drop the first trail entry that was removed, and everything after it. Those entries are the
+     * deleted path or locations that were only reachable through it.
+     */
+    fun withoutPaths(removed: List<Path>): TrailData? {
+        if (removed.isEmpty()) {
+            return null
+        }
+        val cut = trail.indexOfFirst { path -> removed.any { path.isAtOrBelow(it) } }
+        if (cut <= 0) {
+            return null
+        }
+        val newTrail = trail.subList(0, cut).toMutableList()
+        return TrailData(
+            newTrail,
+            states.subList(0, cut).toMutableList(),
+            currentIndex.coerceAtMost(newTrail.lastIndex)
+        )
+    }
+
     val pendingState: Parcelable?
         get() = states.set(currentIndex, null)
 
@@ -81,4 +113,15 @@ class TrailData private constructor(
             return trail
         }
     }
+}
+
+private fun Path.isAtOrBelow(ancestor: Path): Boolean {
+    var current: Path? = this
+    while (current != null) {
+        if (current == ancestor) {
+            return true
+        }
+        current = current.parent
+    }
+    return false
 }

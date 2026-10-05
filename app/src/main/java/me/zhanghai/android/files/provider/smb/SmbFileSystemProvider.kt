@@ -33,6 +33,7 @@ import me.zhanghai.android.files.provider.common.Searchable
 import me.zhanghai.android.files.provider.common.WalkFileTreeSearchable
 import me.zhanghai.android.files.provider.common.WatchServicePathObservable
 import me.zhanghai.android.files.provider.common.decodedPathByteString
+import me.zhanghai.android.files.provider.common.parsedAuthority
 import me.zhanghai.android.files.provider.common.toAccessModes
 import me.zhanghai.android.files.provider.common.toByteString
 import me.zhanghai.android.files.provider.common.toCopyOptions
@@ -106,8 +107,9 @@ object SmbFileSystemProvider : FileSystemProvider(), PathObservableProvider, Sea
 
     private val URI.smbAuthority: Authority
         get() {
-            val port = if (port != -1) port else Authority.DEFAULT_PORT
-            val userInfo = userInfo.orEmpty()
+            val parsed = parsedAuthority()
+            val port = if (parsed.port != -1) parsed.port else Authority.DEFAULT_PORT
+            val userInfo = parsed.userInfo.orEmpty()
             val domainSeparatorIndex = userInfo.indexOf('\\')
             val username: String
             val domain: String?
@@ -118,7 +120,7 @@ object SmbFileSystemProvider : FileSystemProvider(), PathObservableProvider, Sea
                 username = userInfo
                 domain = null
             }
-            return Authority(host, port, username, domain)
+            return Authority(parsed.host, port, username, domain)
         }
 
     @Throws(IOException::class)

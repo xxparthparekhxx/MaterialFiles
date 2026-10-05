@@ -1125,6 +1125,7 @@ private fun FileJob.delete(path: Path, transferInfo: TransferInfo?, actionAllInf
         retry = false
         try {
             path.delete()
+            RemovedPaths.notifyRemoved(path)
             if (transferInfo != null) {
                 transferInfo.incrementTransferredFileCount()
                 postDeleteNotification(transferInfo, path)

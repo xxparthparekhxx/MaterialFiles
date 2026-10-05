@@ -30,6 +30,18 @@ class TrailLiveData : LiveData<TrailData>() {
         return true
     }
 
+    fun dropFromCurrent(): Boolean {
+        val oldTrailData = value ?: return false
+        val trailData = oldTrailData.dropFromCurrent() ?: return false
+        value = trailData
+        return true
+    }
+
+    fun removePaths(paths: List<Path>) {
+        val oldTrailData = value ?: return
+        value = oldTrailData.withoutPaths(paths) ?: return
+    }
+
     fun reload() {
         value = value
     }
