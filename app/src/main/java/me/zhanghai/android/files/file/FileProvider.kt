@@ -277,7 +277,7 @@ class FileProvider : ContentProvider() {
             ensureNotReleased()
             return try {
                 channel.size()
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 throw e.toErrnoException()
             }
         }
@@ -288,7 +288,7 @@ class FileProvider : ContentProvider() {
             if (this.offset != offset) {
                 try {
                     channel.position(offset)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
                 this.offset = offset
@@ -299,7 +299,7 @@ class FileProvider : ContentProvider() {
             while (buffer.hasRemaining()) {
                 val channelSize = try {
                     channel.read(buffer)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
                 if (channelSize == -1) {
@@ -316,7 +316,7 @@ class FileProvider : ContentProvider() {
             if (this.offset != offset) {
                 try {
                     channel.position(offset)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
                 this.offset = offset
@@ -324,7 +324,7 @@ class FileProvider : ContentProvider() {
             val buffer = ByteBuffer.wrap(data, 0, size)
             return try {
                 channel.write(buffer)
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 throw e.toErrnoException()
             }.also { this.offset += it.toLong() }
         }
@@ -335,7 +335,7 @@ class FileProvider : ContentProvider() {
             if (channel.isForceable) {
                 try {
                     channel.force(true)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
             }
@@ -354,13 +354,13 @@ class FileProvider : ContentProvider() {
             }
             try {
                 channel.close()
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
             released = true
         }
 
-        private fun IOException.toErrnoException(): ErrnoException {
+        private fun Throwable.toErrnoException(): ErrnoException {
             val cause = cause
             return if (this is FileSystemException && cause is SyscallException) {
                 ErrnoException(cause.functionName, cause.errno, this)
