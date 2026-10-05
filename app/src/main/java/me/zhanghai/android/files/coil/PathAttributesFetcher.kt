@@ -54,6 +54,10 @@ import java.io.Closeable
 import java.io.IOException
 import me.zhanghai.android.files.util.setDataSource as appSetDataSource
 
+// Keep remote thumbnail reads small. Coil buffers an image, and MediaMetadataRetriever can
+// pull a whole remote video through the process; either one kills the app on a large SMB file.
+internal const val MAX_REMOTE_THUMBNAIL_SIZE = 16L * 1024 * 1024
+
 class PathAttributesKeyer : Keyer<Pair<Path, BasicFileAttributes>> {
     override fun key(data: Pair<Path, BasicFileAttributes>, options: Options): String {
         val (path, attributes) = data
@@ -103,6 +107,9 @@ class PathAttributesFetcher(
                     error("Cannot read $path for thumbnail")
                 }
             }
+        }
+        if (path.isRemotePath && attributes.size() > MAX_REMOTE_THUMBNAIL_SIZE) {
+            error("Cannot read $path for thumbnail")
         }
         val mimeType = AndroidFileTypeDetector.getMimeType(data.first, data.second).asMimeType()
         when {
