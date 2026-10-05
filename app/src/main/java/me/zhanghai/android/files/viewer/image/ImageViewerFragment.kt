@@ -58,12 +58,16 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
 
     private lateinit var systemUiHelper: SystemUiHelper
 
+    private var isAppBarVisible = true
+
     private lateinit var adapter: ImageViewerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        paths = (savedInstanceState?.getState<State>()?.paths ?: argsPaths).toMutableList()
+        val state = savedInstanceState?.getState<State>()
+        paths = (state?.paths ?: argsPaths).toMutableList()
+        isAppBarVisible = state?.isAppBarVisible ?: true
 
         setHasOptionsMenu(true)
     }
@@ -95,16 +99,22 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         systemUiHelper = SystemUiHelper(
             activity, SystemUiHelper.LEVEL_IMMERSIVE, SystemUiHelper.FLAG_IMMERSIVE_STICKY
         ) { visible: Boolean ->
-            binding.appBarLayout.animate()
-                .alpha(if (visible) 1f else 0f)
-                .translationY(if (visible) 0f else -binding.appBarLayout.bottom.toFloat())
-                .setDuration(mediumAnimTime.toLong())
-                .setInterpolator(FastOutSlowInInterpolator())
-                .start()
+            if (isAppBarVisible != visible) {
+                isAppBarVisible = visible
+                animateAppBar(visible)
+            }
         }
-        // This will set up window flags.
-        systemUiHelper.show()
-        adapter = ImageViewerAdapter(viewLifecycleOwner) { systemUiHelper.toggle() }.apply {
+        if (isAppBarVisible) {
+            systemUiHelper.show()
+        } else {
+            systemUiHelper.hide()
+            binding.appBarLayout.alpha = 0f
+            binding.appBarLayout.doOnPreDraw {
+                binding.appBarLayout.translationY =
+                    -(binding.appBarLayout.bottom.takeIf { it > 0 } ?: binding.appBarLayout.height).toFloat()
+            }
+        }
+        adapter = ImageViewerAdapter(viewLifecycleOwner) { toggleAppBar() }.apply {
             replace(paths)
         }
         binding.viewPager.apply {
@@ -137,7 +147,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putState(State(paths))
+        outState.putState(State(paths, isAppBarVisible))
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -225,6 +235,37 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         startActivitySafe(intent)
     }
 
+    private fun toggleAppBar() {
+        setAppBarVisible(!isAppBarVisible)
+    }
+
+    private fun setAppBarVisible(visible: Boolean) {
+        if (isAppBarVisible == visible) {
+            return
+        }
+        isAppBarVisible = visible
+        if (visible) {
+            systemUiHelper.show()
+        } else {
+            systemUiHelper.hide()
+        }
+        animateAppBar(visible)
+    }
+
+    private fun animateAppBar(visible: Boolean) {
+        val translationY = if (visible) {
+            0f
+        } else {
+            -(binding.appBarLayout.bottom.takeIf { it > 0 } ?: binding.appBarLayout.height).toFloat()
+        }
+        binding.appBarLayout.animate()
+            .alpha(if (visible) 1f else 0f)
+            .translationY(translationY)
+            .setDuration(mediumAnimTime.toLong())
+            .setInterpolator(FastOutSlowInInterpolator())
+            .start()
+    }
+
     private val currentPath: Path
         get() = paths[binding.viewPager.currentItem]
 
@@ -232,5 +273,8 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     class Args(val intent: Intent, val position: Int) : ParcelableArgs
 
     @Parcelize
-    private class State(val paths: @WriteWith<ParcelableListParceler> List<Path>) : ParcelableState
+    private class State(
+        val paths: @WriteWith<ParcelableListParceler> List<Path>,
+        val isAppBarVisible: Boolean = true
+    ) : ParcelableState
 }
