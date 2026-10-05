@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.viewpager2.widget.ViewPager2
 import dev.chrisbanes.insetter.applySystemWindowInsetsToPadding
@@ -39,11 +40,13 @@ import me.zhanghai.android.files.util.finish
 import me.zhanghai.android.files.util.getState
 import me.zhanghai.android.files.util.mediumAnimTime
 import me.zhanghai.android.files.util.putState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.withChooser
 import me.zhanghai.android.systemuihelper.SystemUiHelper
-import java.io.IOException
 
 class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     private val args by args<Args>()
@@ -161,13 +164,29 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     }
 
     override fun delete(path: Path) {
-        try {
-            path.delete()
-        } catch (e: IOException) {
-            e.printStackTrace()
-            showToast(e.toString())
-            return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val error = withContext(Dispatchers.IO) {
+                try {
+                    path.delete()
+                    null
+                } catch (e: Exception) {
+                    // SMB delete throws SMBRuntimeException, which is not an IOException.
+                    e
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (error != null) {
+                error.printStackTrace()
+                showToast(error.toString())
+                return@launch
+            }
+            removeDeletedPath(path)
         }
+    }
+
+    private fun removeDeletedPath(path: Path) {
         paths.removeAll(listOf(path))
         if (paths.isEmpty()) {
             finish()

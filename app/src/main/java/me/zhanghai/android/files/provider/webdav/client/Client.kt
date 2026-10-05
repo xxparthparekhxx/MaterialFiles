@@ -99,9 +99,14 @@ object Client {
     }
 
     @Throws(DavException::class)
-    fun delete(path: Path) {
+    fun delete(path: Path, directory: Boolean = false) {
         try {
-            DavResource(getClient(path.authority), path.url).delete {}
+            var url = path.url
+            // RFC 4918 says collection URLs should end with a slash. Nginx rejects DELETE without it.
+            if (directory && !url.encodedPath.endsWith("/")) {
+                url = url.newBuilder().addPathSegment("").build()
+            }
+            DavResource(getClient(path.authority), url).delete {}
         } catch (e: IOException) {
             throw e.toDavException()
         }

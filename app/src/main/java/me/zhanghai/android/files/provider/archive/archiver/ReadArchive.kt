@@ -174,7 +174,12 @@ class ReadArchive : Closeable {
         } else {
             null
         }
-        val type = PosixFileType.fromMode(stat.stMode)
+        // Zip directories are often stored only as a trailing slash, with no directory mode bit.
+        val type = if (name.endsWith("/")) {
+            PosixFileType.DIRECTORY
+        } else {
+            PosixFileType.fromMode(stat.stMode)
+        }
         val size = stat.stSize
         // TODO: There's no way to know if UID/GID is unset or root.
         val owner = PosixUser(
