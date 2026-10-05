@@ -236,7 +236,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         // This is also called after saving because we'll be updating our state of the unchanged
         // text, but we don't want to call TextView.setText() again which resets things like cursor
         // position.
-        if (binding.textEdit.text.toString() != text) {
+        if (binding.textEdit.text?.contentEquals(text) != true) {
             isSettingText = true
             binding.textEdit.setText(text)
             isSettingText = false
@@ -274,11 +274,11 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     }
 
     private fun save() {
-        val text = binding.textEdit.text.toString()
+        val text = binding.textEdit.text ?: return
         viewModel.writeFile(argsFile, text, requireContext())
     }
 
-    private fun onWriteFileStateChanged(state: ActionState<Pair<Path, String>, Unit>) {
+    private fun onWriteFileStateChanged(state: ActionState<Path, Unit>) {
         when (state) {
             is ActionState.Ready, is ActionState.Running -> updateSaveMenuItem()
             is ActionState.Success -> {

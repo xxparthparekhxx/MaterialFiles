@@ -67,7 +67,9 @@
                 android:background="@null"
                 android:gravity="top"
                 android:importantForAutofill="no"
-                android:inputType="textMultiLine"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:breakStrategy="simple"
+                android:hyphenationFrequency="none"
                 android:textAppearance="?textAppearanceListItemSecondary">
                 <requestFocus />
             </me.zhanghai.android.files.ui.ScrollingChildEditText>
