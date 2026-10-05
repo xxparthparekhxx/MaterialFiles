@@ -41,6 +41,8 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.core.view.updatePaddingRelative
@@ -128,6 +130,7 @@ import me.zhanghai.android.files.util.fadeToVisibilityUnsafe
 import me.zhanghai.android.files.util.getDimensionDp
 import me.zhanghai.android.files.util.getQuantityString
 import me.zhanghai.android.files.util.hasSw600Dp
+import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isOrientationLandscape
 import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.setOnEditorConfirmActionListener
@@ -267,6 +270,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.recyclerView.setOnApplyWindowInsetsListener(
             ScrollingViewOnApplyWindowInsetsListener(binding.recyclerView, fastScroller)
         )
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_DRAGGING && viewModel.isSearchViewExpanded) {
+                    val searchView = if (this@FileListFragment::menuBinding.isInitialized) {
+                        menuBinding.searchItem.actionView as? SearchView
+                    } else {
+                        null
+                    }
+                    searchView?.clearFocus()
+                    recyclerView.hideSoftInput()
+                }
+            }
+        })
         binding.speedDialView.inflate(R.menu.file_list_speed_dial)
         binding.speedDialView.setOnActionSelectedListener {
             when (it.id) {
@@ -289,6 +305,32 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 .also { callback ->
                     viewModel.breadcrumbLiveData.observe(viewLifecycleOwner) {
                         callback.isEnabled = viewModel.canNavigateUpBreadcrumb
+                    }
+                }
+        )
+        addOnBackPressedCallback(
+            object : OnBackPressedCallback(false) {
+                override fun handleOnBackPressed() {
+                    val searchView = if (this@FileListFragment::menuBinding.isInitialized) {
+                        menuBinding.searchItem.actionView as? SearchView
+                    } else {
+                        null
+                    }
+                    val searchSrcText = searchView?.findViewById<View>(androidx.appcompat.R.id.search_src_text)
+                    val isKeyboardVisible = searchSrcText?.let {
+                        ViewCompat.getRootWindowInsets(it)?.isVisible(WindowInsetsCompat.Type.ime())
+                    } ?: false
+                    if (searchView != null && (isKeyboardVisible || searchView.hasFocus())) {
+                        searchView.clearFocus()
+                        searchSrcText?.hideSoftInput()
+                    } else {
+                        collapseSearchView()
+                    }
+                }
+            }
+                .also { callback ->
+                    viewModel.searchViewExpandedLiveData.observe(viewLifecycleOwner) {
+                        callback.isEnabled = it
                     }
                 }
         )

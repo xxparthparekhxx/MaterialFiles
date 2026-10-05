@@ -16,6 +16,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -34,6 +36,7 @@ import me.zhanghai.android.files.util.args
 import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.fadeInUnsafe
 import me.zhanghai.android.files.util.fadeOutUnsafe
+import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.viewModels
@@ -69,7 +72,14 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         lifecycleScope.launchWhenStarted {
             onBackPressedCallback = object : OnBackPressedCallback(false) {
                 override fun handleOnBackPressed() {
-                    ConfirmCloseDialogFragment.show(this@TextEditorFragment)
+                    val isKeyboardVisible = ViewCompat.getRootWindowInsets(binding.textEdit)
+                        ?.isVisible(WindowInsetsCompat.Type.ime()) == true
+                    if (isKeyboardVisible || binding.textEdit.hasFocus()) {
+                        binding.textEdit.clearFocus()
+                        binding.textEdit.hideSoftInput()
+                    } else {
+                        ConfirmCloseDialogFragment.show(this@TextEditorFragment)
+                    }
                 }
             }
             launch {
