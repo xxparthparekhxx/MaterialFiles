@@ -39,13 +39,19 @@ fun StorageManager.openProxyFileDescriptorCompat(
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         openProxyFileDescriptor(mode, callback.toProxyFileDescriptorCallback(), handler)
     } else {
-        // TODO: Support other modes?
-        if (mode != ParcelFileDescriptor.MODE_READ_ONLY) {
-            throw UnsupportedOperationException("mode $mode")
+        when (mode) {
+            ParcelFileDescriptor.MODE_READ_ONLY -> {
+                val pfds = ParcelFileDescriptor.createReliablePipe()
+                PipeWriter(pfds[1], callback, handler).start()
+                pfds[0]
+            }
+            ParcelFileDescriptor.MODE_WRITE_ONLY -> {
+                val pfds = ParcelFileDescriptor.createReliablePipe()
+                PipeReader(pfds[0], callback, handler).start()
+                pfds[1]
+            }
+            else -> throw UnsupportedOperationException("mode $mode")
         }
-        val pfds = ParcelFileDescriptor.createReliablePipe()
-        PipeWriter(pfds[1], callback, handler).start()
-        pfds[0]
     }
 
 private class PipeWriter(
@@ -108,6 +114,90 @@ private suspend fun ProxyFileDescriptorCallbackCompat.awaitOnRelease(handler: Ha
         handler.post {
             try {
                 onRelease()
+            } catch (t: Throwable) {
+                continuation.resumeWithException(t)
+                return@post
+            }
+            continuation.resume(Unit)
+        }
+    }
+}
+
+private class PipeReader(
+    private val pfd: ParcelFileDescriptor,
+    private val callback: ProxyFileDescriptorCallbackCompat,
+    private val handler: Handler
+) : Thread("StorageManagerCompat.PipeReader-${id.getAndIncrement()}") {
+    override fun run() {
+        try {
+            ParcelFileDescriptor.AutoCloseInputStream(pfd).use { inputStream ->
+                var offset = 0L
+                val buffer = ByteArray(4 * 1024)
+                while (true) {
+                    val size = inputStream.read(buffer)
+                    if (size == -1) {
+                        break
+                    }
+                    var written = 0
+                    while (written < size) {
+                        val chunk = if (written == 0 && size == buffer.size) {
+                            buffer
+                        } else {
+                            buffer.copyOfRange(written, size)
+                        }
+                        val writeSize = runBlocking {
+                            callback.awaitOnWrite(offset + written, size - written, chunk, handler)
+                        }
+                        if (writeSize <= 0) {
+                            break
+                        }
+                        written += writeSize
+                    }
+                    offset += size.toLong()
+                }
+                runBlocking {
+                    callback.awaitOnFsync(handler)
+                    callback.awaitOnRelease(handler)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try {
+                pfd.closeWithError(e.message)
+            } catch (e2: IOException) {
+                e2.printStackTrace()
+            }
+        }
+    }
+
+    companion object {
+        private val id = AtomicInteger()
+    }
+}
+
+private suspend fun ProxyFileDescriptorCallbackCompat.awaitOnWrite(
+    offset: Long,
+    size: Int,
+    data: ByteArray,
+    handler: Handler
+): Int =
+    suspendCoroutine { continuation ->
+        handler.post {
+            val writeSize = try {
+                onWrite(offset, size, data)
+            } catch (t: Throwable) {
+                continuation.resumeWithException(t)
+                return@post
+            }
+            continuation.resume(writeSize)
+        }
+    }
+
+private suspend fun ProxyFileDescriptorCallbackCompat.awaitOnFsync(handler: Handler) {
+    suspendCoroutine<Unit> { continuation ->
+        handler.post {
+            try {
+                onFsync()
             } catch (t: Throwable) {
                 continuation.resumeWithException(t)
                 return@post

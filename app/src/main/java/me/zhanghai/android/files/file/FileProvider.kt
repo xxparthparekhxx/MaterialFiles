@@ -211,9 +211,14 @@ class FileProvider : ContentProvider() {
         } catch (e: Exception) {
             throw e.toFileNotFoundException()
         }
+        val proxyMode = when {
+            modeBits.hasBits(ParcelFileDescriptor.MODE_READ_WRITE) -> ParcelFileDescriptor.MODE_READ_WRITE
+            modeBits.hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY) -> ParcelFileDescriptor.MODE_WRITE_ONLY
+            else -> ParcelFileDescriptor.MODE_READ_ONLY
+        }
         return try {
             storageManager.openProxyFileDescriptorCompat(
-                modeBits, ChannelCallback(channel), callbackHandler
+                proxyMode, ChannelCallback(channel), callbackHandler
             )
         } catch (e: Exception) {
             channel.closeSafe()
@@ -226,25 +231,21 @@ class FileProvider : ContentProvider() {
             return false
         }
         val file = toFile()
-        val readOnly = mode.hasBits(ParcelFileDescriptor.MODE_READ_ONLY)
-        val writeOnly = mode.hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
-        val readWrite = mode.hasBits(ParcelFileDescriptor.MODE_READ_WRITE)
-        val needRead = readOnly || readWrite
-        val needWrite = writeOnly || readWrite
+        val isReadWrite = mode.hasBits(ParcelFileDescriptor.MODE_READ_WRITE)
+        val isWriteOnly = mode.hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
+        val needRead = isReadWrite || !isWriteOnly
+        val needWrite = isReadWrite || isWriteOnly
         return !((needRead && !file.canRead()) || (needWrite && !file.canWrite()))
     }
 
     private fun Int.toOpenOptions(): Set<OpenOption> =
         mutableSetOf<OpenOption>().apply {
-            // May be "r" for read-only access, "rw" for read and write access, or "rwt" for
-            // read and write access that truncates any existing file.
-            require(!hasBits(ParcelFileDescriptor.MODE_APPEND)) { "mode ${this@toOpenOptions}" }
-            if (hasBits(ParcelFileDescriptor.MODE_READ_ONLY)
-                || hasBits(ParcelFileDescriptor.MODE_READ_WRITE)) {
+            val isReadWrite = hasBits(ParcelFileDescriptor.MODE_READ_WRITE)
+            val isWriteOnly = hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
+            if (isReadWrite || !isWriteOnly) {
                 this += StandardOpenOption.READ
             }
-            if (hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
-                || hasBits(ParcelFileDescriptor.MODE_READ_WRITE)) {
+            if (isReadWrite || isWriteOnly) {
                 this += StandardOpenOption.WRITE
             }
             if (hasBits(ParcelFileDescriptor.MODE_CREATE)) {
@@ -252,6 +253,9 @@ class FileProvider : ContentProvider() {
             }
             if (hasBits(ParcelFileDescriptor.MODE_TRUNCATE)) {
                 this += StandardOpenOption.TRUNCATE_EXISTING
+            }
+            if (hasBits(ParcelFileDescriptor.MODE_APPEND)) {
+                this += StandardOpenOption.APPEND
             }
         }
 
