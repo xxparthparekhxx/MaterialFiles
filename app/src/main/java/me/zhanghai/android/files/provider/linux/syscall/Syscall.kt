@@ -17,11 +17,21 @@ import java.io.InterruptedIOException
 import me.zhanghai.android.files.compat.SELinuxCompat
 import me.zhanghai.android.files.provider.common.ByteString
 import me.zhanghai.android.files.provider.common.moveToByteString
+import me.zhanghai.android.files.provider.root.RootFileService
+import me.zhanghai.android.files.provider.root.isRunningAsRoot
 import me.zhanghai.android.libselinux.SeLinux
 
 object Syscall {
     init {
-        System.loadLibrary("syscall")
+        try {
+            System.loadLibrary("syscall")
+        } catch (e: UnsatisfiedLinkError) {
+            if (isRunningAsRoot) {
+                RootFileService.loadNativeLibraryFallback("syscall", e)
+            } else {
+                throw e
+            }
+        }
     }
 
     @Throws(SyscallException::class)

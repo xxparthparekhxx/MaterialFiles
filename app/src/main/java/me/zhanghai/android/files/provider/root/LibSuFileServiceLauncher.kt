@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import com.topjohnwu.superuser.NoShellException
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ipc.RootService
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.provider.remote.IRemoteFileService
 import me.zhanghai.android.files.provider.remote.RemoteFileServiceInterface
 import me.zhanghai.android.files.provider.remote.RemoteFileSystemException
@@ -31,6 +33,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 object LibSuFileServiceLauncher {
+    private val LOG_TAG = LibSuFileServiceLauncher::class.java.simpleName
+
     private val lock = Any()
 
     @Volatile
@@ -76,6 +80,34 @@ object LibSuFileServiceLauncher {
         return supported
     }
 
+    private fun prepareRootEnvironment(shell: Shell) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return
+        }
+        try {
+            val nativeLibDir = application.applicationInfo.nativeLibraryDir
+            val quotedDir = "'" + nativeLibDir.replace("'", "'\\''") + "'"
+            shell.newJob()
+                .add(
+                    "supolicy --live \"allow zygote apk_data_file file { read execute rx_file_perms }\" 2>/dev/null",
+                    "magiskpolicy --live \"allow zygote apk_data_file file { read execute rx_file_perms }\" 2>/dev/null",
+                    "chcon -R u:object_r:system_file:s0 $quotedDir 2>/dev/null",
+                    "toolbox chcon -R u:object_r:system_file:s0 $quotedDir 2>/dev/null",
+                    "chcon u:object_r:system_file:s0 $quotedDir/* 2>/dev/null",
+                    "toolbox chcon u:object_r:system_file:s0 $quotedDir/* 2>/dev/null",
+                    "mkdir -p /data/dalvik-cache/materialfiles_lib 2>/dev/null",
+                    "cp $quotedDir/*.so /data/dalvik-cache/materialfiles_lib/ 2>/dev/null",
+                    "chmod 755 /data/dalvik-cache/materialfiles_lib 2>/dev/null",
+                    "chmod 644 /data/dalvik-cache/materialfiles_lib/*.so 2>/dev/null",
+                    "chcon u:object_r:system_file:s0 /data/dalvik-cache/materialfiles_lib/*.so 2>/dev/null",
+                    "toolbox chcon u:object_r:system_file:s0 /data/dalvik-cache/materialfiles_lib/*.so 2>/dev/null"
+                )
+                .exec()
+        } catch (t: Throwable) {
+            Log.w(LOG_TAG, "Failed to prepare root environment", t)
+        }
+    }
+
     fun isSuAvailable(): Boolean =
         // @see com.topjohnwu.superuser.Shell.rootAccess
         try {
@@ -111,7 +143,8 @@ object LibSuFileServiceLauncher {
                                 // Shell.getShell(GetShellCallback) doesn't allow handling errors.
                                 Shell.EXECUTOR.submit {
                                     try {
-                                        Shell.getShell()
+                                        val shell = Shell.getShell()
+                                        prepareRootEnvironment(shell)
                                         continuation.resume(Unit)
                                     } catch (e: NoShellException) {
                                         continuation.resumeWithException(
