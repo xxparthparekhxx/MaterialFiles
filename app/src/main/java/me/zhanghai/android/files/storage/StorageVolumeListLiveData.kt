@@ -10,6 +10,9 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
+import android.os.Looper
+import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
@@ -21,6 +24,16 @@ import me.zhanghai.android.files.compat.storageVolumesCompat
 object StorageVolumeListLiveData : LiveData<List<StorageVolume>>() {
     init {
         loadValue()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            storageManager.registerStorageVolumeCallback(
+                ContextCompat.getMainExecutor(application),
+                object : StorageManager.StorageVolumeCallback() {
+                    override fun onStateChanged(volume: StorageVolume) {
+                        loadValue()
+                    }
+                }
+            )
+        }
         application.registerReceiverCompat(
             object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
@@ -43,6 +56,11 @@ object StorageVolumeListLiveData : LiveData<List<StorageVolume>>() {
     }
 
     private fun loadValue() {
-        value = storageManager.storageVolumesCompat
+        val volumes = storageManager.storageVolumesCompat
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            value = volumes
+        } else {
+            postValue(volumes)
+        }
     }
 }

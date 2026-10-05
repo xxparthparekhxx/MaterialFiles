@@ -22,7 +22,12 @@ private val storageVolumeClass = StorageVolume::class.java
 private val getPathMethod by lazyReflectedMethod(storageVolumeClass, "getPath")
 
 val StorageVolume.pathCompat: String
-    get() = getPathMethod.invoke(this) as String
+    get() =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            directory?.path ?: (getPathMethod.invoke(this) as String)
+        } else {
+            getPathMethod.invoke(this) as String
+        }
 
 private val getPathFileMethod by lazyReflectedMethod(storageVolumeClass, "getPathFile")
 
@@ -32,7 +37,12 @@ val StorageVolume.pathFileCompat: File
 val StorageVolume.directoryCompat: File?
     get() =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            directory
+            directory ?: pathFileCompat.takeIf {
+                when (stateCompat) {
+                    Environment.MEDIA_MOUNTED, Environment.MEDIA_MOUNTED_READ_ONLY -> true
+                    else -> false
+                }
+            }
         } else {
             when (stateCompat) {
                 Environment.MEDIA_MOUNTED, Environment.MEDIA_MOUNTED_READ_ONLY -> pathFileCompat
