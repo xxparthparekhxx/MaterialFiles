@@ -16,6 +16,7 @@ import me.zhanghai.android.files.util.Failure
 import me.zhanghai.android.files.util.Loading
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.Success
+import me.zhanghai.android.files.util.findCauseByClass
 import me.zhanghai.android.files.util.valueCompat
 import java.io.IOException
 import java.util.concurrent.ExecutorService
@@ -23,11 +24,17 @@ import java.util.concurrent.Future
 
 class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List<FileItem>>>() {
     private var future: Future<Unit>? = null
+    private var currentTask: LoadTask? = null
 
     private val observer: PathObserver
 
     @Volatile
     private var isChangedWhileInactive = false
+
+    private class LoadTask {
+        @Volatile
+        var isCancelled = false
+    }
 
     init {
         observer = PathObserver(path) { onChangeObserved() }
@@ -36,13 +43,22 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
 
     fun loadValue() {
         observer.observe()
-        future?.cancel(true)
+        currentTask?.isCancelled = true
+        future?.cancel(false)
+        val task = LoadTask()
+        currentTask = task
         value = Loading(value?.value)
         future = (AsyncTask.THREAD_POOL_EXECUTOR as ExecutorService).submit<Unit> {
+            if (task.isCancelled) {
+                return@submit
+            }
             val value = try {
                 path.newDirectoryStream().use { directoryStream ->
                     val fileList = mutableListOf<FileItem>()
                     for (path in directoryStream) {
+                        if (task.isCancelled) {
+                            return@submit
+                        }
                         try {
                             fileList.add(path.loadFileItem())
                         } catch (e: DirectoryIteratorException) {
@@ -53,12 +69,22 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
                             e.printStackTrace()
                         }
                     }
+                    if (task.isCancelled) {
+                        return@submit
+                    }
                     Success(fileList as List<FileItem>)
                 }
             } catch (e: Exception) {
+                if (task.isCancelled || Thread.currentThread().isInterrupted ||
+                    e.findCauseByClass<InterruptedException>() != null
+                ) {
+                    return@submit
+                }
                 Failure(valueCompat.value, e)
             }
-            postValue(value)
+            if (!task.isCancelled) {
+                postValue(value)
+            }
         }
     }
 
@@ -81,6 +107,7 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
 
     override fun close() {
         observer.close()
-        future?.cancel(true)
+        currentTask?.isCancelled = true
+        future?.cancel(false)
     }
 }
