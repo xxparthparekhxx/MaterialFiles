@@ -56,7 +56,12 @@ object Client {
 
     private val clients = mutableMapOf<Authority, OkHttpClient>()
 
-    private val collectionMemberCache = Collections.synchronizedMap(WeakHashMap<Path, Response>())
+    private val collectionMemberCache = Collections.synchronizedMap(
+        object : LinkedHashMap<Path, Response>(128, 0.75f, true) {
+            override fun removeEldestEntry(eldest: Map.Entry<Path, Response>?): Boolean =
+                size > 4096
+        }
+    )
 
     @Throws(IOException::class)
     private fun getClient(authority: Authority): OkHttpClient {
@@ -85,6 +90,7 @@ object Client {
         } catch (e: IOException) {
             throw e.toDavException()
         }
+        collectionMemberCache -= path
         LocalWatchService.onEntryCreated(path as Java8Path)
     }
 
@@ -95,6 +101,7 @@ object Client {
         } catch (e: IOException) {
             throw e.toDavException()
         }
+        collectionMemberCache -= path
         LocalWatchService.onEntryCreated(path as Java8Path)
     }
 
@@ -142,17 +149,20 @@ object Client {
     fun findCollectionMembers(path: Path): List<Path> =
         buildList {
             try {
-                DavCollection(getClient(path.authority), path.url)
+                var url = path.url
+                if (!url.encodedPath.endsWith("/")) {
+                    url = url.newBuilder().addPathSegment("").build()
+                }
+                DavCollection(getClient(path.authority), url)
                     .propfind(1, *FILE_PROPERTIES) { response, relation ->
                         if (relation != Response.HrefRelation.MEMBER) {
                             return@propfind
                         }
-                        this += path.resolve(response.hrefName())
-                            .also {
-                                if (response.isSuccess()) {
-                                    collectionMemberCache[it] = response
-                                }
-                            }
+                        val memberPath = path.resolve(response.hrefName())
+                        this += memberPath
+                        if (response.isSuccess()) {
+                            collectionMemberCache[memberPath] = response
+                        }
                     }
             } catch (e: IOException) {
                 throw e.toDavException()
@@ -173,12 +183,16 @@ object Client {
     @Throws(DavException::class)
     fun findProperties(path: Path, noFollowLinks: Boolean): Response {
         synchronized(collectionMemberCache) {
-            collectionMemberCache.remove(path)?.let { return it }
+            collectionMemberCache[path]?.let { return it }
         }
         try {
             return findProperties(
                 DavResource(getClient(path.authority), path.url), *FILE_PROPERTIES
-            )
+            ).also { response ->
+                if (response.isSuccess()) {
+                    collectionMemberCache[path] = response
+                }
+            }
         } catch (e: IOException) {
             throw e.toDavException()
         }
@@ -235,6 +249,7 @@ object Client {
     @Throws(DavException::class)
     fun put(path: Path): OutputStream =
         try {
+            collectionMemberCache -= path
             NotifyEntryModifiedOutputStream(
                 DavResource(getClient(path.authority), path.url).putCompat(), path as Java8Path
             )
