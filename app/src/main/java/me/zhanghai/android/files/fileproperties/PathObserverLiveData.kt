@@ -33,10 +33,14 @@ abstract class PathObserverLiveData<T>(protected val path: Path) : CloseableLive
         if (changedWhileInactive) {
             loadValue()
             changedWhileInactive = false
+        } else if (::observer.isInitialized) {
+            observer.observe()
         }
     }
 
     override fun close() {
-        observer.close()
+        if (::observer.isInitialized) {
+            observer.close()
+        }
     }
 }
