@@ -59,6 +59,13 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
 
         setHasOptionsMenu(true)
 
+        val file = args.intent.extraPath
+        if (file == null) {
+            finish()
+            return
+        }
+        argsFile = file
+
         lifecycleScope.launchWhenStarted {
             onBackPressedCallback = object : OnBackPressedCallback(false) {
                 override fun handleOnBackPressed() {
@@ -91,13 +98,9 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val argsFile = args.intent.extraPath
-        if (argsFile == null) {
-            // TODO: Show a toast.
-            finish()
+        if (!::argsFile.isInitialized) {
             return
         }
-        this.argsFile = argsFile
 
         val activity = requireActivity() as AppCompatActivity
         activity.lifecycleScope.launchWhenCreated {
@@ -131,6 +134,9 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
+        if (!::argsFile.isInitialized || !::binding.isInitialized) {
+            return
+        }
         viewModel.setEditTextSavedState(binding.textEdit.onSaveInstanceState())
     }
 

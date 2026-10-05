@@ -728,7 +728,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
         if (throwable != null && !isSearching && throwable.isMissingDirectory() &&
-            viewModel.navigateUp()
+            viewModel.dropMissingCurrentPath()
         ) {
             return
         }
