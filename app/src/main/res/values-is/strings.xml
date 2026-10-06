@@ -637,6 +637,7 @@
         <item>Setja úrfellingarpunkta í miðju</item>
         <item>Setja úrfellingarpunkta í enda</item>
         <item>Valumgjörð</item>
+        <item>Línuskipting</item>
     </string-array>
     <string name="settings_behavior_title">Hegðun</string>
     <string name="settings_default_directory_title">Sjálfgefin mappa</string>

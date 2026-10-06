@@ -697,6 +697,7 @@
         <item>Еліпсувати середину</item>
         <item>Еліпсувати кінець</item>
         <item>\"Бігуча строка\"</item>
+        <item>Перенос рядка</item>
     </string-array>
     <string name="settings_behavior_title">Поведінка</string>
     <string name="settings_default_directory_title">Типова тека</string>

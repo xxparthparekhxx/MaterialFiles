@@ -665,6 +665,7 @@
         <item>Recortar en el medio</item>
         <item>Recortar al final</item>
         <item>Desplazar</item>
+        <item>Ajustar</item>
     </string-array>
     <string name="settings_behavior_title">Comportamiento</string>
     <string name="settings_default_directory_title">Carpeta predeterminada</string>

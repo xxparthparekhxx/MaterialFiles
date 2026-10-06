@@ -667,6 +667,7 @@
         <item>Tronquer le milieu</item>
         <item>Tronquer la fin</item>
         <item>Entier</item>
+        <item>Retour à la ligne</item>
     </string-array>
     <string name="settings_behavior_title">Comportement</string>
     <string name="settings_default_directory_title">Dossier par défaut</string>

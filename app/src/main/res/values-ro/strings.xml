@@ -574,6 +574,7 @@
         <item>Elipsizează mijlocul</item>
         <item>Elipsizează finalul</item>
         <item>Marcaj</item>
+        <item>Încadrare</item>
     </string-array>
     <string name="settings_behavior_title">Comportament</string>
     <string name="settings_default_directory_title">Dosar implicit</string>

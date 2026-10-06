@@ -603,6 +603,7 @@
         <item>Elipsis di tengah</item>
         <item>Elipsis di akhir</item>
         <item>Marquee</item>
+        <item>Bungkus</item>
     </string-array>
     <string name="settings_behavior_title">Perilaku</string>
     <string name="settings_default_directory_title">Folder default</string>

@@ -635,6 +635,7 @@
         <item>Die Mitte kürzen</item>
         <item>Das Ende kürzen</item>
         <item>Laufschrift</item>
+        <item>Umbrechen</item>
     </string-array>
     <string name="settings_behavior_title">Verhalten</string>
     <string name="settings_default_directory_title">Startordner</string>

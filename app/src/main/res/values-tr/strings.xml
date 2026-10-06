@@ -509,6 +509,7 @@
         <item>Ortadan kısalt</item>
         <item>Sondan kısalt</item>
         <item>Kayan yazı (Hepsi)</item>
+        <item>Satır kaydır</item>
     </string-array>
     <string name="settings_behavior_title">Davranış</string>
     <string name="settings_default_directory_title">Varsayılan klasör</string>

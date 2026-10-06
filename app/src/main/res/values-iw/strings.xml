@@ -667,6 +667,7 @@
         <item>אמצע אליפסי</item>
         <item>סיום אליפסי</item>
         <item>אוהל גדול</item>
+        <item>גלישת שורה</item>
     </string-array>
     <string name="settings_behavior_title">התנהגות</string>
     <string name="settings_default_directory_title">תיקיית ברירת מחדל</string>

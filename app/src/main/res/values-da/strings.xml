@@ -635,6 +635,7 @@
         <item>Ellipsér midten</item>
         <item>Ellipsér slutningen</item>
         <item>Rullende tekst</item>
+        <item>Ombryd</item>
     </string-array>
     <string name="settings_behavior_title">Adfærd</string>
     <string name="settings_default_directory_title">Standardmappe</string>

@@ -520,6 +520,7 @@
         <item>Lyhennä keskeltä</item>
         <item>Lyhennä lopusta</item>
         <item>Marquee</item>
+        <item>Rivitä</item>
     </string-array>
     <string name="settings_behavior_title">Toiminta</string>
     <string name="settings_default_directory_title">Oletuskansio</string>

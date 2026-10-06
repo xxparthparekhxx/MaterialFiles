@@ -6,13 +6,13 @@
 package me.zhanghai.android.files.settings
 
 import android.os.Environment
-import android.text.TextUtils
 import java8.nio.file.Path
 import java8.nio.file.Paths
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.compat.EnvironmentCompat2
 import me.zhanghai.android.files.filelist.FileListDensity
+import me.zhanghai.android.files.filelist.FileNameEllipsize
 import me.zhanghai.android.files.filelist.FileSortOptions
 import me.zhanghai.android.files.filelist.FileViewType
 import me.zhanghai.android.files.filelist.OpenApkDefaultAction
@@ -340,10 +340,10 @@ object Settings {
             R.string.pref_key_file_list_font_size, R.string.pref_default_value_file_list_font_size
         )
 
-    val FILE_NAME_ELLIPSIZE: SettingLiveData<TextUtils.TruncateAt> =
+    val FILE_NAME_ELLIPSIZE: SettingLiveData<FileNameEllipsize> =
         EnumSettingLiveData(
             R.string.pref_key_file_name_ellipsize, R.string.pref_default_value_file_name_ellipsize,
-            TextUtils.TruncateAt::class.java
+            FileNameEllipsize::class.java
         )
 
     val STANDARD_DIRECTORY_SETTINGS: SettingLiveData<List<StandardDirectorySettings>> =
