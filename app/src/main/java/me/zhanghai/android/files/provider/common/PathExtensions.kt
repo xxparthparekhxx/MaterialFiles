@@ -52,7 +52,71 @@ fun Path.copyTo(target: Path, vararg options: CopyOption) {
     } else {
         ForeignCopyMove.copy(this, target, *options)
     }
+    // A copy made as root would otherwise stay owned by root inside someone else's folder.
+    try {
+        target.inheritRootOwnerFromParent()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }
+
+private fun Path.inheritRootOwnerFromParent() {
+    val parent = parent ?: return
+    val parentOwner = try {
+        parent.getOwner(LinkOption.NOFOLLOW_LINKS)
+    } catch (e: Exception) {
+        return
+    }
+    if (parentOwner.isRootPrincipal()) {
+        return
+    }
+    val owner = try {
+        getOwner(LinkOption.NOFOLLOW_LINKS)
+    } catch (e: Exception) {
+        return
+    }
+    if (owner.isRootPrincipal()) {
+        try {
+            setOwner(parentOwner, LinkOption.NOFOLLOW_LINKS)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        inheritRootGroupFromParent()
+    }
+    if (!isDirectory(LinkOption.NOFOLLOW_LINKS)) {
+        return
+    }
+    newDirectoryStream().use { stream ->
+        for (child in stream) {
+            child.inheritRootOwnerFromParent()
+        }
+    }
+}
+
+private fun Path.inheritRootGroupFromParent() {
+    val parent = parent ?: return
+    val view = getFileAttributeView(
+        Java8PosixFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS
+    ) ?: return
+    val parentView = parent.getFileAttributeView(
+        Java8PosixFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS
+    ) ?: return
+    val group = view.readAttributes().group() ?: return
+    if (!group.isRootPrincipal()) {
+        return
+    }
+    val parentGroup = parentView.readAttributes().group() ?: return
+    if (parentGroup.isRootPrincipal()) {
+        return
+    }
+    setGroup(parentGroup, LinkOption.NOFOLLOW_LINKS)
+}
+
+private fun UserPrincipal.isRootPrincipal(): Boolean =
+    this is PosixUser && id == 0 || name == "root"
+
+private fun GroupPrincipal.isRootPrincipal(): Boolean =
+    this is PosixGroup && id == 0 || name == "root"
 
 @Throws(IOException::class)
 fun Path.createDirectory(vararg attributes: FileAttribute<*>): Path =
