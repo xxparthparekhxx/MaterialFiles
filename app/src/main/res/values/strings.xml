@@ -247,6 +247,7 @@
     <string name="file_open_from_background_text">Tap to open</string>
     <string name="file_name_error_empty">File name cannot be empty</string>
     <string name="file_name_error_invalid">Invalid file name</string>
+    <string name="file_name_error_invalid_characters">File name cannot contain \"/\" or null characters</string>
     <string name="file_name_error_already_exists">A file with this name already exists</string>
     <string name="file_replace_message_format">Replace “%1$s”?</string>
     <string name="file_delete_message_file_format">Delete “%1$s”?</string>
