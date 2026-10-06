@@ -98,6 +98,10 @@
             android:title="@string/settings_open_with_built_in_viewers_title"
             android:summary="@string/settings_open_with_built_in_viewers_summary"
             android:defaultValue="@bool/pref_default_value_open_with_built_in_viewers" />
+            android:key="@string/pref_key_highlight_delete"
+            android:title="@string/settings_highlight_delete_title"
+            android:summary="@string/settings_highlight_delete_summary"
+            android:defaultValue="@bool/pref_default_value_highlight_delete" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"

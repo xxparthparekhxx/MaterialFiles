@@ -5,6 +5,9 @@
 
 package me.zhanghai.android.files.filelist
 
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.View
@@ -40,6 +43,7 @@ import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.AnimatedListAdapter
 import me.zhanghai.android.files.ui.CheckableForegroundLinearLayout
 import me.zhanghai.android.files.ui.CheckableItemBackground
+import me.zhanghai.android.files.util.getColorByAttr
 import me.zhanghai.android.files.util.isMaterial3Theme
 import me.zhanghai.android.files.util.layoutInflater
 import me.zhanghai.android.files.util.valueCompat
@@ -457,7 +461,24 @@ class FileListAdapter(
         val isArchivePath = path.isArchivePath
         menu.findItem(R.id.action_copy)
             .setTitle(if (isArchivePath) R.string.file_item_action_extract else R.string.copy)
-        menu.findItem(R.id.action_delete).isVisible = !isReadOnly
+        menu.findItem(R.id.action_delete).apply {
+            isVisible = !isReadOnly
+            val title = holder.menuButton.context.getString(R.string.delete)
+            this.title = if (Settings.HIGHLIGHT_DELETE.valueCompat) {
+                SpannableString(title).apply {
+                    setSpan(
+                        ForegroundColorSpan(
+                            holder.menuButton.context.getColorByAttr(
+                                androidx.appcompat.R.attr.colorError
+                            )
+                        ),
+                        0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+            } else {
+                title
+            }
+        }
         menu.findItem(R.id.action_rename).isVisible = !isReadOnly
         menu.findItem(R.id.action_extract).isVisible = file.isArchiveFile
         menu.findItem(R.id.action_test_archive).isVisible = file.isArchiveFile
