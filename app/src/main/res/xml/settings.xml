@@ -122,6 +122,10 @@
             android:title="@string/settings_file_list_hide_add_button_title"
             android:summary="@string/settings_file_list_hide_add_button_summary"
             android:defaultValue="@bool/pref_default_value_file_list_hide_add_button" />
+            android:key="@string/pref_key_file_list_dividers"
+            android:title="@string/settings_file_list_dividers_title"
+            android:summary="@string/settings_file_list_dividers_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_dividers" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
