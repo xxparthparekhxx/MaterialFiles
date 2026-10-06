@@ -83,12 +83,15 @@ import me.zhanghai.android.files.provider.common.readAttributes
 import me.zhanghai.android.files.provider.common.resolveForeign
 import me.zhanghai.android.files.provider.common.restoreSeLinuxContext
 import me.zhanghai.android.files.provider.common.setGroup
+import me.zhanghai.android.files.provider.common.setLastModifiedTime
 import me.zhanghai.android.files.provider.common.setMode
 import me.zhanghai.android.files.provider.common.setOwner
 import me.zhanghai.android.files.provider.common.setSeLinuxContext
 import me.zhanghai.android.files.provider.common.toByteString
 import me.zhanghai.android.files.provider.common.toModeString
 import me.zhanghai.android.files.provider.linux.isLinuxPath
+import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.asFileName
 import me.zhanghai.android.files.util.createInstallPackageIntent
 import me.zhanghai.android.files.util.createIntent
@@ -966,6 +969,24 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
                 // TODO: Prompt retry, skip, skip-all or abort.
                 return super.visitFileFailed(file, exception)
             }
+
+            @Throws(IOException::class)
+            override fun postVisitDirectory(
+                directory: Path,
+                exception: IOException?
+            ): FileVisitResult {
+                // Adding children changes a directory's modification time, so set it last.
+                if (exception == null) {
+                    val relative = source.relativize(directory)
+                    val directoryInTarget = if (isExtract) {
+                        resolveSanitizedExtractTarget(target, relative)
+                    } else {
+                        target.resolveForeign(relative)
+                    }
+                    preserveModificationTime(directory, directoryInTarget)
+                }
+                return super.postVisitDirectory(directory, exception)
+            }
         })
     }
 
@@ -1104,11 +1125,33 @@ private fun FileJob.copy(
     isExtract: Boolean,
     transferInfo: TransferInfo,
     actionAllInfo: ActionAllInfo
-): Boolean =
-    copyOrMove(
+): Boolean {
+    val copied = copyOrMove(
         source, target, if (isExtract) CopyMoveType.EXTRACT else CopyMoveType.COPY, true, false,
         transferInfo, actionAllInfo
     )
+    if (copied && !source.isDirectory(LinkOption.NOFOLLOW_LINKS)) {
+        preserveModificationTime(source, target)
+    }
+    return copied
+}
+
+/**
+ * Give the copy the original's last modified time, if the user asked for it. Failures (for
+ * example on file systems that cannot set times) are ignored.
+ */
+private fun preserveModificationTime(source: Path, target: Path) {
+    if (!Settings.COPY_PRESERVE_MODIFICATION_TIME.valueCompat) {
+        return
+    }
+    try {
+        target.setLastModifiedTime(
+            source.readAttributes(BasicFileAttributes::class.java).lastModifiedTime()
+        )
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
 
 class CreateFileJob(private val path: Path, private val createDirectory: Boolean) : FileJob() {
     @Throws(IOException::class)

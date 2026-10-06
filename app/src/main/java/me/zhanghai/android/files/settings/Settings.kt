@@ -276,6 +276,12 @@ object Settings {
             R.string.pref_key_block_screenshots, R.bool.pref_default_value_block_screenshots
         )
 
+    val COPY_PRESERVE_MODIFICATION_TIME: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_copy_preserve_modification_time,
+            R.bool.pref_default_value_copy_preserve_modification_time
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
