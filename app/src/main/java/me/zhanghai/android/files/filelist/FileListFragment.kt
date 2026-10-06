@@ -1215,12 +1215,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             menu.findItem(R.id.action_open).isVisible = isOpen
             menu.findItem(R.id.action_create).isVisible = !isOpen
             menu.findItem(R.id.action_select_all).isVisible = pickOptions.allowMultiple
+            menu.findItem(R.id.action_select_range).isVisible =
+                pickOptions.allowMultiple && files.size >= 2
         } else {
             overlayActionMode.title = getSelectTitle(files)
             overlayActionMode.setMenuResource(R.menu.file_list_select)
             val menu = overlayActionMode.menu
             val isAnyFileReadOnly = files.any { it.path.fileSystem.isReadOnly }
             menu.findItem(R.id.action_cut).isVisible = !isAnyFileReadOnly
+            menu.findItem(R.id.action_select_range).isVisible = files.size >= 2
             val areAllFilesArchivePaths = files.all { it.path.isArchivePath }
             menu.findItem(R.id.action_copy)
                 .setIcon(
@@ -1316,6 +1319,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 selectAllFiles()
                 true
             }
+            R.id.action_select_range -> {
+                selectRangeOfFiles()
+                true
+            }
             else -> false
         }
 
@@ -1393,6 +1400,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun selectAllFiles() {
         adapter.selectAllFiles()
+    }
+
+    private fun selectRangeOfFiles() {
+        adapter.selectRange()
     }
 
     private fun onPasteStateChanged(pasteState: PasteState) {
