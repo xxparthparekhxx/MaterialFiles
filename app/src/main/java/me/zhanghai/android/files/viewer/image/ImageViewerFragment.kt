@@ -123,7 +123,11 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
                     -(binding.appBarLayout.bottom.takeIf { it > 0 } ?: binding.appBarLayout.height).toFloat()
             }
         }
-        adapter = ImageViewerAdapter(viewLifecycleOwner) { toggleAppBar() }.apply {
+        adapter = ImageViewerAdapter(
+            viewLifecycleOwner,
+            { toggleAppBar() },
+            { zoomed -> binding.viewPager.isUserInputEnabled = !zoomed }
+        ).apply {
             replace(paths)
         }
         binding.viewPager.apply {
