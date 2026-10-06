@@ -181,6 +181,8 @@
     <bool name="pref_default_value_file_list_show_permissions">false</bool>
     <string name="pref_key_full_date_time">key_full_date_time</string>
     <bool name="pref_default_value_full_date_time">false</bool>
+    <string name="pref_key_file_list_hide_add_button">key_file_list_hide_add_button</string>
+    <bool name="pref_default_value_file_list_hide_add_button">false</bool>
 
     <string name="pref_key_binary_file_size_unit">key_binary_file_size_unit</string>
     <bool name="pref_default_value_binary_file_size_unit">false</bool>

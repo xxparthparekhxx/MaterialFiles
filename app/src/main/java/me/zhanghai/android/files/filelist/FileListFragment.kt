@@ -545,6 +545,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_FIT_THUMBNAILS.observe(viewLifecycleOwner) {
             adapter.fitThumbnails = it
         }
+        Settings.FILE_LIST_HIDE_ADD_BUTTON.observe(viewLifecycleOwner) { updateAddButton() }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }
@@ -646,6 +647,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateSelectAllMenuItem()
         updateShowHiddenFilesMenuItem()
         menu.findItem(R.id.action_rescan_media)?.isVisible = currentPath.isLinuxPath
+        updateAddButton()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -661,6 +663,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             R.id.action_view_sort -> {
                 ViewSortBottomSheetFragment.show(this)
+                true
+            }
+            R.id.action_new_folder -> {
+                showCreateDirectoryDialog()
+                true
+            }
+            R.id.action_new_file -> {
+                showCreateFileDialog()
                 true
             }
             R.id.action_new_task -> {
@@ -760,6 +770,22 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         return Settings.FILE_LIST_DEFAULT_DIRECTORY.valueCompat
     }
 
+    /**
+     * The add button, or its replacement entries in the toolbar menu, are only available when the
+     * current directory is writable.
+     */
+    private fun updateAddButton() {
+        val canCreate = !currentPath.fileSystem.isReadOnly
+        val hideAddButton = Settings.FILE_LIST_HIDE_ADD_BUTTON.valueCompat
+        binding.speedDialView.isVisible = canCreate && !hideAddButton
+        if (this::menuBinding.isInitialized) {
+            menuBinding.menu.findItem(R.id.action_new_folder)?.isVisible =
+                canCreate && hideAddButton
+            menuBinding.menu.findItem(R.id.action_new_file)?.isVisible =
+                canCreate && hideAddButton
+        }
+    }
+
     private fun onCurrentPathChanged(path: Path) {
         // When going up to an ancestor, remember the child we came from so it can be highlighted.
         val previousPath = lastPath
@@ -779,7 +805,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             Settings.FILE_LIST_REMEMBER_LAST_DIRECTORY.valueCompat) {
             Settings.FILE_LIST_LAST_DIRECTORY.putValue(path)
         }
-        binding.speedDialView.isVisible = !path.fileSystem.isReadOnly
+        updateAddButton()
         updateOverlayToolbar()
         updateBottomToolbar()
         ensureUsbStorageAccess(path)

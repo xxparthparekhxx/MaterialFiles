@@ -74,6 +74,20 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_new_folder"
+        android:orderInCategory="100"
+        android:title="@string/file_list_action_new_folder"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_new_file"
+        android:orderInCategory="100"
+        android:title="@string/file_list_action_new_file"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_copy_path"
         android:orderInCategory="100"
         android:title="@string/file_list_action_copy_path"
