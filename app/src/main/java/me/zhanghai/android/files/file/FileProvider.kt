@@ -438,11 +438,12 @@ val Path.fileProviderUri: Uri
                 e.printStackTrace()
             }
         }
+        // path() would encode this again, and the other app then cannot open the file.
         val uriPath = Uri.encode(toUri().toString())
         return Uri.Builder()
             .scheme(ContentResolver.SCHEME_CONTENT)
             .authority(BuildConfig.FILE_PROVIDIER_AUTHORITY)
-            .path(uriPath)
+            .encodedPath("/$uriPath")
             .build()
     }
 
@@ -451,6 +452,11 @@ private val Uri.fileProviderPath: Path
         // Strip the prepended slash. A slash is always prepended because our Uri path starts with
         // our URI scheme, which can never start with a slash; but our Uri has an authority so its
         // path must start with a slash.
-        val uriPath = Uri.decode(path).substring(1)
+        // Uri.path is already decoded once. Links built the old way were encoded twice, so the
+        // scheme separator may still be percent-encoded.
+        var uriPath = checkNotNull(path).substring(1)
+        if (!uriPath.contains("://")) {
+            uriPath = Uri.decode(uriPath)
+        }
         return Paths.get(URI.create(uriPath))
     }
