@@ -164,6 +164,15 @@ class FileListAdapter(
             notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
         }
 
+    var listDensity: FileListDensity = FileListDensity.COMFORTABLE
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = value
+            notifyItemRangeChanged(0, itemCount)
+        }
+
     private val selectedFiles = fileItemSetOf()
 
     private val filePositionMap = mutableMapOf<Path, Int>()
@@ -397,6 +406,7 @@ class FileListAdapter(
                 isSelected = false
             }
         }
+        applyListDensity(holder)
         if (payloads.isNotEmpty()) {
             return
         }
@@ -712,6 +722,37 @@ class FileListAdapter(
         )
 
         lateinit var popupMenu: PopupMenu
+    }
+
+    private fun applyListDensity(holder: ViewHolder) {
+        if (_viewType == FileViewType.GRID) {
+            return
+        }
+        val heightDp = when (_viewType) {
+            FileViewType.COMPACT_LIST -> when (listDensity) {
+                FileListDensity.COMFORTABLE -> 40
+                FileListDensity.COMPACT -> 36
+                FileListDensity.TIGHT -> 32
+            }
+            else -> when (listDensity) {
+                FileListDensity.COMFORTABLE -> 72
+                FileListDensity.COMPACT -> 56
+                FileListDensity.TIGHT -> 48
+            }
+        }
+        val heightPx = (heightDp * holder.itemLayout.resources.displayMetrics.density).toInt()
+        val layoutParams = holder.itemLayout.layoutParams
+        if (layoutParams.height != heightPx) {
+            layoutParams.height = heightPx
+            holder.itemLayout.requestLayout()
+        }
+        val nameSp = when (listDensity) {
+            FileListDensity.COMFORTABLE -> 16f
+            FileListDensity.COMPACT -> 14f
+            FileListDensity.TIGHT -> 13f
+        }
+        holder.nameText.setTextSize(TypedValue.COMPLEX_UNIT_SP, nameSp)
+        holder.descriptionText?.setTextSize(TypedValue.COMPLEX_UNIT_SP, (nameSp - 2f).coerceAtLeast(11f))
     }
 
     interface Listener {

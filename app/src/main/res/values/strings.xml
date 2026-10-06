@@ -912,6 +912,12 @@
         <item>Largest</item>
     </string-array>
     <string name="settings_file_name_ellipsize_title">Display long file name</string>
+    <string name="settings_file_list_density_title">List size</string>
+    <string-array name="settings_file_list_density_entries">
+        <item>Comfortable</item>
+        <item>Compact</item>
+        <item>Tight</item>
+    </string-array>
     <string-array name="settings_file_name_ellipsize_entries">
         <item>Ellipsize the beginning</item>
         <item>Ellipsize the middle</item>
