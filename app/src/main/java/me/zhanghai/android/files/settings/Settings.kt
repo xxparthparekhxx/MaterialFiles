@@ -232,6 +232,12 @@ object Settings {
             R.bool.pref_default_value_auto_calculate_checksums
         )
 
+    val FILE_LIST_FIT_THUMBNAILS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_fit_thumbnails,
+            R.bool.pref_default_value_file_list_fit_thumbnails
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
