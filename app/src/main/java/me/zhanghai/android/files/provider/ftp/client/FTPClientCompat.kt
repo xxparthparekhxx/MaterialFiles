@@ -43,14 +43,15 @@ fun FTPClient.mlistDirCompat(pathname: String): Array<FTPFile>? {
     // @see https://datatracker.ietf.org/doc/html/rfc3659#section-7.8
     // FTPClient silently returns an empty array even when server returns an error for unknown
     // command, so we have to rely on checking the feature.
-    if (hasFeature(FTPCmd.MLST) && !pathname.hasSpecialFtpCharacters()) {
-        return mlistDir(pathname)
-    }
-    // Changing working directory avoids globbing and syntax issues with special characters
-    // (such as '[') in pathname on MLSD and LIST.
+    // Some servers ignore the pathname on MLSD and list the working directory instead, so enter
+    // the directory first and list it with no path. Changing directory also avoids globbing of
+    // special characters (such as '[') in the pathname.
     val previousWorkingDirectory = printWorkingDirectory()
     val changed = changeWorkingDirectory(pathname)
     if (!changed) {
+        if (hasFeature(FTPCmd.MLST) && !pathname.hasSpecialFtpCharacters()) {
+            return mlistDir(pathname)
+        }
         return null
     }
     try {
