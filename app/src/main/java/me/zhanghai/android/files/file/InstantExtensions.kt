@@ -8,6 +8,8 @@ package me.zhanghai.android.files.file
 import android.content.Context
 import android.text.format.DateUtils
 import android.text.format.Time
+import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.util.valueCompat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -16,6 +18,9 @@ import java.time.format.FormatStyle
 /* @see com.android.documentsui.base.Shared#formatTime(Context, long) */
 @Suppress("DEPRECATION")
 fun Instant.formatShort(context: Context): String {
+    if (Settings.ISO_DATE_FORMAT.valueCompat) {
+        return ISO_SHORT_FORMATTER.format(this)
+    }
     val time = toEpochMilli()
     val then = Time().apply { set(time) }
     val now = Time().apply { setToNow() }
@@ -29,6 +34,16 @@ fun Instant.formatShort(context: Context): String {
 }
 
 fun Instant.formatLong(): String =
-    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-        .withZone(ZoneId.systemDefault())
-        .format(this)
+    if (Settings.ISO_DATE_FORMAT.valueCompat) {
+        ISO_LONG_FORMATTER.format(this)
+    } else {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+            .withZone(ZoneId.systemDefault())
+            .format(this)
+    }
+
+private val ISO_SHORT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    .withZone(ZoneId.systemDefault())
+
+private val ISO_LONG_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    .withZone(ZoneId.systemDefault())
