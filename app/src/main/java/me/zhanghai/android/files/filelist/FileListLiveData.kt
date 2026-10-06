@@ -6,6 +6,9 @@
 package me.zhanghai.android.files.filelist
 
 import android.os.AsyncTask
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import java8.nio.file.DirectoryIteratorException
 import java8.nio.file.Path
 import me.zhanghai.android.files.file.FileItem
@@ -31,6 +34,16 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
     @Volatile
     private var isChangedWhileInactive = false
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var lastReloadUptimeMillis = 0L
+    private val debouncedReloadRunnable = Runnable {
+        if (hasActiveObservers()) {
+            loadValue()
+        } else {
+            isChangedWhileInactive = true
+        }
+    }
+
     private class LoadTask {
         @Volatile
         var isCancelled = false
@@ -42,6 +55,8 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
     }
 
     fun loadValue() {
+        lastReloadUptimeMillis = SystemClock.uptimeMillis()
+        mainHandler.removeCallbacks(debouncedReloadRunnable)
         observer.observe()
         currentTask?.isCancelled = true
         future?.cancel(false)
@@ -93,10 +108,21 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
     }
 
     private fun onChangeObserved() {
-        if (hasActiveObservers()) {
-            loadValue()
+        // Directory changes arrive in bursts during transfers (observer already throttles to
+        // ~1s). Reloading on every burst restarts the load, re-stats every file and re-diffs
+        // the list, which janks scrolling. Coalesce to at most one reload per interval with a
+        // trailing reload so the final state is still shown.
+        val now = SystemClock.uptimeMillis()
+        val elapsed = now - lastReloadUptimeMillis
+        if (elapsed >= RELOAD_DEBOUNCE_MILLIS) {
+            if (hasActiveObservers()) {
+                loadValue()
+            } else {
+                isChangedWhileInactive = true
+            }
         } else {
-            isChangedWhileInactive = true
+            mainHandler.removeCallbacks(debouncedReloadRunnable)
+            mainHandler.postDelayed(debouncedReloadRunnable, RELOAD_DEBOUNCE_MILLIS - elapsed)
         }
     }
 
@@ -110,8 +136,13 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
     }
 
     override fun close() {
+        mainHandler.removeCallbacks(debouncedReloadRunnable)
         observer.close()
         currentTask?.isCancelled = true
         future?.cancel(false)
+    }
+
+    companion object {
+        private const val RELOAD_DEBOUNCE_MILLIS = 2000L
     }
 }
