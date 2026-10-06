@@ -201,6 +201,16 @@ class ReadArchive : Closeable {
         )
     }
 
+    @Throws(ArchiveException::class)
+    fun findEntry(name: String, charset: Charset): Boolean {
+        while (true) {
+            val currentEntry = readEntry(charset) ?: return false
+            if (currentEntry.name == name) {
+                return true
+            }
+        }
+    }
+
     private fun getEntryString(stringUtf8: String?, string: ByteArray?, charset: Charset): String? =
         stringUtf8 ?: string?.toString(charset)
 
