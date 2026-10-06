@@ -435,6 +435,7 @@ class FileListAdapter(
         menu.findItem(R.id.action_test_archive).isVisible = file.isArchiveFile
         menu.findItem(R.id.action_archive).isVisible = !isArchivePath
         menu.findItem(R.id.action_add_bookmark).isVisible = isDirectory
+        menu.findItem(R.id.action_show_in_folder).isVisible = isSearching
         holder.popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.action_open_with -> {
@@ -471,6 +472,10 @@ class FileListAdapter(
                 }
                 R.id.action_share -> {
                     listener.shareFile(file)
+                    true
+                }
+                R.id.action_show_in_folder -> {
+                    listener.showInFolder(file)
                     true
                 }
                 R.id.action_copy_path -> {
@@ -606,6 +611,8 @@ class FileListAdapter(
         fun shareFile(file: FileItem)
         fun copyPath(file: FileItem)
         fun addBookmark(file: FileItem)
+
+        fun showInFolder(file: FileItem)
         fun createShortcut(file: FileItem)
         fun showPropertiesDialog(file: FileItem)
     }
