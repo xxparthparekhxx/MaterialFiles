@@ -120,6 +120,12 @@ object Settings {
             FileSortOptions(FileSortOptions.By.NAME, FileSortOptions.Order.ASCENDING, true)
         )
 
+    val DELETE_ARCHIVE_AFTER_EXTRACT: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_delete_archive_after_extract,
+            R.bool.pref_default_value_delete_archive_after_extract
+        )
+
     val CREATE_ARCHIVE_TYPE: SettingLiveData<Int> =
         ResourceIdSettingLiveData(R.string.pref_key_create_archive_type, R.id.zipRadio)
 

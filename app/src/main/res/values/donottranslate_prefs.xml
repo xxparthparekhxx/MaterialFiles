@@ -133,6 +133,8 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string name="pref_key_delete_archive_after_extract">key_delete_archive_after_extract</string>
+    <bool name="pref_default_value_delete_archive_after_extract">false</bool>
     <string name="pref_key_archive_file_name_encoding">key_archive_file_name_encoding</string>
     <string name="pref_default_value_archive_file_name_encoding">UTF-8</string>
     <string name="pref_key_open_apk_default_action">key_open_apk_default_action</string>
