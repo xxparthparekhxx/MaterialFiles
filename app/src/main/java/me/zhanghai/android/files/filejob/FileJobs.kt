@@ -873,10 +873,19 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
         val transferInfo = TransferInfo(scanInfo, targetDirectory)
         val actionAllInfo = ActionAllInfo()
         for (source in sources) {
-            val target = if (source.parent == targetDirectory) {
+            val rawTarget = if (source.parent == targetDirectory) {
                 getTargetPathForDuplicate(source)
             } else {
                 targetDirectory.resolveForeign(getTargetFileName(source))
+            }
+            // Archives may contain entry names valid on their original file system but
+            // forbidden on the target (e.g. ':' on FAT-emulating primary storage), which
+            // otherwise fails with "Operation not permitted". Sanitize on extract so the
+            // operation succeeds instead of erroring out.
+            val target = if (isExtract) {
+                sanitizeExtractTargetFileName(rawTarget)
+            } else {
+                rawTarget
             }
             copyRecursively(source, target, isExtract, transferInfo, actionAllInfo)
             throwIfInterrupted()
@@ -897,7 +906,12 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
                 directory: Path,
                 attributes: BasicFileAttributes
             ): FileVisitResult {
-                val directoryInTarget = target.resolveForeign(source.relativize(directory))
+                val relative = source.relativize(directory)
+                val directoryInTarget = if (isExtract) {
+                    resolveSanitizedExtractTarget(target, relative)
+                } else {
+                    target.resolveForeign(relative)
+                }
                 val copied = copy(
                     directory, directoryInTarget, isExtract, transferInfo, actionAllInfo
                 )
@@ -907,7 +921,12 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
 
             @Throws(IOException::class)
             override fun visitFile(file: Path, attributes: BasicFileAttributes): FileVisitResult {
-                val fileInTarget = target.resolveForeign(source.relativize(file))
+                val relative = source.relativize(file)
+                val fileInTarget = if (isExtract) {
+                    resolveSanitizedExtractTarget(target, relative)
+                } else {
+                    target.resolveForeign(relative)
+                }
                 copy(file, fileInTarget, isExtract, transferInfo, actionAllInfo)
                 throwIfInterrupted()
                 return FileVisitResult.CONTINUE
@@ -998,6 +1017,52 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
             .append(" ($count)".toByteString())
             .append(fileName.substring(countInfo.countEnd))
             .toByteString()
+    }
+
+    private fun sanitizeExtractTargetFileName(target: Path): Path {
+        val fileName = target.fileName?.toString() ?: return target
+        val sanitized = sanitizeExtractFileName(fileName)
+        return if (sanitized == fileName) target else target.resolveSibling(sanitized)
+    }
+
+    private fun resolveSanitizedExtractTarget(base: Path, relative: Path): Path {
+        if (relative.nameCount == 0) {
+            return base
+        }
+        var result = base
+        for (i in 0 until relative.nameCount) {
+            result = result.resolve(sanitizeExtractFileName(relative.getName(i).toString()))
+        }
+        return result
+    }
+
+    private fun sanitizeExtractFileName(name: String): String {
+        if (name.isEmpty()) {
+            return "_"
+        }
+        // Primary storage emulates FAT/exFAT, which forbids these plus control characters.
+        // Replace them so extraction succeeds instead of failing with "Operation not permitted".
+        val builder = StringBuilder(name.length)
+        for (char in name) {
+            builder.append(
+                if (char.code < 0x20 || char == '"' || char == '*' || char == '/' ||
+                    char == ':' || char == '<' || char == '>' || char == '?' ||
+                    char == '\\' || char == '|'
+                ) {
+                    '_'
+                } else {
+                    char
+                }
+            )
+        }
+        // Trailing spaces and dots are also rejected; normalize them.
+        var end = builder.length
+        while (end > 0 && (builder[end - 1] == ' ' || builder[end - 1] == '.')) {
+            builder.setCharAt(end - 1, '_')
+            --end
+        }
+        val result = builder.toString()
+        return if (result.isEmpty()) "_" else result
     }
 
     private class DuplicateCountInfo(val countStart: Int, val countEnd: Int, val count: Int)
