@@ -244,6 +244,11 @@ object Settings {
             R.bool.pref_default_value_file_list_fit_thumbnails
         )
 
+    val FILE_LIST_BACK_EXITS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_back_exits, R.bool.pref_default_value_file_list_back_exits
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

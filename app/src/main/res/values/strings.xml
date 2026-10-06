@@ -860,6 +860,8 @@
     <string name="file_properties_checksum_tap_to_calculate">Tap to calculate</string>
     <string name="settings_file_list_fit_thumbnails_title">Fit grid thumbnails</string>
     <string name="settings_file_list_fit_thumbnails_summary">Show the whole image in grid thumbnails instead of cropping it to a square</string>
+    <string name="settings_file_list_back_exits_title">Back exits the app</string>
+    <string name="settings_file_list_back_exits_summary">Leave the app with the back button or gesture instead of going up one folder at a time</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
