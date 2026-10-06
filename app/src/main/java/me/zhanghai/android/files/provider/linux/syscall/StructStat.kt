@@ -21,7 +21,8 @@ class StructStat(
     val st_blocks: Long, /*blkcnt_t*/
     val st_atim: StructTimespec,
     val st_mtim: StructTimespec,
-    val st_ctim: StructTimespec
+    val st_ctim: StructTimespec,
+    val st_btim: StructTimespec
 ) {
     val st_atime: Long /*time_t*/
         get() = st_atim.tv_sec

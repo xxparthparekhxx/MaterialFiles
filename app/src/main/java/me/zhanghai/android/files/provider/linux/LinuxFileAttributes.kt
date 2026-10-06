@@ -44,7 +44,8 @@ internal class LinuxFileAttributes(
                 FileTime.from(Instant.ofEpochSecond(stat.st_mtim.tv_sec, stat.st_mtim.tv_nsec))
             val lastAccessTime =
                 FileTime.from(Instant.ofEpochSecond(stat.st_atim.tv_sec, stat.st_atim.tv_nsec))
-            val creationTime = lastModifiedTime
+            val creationTime =
+                FileTime.from(Instant.ofEpochSecond(stat.st_btim.tv_sec, stat.st_btim.tv_nsec))
             val type = PosixFileType.fromMode(stat.st_mode)
             val size = stat.st_size
             val fileKey = LinuxFileKey(stat.st_dev, stat.st_ino)
