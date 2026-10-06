@@ -26,6 +26,9 @@ fun Instant.formatShort(context: Context): String {
     val now = Time().apply { setToNow() }
     val flags = DateUtils.FORMAT_NO_NOON or DateUtils.FORMAT_NO_MIDNIGHT or
         DateUtils.FORMAT_ABBREV_ALL or when {
+            Settings.FULL_DATE_TIME.valueCompat ->
+                DateUtils.FORMAT_SHOW_YEAR or DateUtils.FORMAT_SHOW_DATE or
+                    DateUtils.FORMAT_SHOW_TIME
             then.year != now.year -> DateUtils.FORMAT_SHOW_YEAR or DateUtils.FORMAT_SHOW_DATE
             then.yearDay != now.yearDay -> DateUtils.FORMAT_SHOW_DATE
             else -> DateUtils.FORMAT_SHOW_TIME
