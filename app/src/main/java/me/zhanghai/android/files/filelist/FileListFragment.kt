@@ -10,7 +10,11 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.ThumbnailUtils
 import android.net.Uri
+import android.os.AsyncTask
 import android.os.Build
 import android.media.MediaScannerConnection
 import android.os.AsyncTask
@@ -1975,6 +1979,44 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun createShortcut(path: Path, mimeType: MimeType) {
         val context = requireContext()
+        if (mimeType.isImage && path.isLinuxPath) {
+            // Use a small thumbnail of the image as the icon, decoded off the main thread.
+            AsyncTask.THREAD_POOL_EXECUTOR.execute {
+                val thumbnail = path.decodeShortcutThumbnail()
+                view?.post {
+                    if (isAdded) {
+                        createShortcut(path, mimeType, thumbnail)
+                    }
+                } ?: Unit
+            }
+            return
+        }
+        createShortcut(path, mimeType, null)
+    }
+
+    private fun Path.decodeShortcutThumbnail(): Bitmap? =
+        try {
+            val file = toFile()
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.path, options)
+            val size = SHORTCUT_THUMBNAIL_SIZE
+            var sampleSize = 1
+            while (options.outWidth / (sampleSize * 2) >= size &&
+                options.outHeight / (sampleSize * 2) >= size
+            ) {
+                sampleSize *= 2
+            }
+            val decoded = BitmapFactory.decodeFile(
+                file.path, BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            )
+            decoded?.let { ThumbnailUtils.extractThumbnail(it, size, size) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+
+    private fun createShortcut(path: Path, mimeType: MimeType, thumbnail: Bitmap?) {
+        val context = requireContext()
         val isDirectory = mimeType == MimeType.DIRECTORY
         val shortcutInfo = ShortcutInfoCompat.Builder(context, path.toString())
             .setShortLabel(path.name)
@@ -1987,13 +2029,17 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 }
             )
             .setIcon(
-                IconCompat.createWithResource(
-                    context, if (isDirectory) {
-                        R.mipmap.directory_shortcut_icon
-                    } else {
-                        R.mipmap.file_shortcut_icon
-                    }
-                )
+                if (thumbnail != null) {
+                    IconCompat.createWithBitmap(thumbnail)
+                } else {
+                    IconCompat.createWithResource(
+                        context, if (isDirectory) {
+                            R.mipmap.directory_shortcut_icon
+                        } else {
+                            R.mipmap.file_shortcut_icon
+                        }
+                    )
+                }
             )
             .build()
         ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
@@ -2233,6 +2279,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         private const val IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
 
         private const val DOUBLE_BACK_TO_EXIT_TIMEOUT_MILLIS = 2000L
+        private const val SHORTCUT_THUMBNAIL_SIZE = 192
     }
 
     private class RequestAllFilesAccessContract : ActivityResultContract<Unit, Boolean>() {
