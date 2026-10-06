@@ -153,6 +153,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
 
+        // Without a file we are finishing, and the view model cannot be created.
+        if (!::argsFile.isInitialized) {
+            return
+        }
         menuBinding = MenuBinding.inflate(menu, inflater)
     }
 
@@ -164,7 +168,9 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
-        when (item.itemId) {
+        if (!::argsFile.isInitialized) {
+            super.onOptionsItemSelected(item)
+        } else when (item.itemId) {
             R.id.action_save -> {
                 save()
                 true
@@ -181,7 +187,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         }
 
     fun onSupportNavigateUp(): Boolean {
-        if (onBackPressedCallback.isEnabled) {
+        if (::onBackPressedCallback.isInitialized && onBackPressedCallback.isEnabled) {
             onBackPressedCallback.handleOnBackPressed()
             return true
         }
