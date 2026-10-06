@@ -365,6 +365,10 @@ class FileListAdapter(
                 val nameEllipsize = nameEllipsize
                 ellipsize = nameEllipsize
                 isSelected = nameEllipsize == TextUtils.TruncateAt.MARQUEE
+            } else {
+                // End ellipsis hides the extension on a wrapped name.
+                ellipsize = TextUtils.TruncateAt.MIDDLE
+                isSelected = false
             }
         }
         if (payloads.isNotEmpty()) {
@@ -476,6 +480,11 @@ class FileListAdapter(
                 }
             }
             val descriptionSeparator = context.getString(R.string.file_item_description_separator)
+            if (!isDirectory) {
+                file.extension.takeIf { it.isNotEmpty() }?.let {
+                    descriptionParts += it.uppercase(Locale.getDefault())
+                }
+            }
             descriptionParts.joinToString(descriptionSeparator).takeIf { it.isNotEmpty() }
         }
         val isArchivePath = path.isArchivePath
