@@ -289,6 +289,7 @@
     <string name="file_list_subtitle_separator">,\u0020</string>
     <string name="file_list_path_error_empty">Path cannot be empty</string>
     <string name="file_list_path_error_invalid">Invalid path</string>
+    <string name="file_list_pick_local_only_error">Only local files can be picked here</string>
     <string name="file_list_error_directory_not_found">Folder not found</string>
     <string name="file_list_action_view_sort">View and sort</string>
     <string name="file_list_action_view_list">List</string>
@@ -761,6 +762,8 @@
     </string-array>
     <string name="settings_black_night_mode">Black night mode</string>
     <string name="settings_file_list_animation_title">File list animation</string>
+    <string name="settings_default_apps_title">Default apps</string>
+    <string name="settings_default_apps_summary">Set Material Files as the default file manager</string>
     <string name="settings_file_list_lock_header_title">Lock header</string>
     <string name="settings_file_list_grid_span_count_title">Grid columns</string>
     <string-array name="settings_file_list_grid_span_count_entries">
