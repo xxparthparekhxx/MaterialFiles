@@ -290,6 +290,11 @@
             android:theme="@style/Theme.MaterialFiles.Translucent" />
 
         <activity
+            android:name="me.zhanghai.android.files.fileaction.SftpPasswordDialogActivity"
+            android:autoRemoveFromRecents="true"
+            android:theme="@style/Theme.MaterialFiles.Translucent" />
+
+        <activity
             android:name="me.zhanghai.android.files.filejob.FileJobErrorDialogActivity"
             android:autoRemoveFromRecents="true"
             android:theme="@style/Theme.MaterialFiles.Translucent" />
