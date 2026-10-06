@@ -82,6 +82,10 @@
             android:title="@string/settings_auto_calculate_checksums_title"
             android:summary="@string/settings_auto_calculate_checksums_summary"
             android:defaultValue="@bool/pref_default_value_auto_calculate_checksums" />
+            android:key="@string/pref_key_file_list_fit_thumbnails"
+            android:title="@string/settings_file_list_fit_thumbnails_title"
+            android:summary="@string/settings_file_list_fit_thumbnails_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_fit_thumbnails" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
