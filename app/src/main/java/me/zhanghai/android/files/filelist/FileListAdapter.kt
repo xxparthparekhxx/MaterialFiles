@@ -433,6 +433,8 @@ class FileListAdapter(
         menu.findItem(R.id.action_rename).isVisible = !isReadOnly
         menu.findItem(R.id.action_extract).isVisible = file.isArchiveFile
         menu.findItem(R.id.action_test_archive).isVisible = file.isArchiveFile
+        menu.findItem(R.id.action_open_as_archive).isVisible =
+            !file.attributes.isDirectory && !file.isArchiveFile && !isArchivePath
         menu.findItem(R.id.action_archive).isVisible = !isArchivePath
         menu.findItem(R.id.action_add_bookmark).isVisible = isDirectory
         menu.findItem(R.id.action_show_in_folder).isVisible = isSearching
@@ -464,6 +466,10 @@ class FileListAdapter(
                 }
                 R.id.action_test_archive -> {
                     listener.testArchive(file)
+                    true
+                }
+                R.id.action_open_as_archive -> {
+                    listener.openAsArchive(file)
                     true
                 }
                 R.id.action_archive -> {
@@ -607,6 +613,7 @@ class FileListAdapter(
         fun showRenameFileDialog(file: FileItem)
         fun extractFile(file: FileItem)
         fun testArchive(file: FileItem)
+        fun openAsArchive(file: FileItem)
         fun showCreateArchiveDialog(file: FileItem)
         fun shareFile(file: FileItem)
         fun copyPath(file: FileItem)

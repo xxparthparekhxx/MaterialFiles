@@ -1803,6 +1803,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         viewModel.selectFiles(newNames.mapTo(fileItemSetOf()) { it.first }, false)
     }
 
+    override fun openAsArchive(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        navigateTo(file.path.createArchiveRootPath())
+    }
+
     override fun extractFile(file: FileItem) {
         if (!isAdded) {
             return
