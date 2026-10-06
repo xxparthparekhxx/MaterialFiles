@@ -32,6 +32,9 @@
     <string name="reload">Reload</string>
     <string name="remove">Remove</string>
     <string name="rename">Rename</string>
+    <string name="file_rename_multiple_title">Rename selected items</string>
+    <string name="file_rename_multiple_helper">Use {n} for the number. Items are numbered by name and keep their extensions.</string>
+    <string name="file_list_select_action_rename">Rename</string>
     <string name="replace">Replace</string>
     <string name="reset">Reset</string>
     <string name="retry">Retry</string>
