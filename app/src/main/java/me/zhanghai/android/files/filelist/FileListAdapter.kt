@@ -619,6 +619,10 @@ class FileListAdapter(
                     listener.createShortcut(file)
                     true
                 }
+                R.id.action_hide -> {
+                    listener.hideFile(file)
+                    true
+                }
                 R.id.action_properties -> {
                     listener.showPropertiesDialog(file)
                     true
@@ -777,6 +781,7 @@ class FileListAdapter(
 
         fun showInFolder(file: FileItem)
         fun createShortcut(file: FileItem)
+        fun hideFile(file: FileItem)
         fun showPropertiesDialog(file: FileItem)
     }
 }

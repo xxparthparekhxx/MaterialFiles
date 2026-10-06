@@ -590,6 +590,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_SHOW_HIDDEN_FILES.observe(viewLifecycleOwner) {
             onShowHiddenFilesChanged(it)
         }
+        Settings.FILE_LIST_HIDDEN_PATHS.observe(viewLifecycleOwner) {
+            updateAdapterFileList()
+        }
         Settings.FILE_LIST_LOCK_HEADER.observe(viewLifecycleOwner) {
             updateToolbarScrollFlags()
         }
@@ -1238,6 +1241,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         var files = viewModel.fileListStateful.value ?: return
         if (!Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat) {
             files = files.filterNot { it.isHidden }
+        }
+        val hiddenPaths = Settings.FILE_LIST_HIDDEN_PATHS.valueCompat
+        if (hiddenPaths.isNotEmpty()) {
+            files = files.filterNot { it.path.toUri().toString() in hiddenPaths }
         }
         adapter.replaceListAndIsSearching(files, viewModel.searchState.isSearching)
     }
@@ -2157,6 +2164,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         createShortcut(file.path, file.mimeType)
+    }
+
+    override fun hideFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        val hiddenPaths = Settings.FILE_LIST_HIDDEN_PATHS.valueCompat.toMutableSet()
+        hiddenPaths += file.path.toUri().toString()
+        Settings.FILE_LIST_HIDDEN_PATHS.putValue(hiddenPaths)
+        showToast(R.string.file_hide_success)
     }
 
     private fun createShortcut() {
