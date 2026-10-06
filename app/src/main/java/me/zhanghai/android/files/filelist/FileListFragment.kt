@@ -1552,6 +1552,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun onPasteStateChanged(pasteState: PasteState) {
+        adapter.hasPaste = pasteState.files.isNotEmpty()
         updateBottomToolbar()
     }
 
@@ -1891,6 +1892,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         copyFiles(fileItemSetOf(file))
+    }
+
+    override fun pasteInto(directory: Path) {
+        if (!isAdded) {
+            return
+        }
+        pasteFiles(directory)
     }
 
     override fun confirmDeleteFile(file: FileItem) {
