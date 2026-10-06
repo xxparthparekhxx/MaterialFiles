@@ -39,6 +39,19 @@ object Settings {
             Paths.get(Environment.getExternalStorageDirectory().absolutePath)
         )
 
+    val FILE_LIST_REMEMBER_LAST_DIRECTORY: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_remember_last_directory,
+            R.bool.pref_default_value_file_list_remember_last_directory
+        )
+
+    val FILE_LIST_LAST_DIRECTORY: SettingLiveData<Path> =
+        ParcelValueSettingLiveData(
+            R.string.pref_key_file_list_last_directory,
+            @Suppress("DEPRECATION")
+            Paths.get(Environment.getExternalStorageDirectory().absolutePath)
+        )
+
     val FILE_LIST_PERSISTENT_DRAWER_OPEN: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_file_list_persistent_drawer_open,
