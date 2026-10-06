@@ -111,14 +111,27 @@ abstract class SetPrincipalDialogFragment : AppCompatDialogFragment() {
     }
 
     private fun setPrincipal() {
-        val id = viewModel.selectionLiveData.valueCompat
         val recursive = binding.recursiveCheck.isChecked
+        val text = binding.filterEdit.text?.toString()?.trim().orEmpty()
+        val typedId = text.toIntOrNull()
+        val principalListStateful = viewModel.principalListStateful
+        val knownPrincipals = (principalListStateful as? Success)?.value
+        // The field filters the list, so an id that is not already listed never becomes the
+        // selection. Accept that id when the filter matches nobody.
+        if (typedId != null && typedId >= 0 && adapter.itemCount == 0
+            && knownPrincipals?.any { it.id == typedId } != true
+        ) {
+            setPrincipal(
+                args.file.path, PrincipalItem(typedId, null, emptyList(), emptyList()), recursive
+            )
+            return
+        }
+        val id = viewModel.selectionLiveData.valueCompat
         if (!recursive) {
             if (id == argsPrincipalId) {
                 return
             }
         }
-        val principalListStateful = viewModel.principalListStateful
         if (principalListStateful !is Success) {
             return
         }
