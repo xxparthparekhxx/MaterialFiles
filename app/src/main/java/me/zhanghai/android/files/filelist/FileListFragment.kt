@@ -1122,6 +1122,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 shareFiles(viewModel.selectedFiles)
                 true
             }
+            R.id.action_copy_path -> {
+                copyPaths(viewModel.selectedFiles)
+                true
+            }
             R.id.action_select_all -> {
                 selectAllFiles()
                 true
@@ -1192,6 +1196,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun shareFiles(files: FileItemSet) {
         shareFiles(files.map { it.path }, files.map { it.mimeType })
+        viewModel.selectFiles(files, false)
+    }
+
+    private fun copyPaths(files: FileItemSet) {
+        val paths = files.map { it.path.toUserFriendlyString() }.joinToString("
+")
+        clipboardManager.copyText(paths, requireContext())
         viewModel.selectFiles(files, false)
     }
 
