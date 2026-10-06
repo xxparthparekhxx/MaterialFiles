@@ -769,14 +769,21 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.progress.fadeToVisibilityUnsafe(stateful is Loading && !(hasFiles || isSearching))
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
-        if (throwable != null && !isSearching && throwable.isMissingDirectory() &&
-            viewModel.dropMissingCurrentPath()
-        ) {
-            return
+        if (throwable != null && !isSearching && throwable.isMissingDirectory()) {
+            if (viewModel.dropMissingCurrentPath()) {
+                showToast(getString(R.string.file_list_error_directory_not_found))
+                return
+            }
+            // Couldn't navigate away (e.g. already at trail root): fall through and show a
+            // friendly message instead of the raw exception below.
         }
         if (throwable != null) {
             throwable.printStackTrace()
-            val error = throwable.toString()
+            val error = if (!isSearching && throwable.isMissingDirectory()) {
+                getString(R.string.file_list_error_directory_not_found)
+            } else {
+                throwable.toString()
+            }
             if (hasFiles) {
                 showToast(error)
             } else {
