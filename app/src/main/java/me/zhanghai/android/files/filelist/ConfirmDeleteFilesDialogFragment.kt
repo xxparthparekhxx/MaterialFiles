@@ -42,7 +42,14 @@ class ConfirmDeleteFilesDialogFragment : AppCompatDialogFragment() {
                 allFiles -> R.plurals.file_delete_message_multiple_files_format
                 else -> R.plurals.file_delete_message_multiple_mixed_format
             }
-            getQuantityString(messageRes, files.size, files.size)
+            val names = files.take(MAX_LISTED_NAMES).joinToString("\n") { "• " + it.name }
+            val remaining = files.size - MAX_LISTED_NAMES
+            val moreNames = if (remaining > 0) {
+                "\n" + getQuantityString(R.plurals.file_delete_message_more_format, remaining, remaining)
+            } else {
+                ""
+            }
+            getQuantityString(messageRes, files.size, files.size) + "\n\n" + names + moreNames
         }
         return MaterialAlertDialogBuilder(requireContext(), theme)
             .setMessage(message)
@@ -52,6 +59,8 @@ class ConfirmDeleteFilesDialogFragment : AppCompatDialogFragment() {
     }
 
     companion object {
+        private const val MAX_LISTED_NAMES = 50
+
         fun show(files: FileItemSet, fragment: Fragment) {
             ConfirmDeleteFilesDialogFragment().putArgs(Args(files)).show(fragment)
         }
