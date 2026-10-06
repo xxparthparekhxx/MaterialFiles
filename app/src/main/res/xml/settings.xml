@@ -70,6 +70,10 @@
             android:title="@string/settings_open_files_in_new_task_title"
             android:summary="@string/settings_open_files_in_new_task_summary"
             android:defaultValue="@bool/pref_default_value_open_files_in_new_task" />
+            android:key="@string/pref_key_iso_date_format"
+            android:title="@string/settings_iso_date_format_title"
+            android:summary="@string/settings_iso_date_format_summary"
+            android:defaultValue="@bool/pref_default_value_iso_date_format" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"

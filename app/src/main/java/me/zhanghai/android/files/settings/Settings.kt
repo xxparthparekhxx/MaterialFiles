@@ -216,6 +216,11 @@ object Settings {
             R.string.pref_key_open_files_in_new_task, R.bool.pref_default_value_open_files_in_new_task
         )
 
+    val ISO_DATE_FORMAT: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_iso_date_format, R.bool.pref_default_value_iso_date_format
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
