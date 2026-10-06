@@ -23,6 +23,7 @@ import me.zhanghai.android.files.provider.archive.createArchiveRootPath
 import me.zhanghai.android.files.provider.document.documentSupportsThumbnail
 import me.zhanghai.android.files.provider.document.isDocumentPath
 import me.zhanghai.android.files.provider.ftp.isFtpPath
+import me.zhanghai.android.files.provider.sftp.isSftpPath
 import me.zhanghai.android.files.provider.linux.isLinuxPath
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.asFileName
@@ -63,7 +64,9 @@ val FileItem.supportsThumbnail: Boolean
             return true
         }
         if (path.isRemotePath) {
-            val shouldReadRemotePath = !path.isFtpPath
+            // FTP and SFTP reads are too slow for thumbnails (one connection per parallel
+            // read, no efficient random access); skip them instead of stalling listings.
+            val shouldReadRemotePath = !path.isFtpPath && !path.isSftpPath
                 && Settings.READ_REMOTE_FILES_FOR_THUMBNAIL.valueCompat
             if (!shouldReadRemotePath) {
                 return false
