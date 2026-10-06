@@ -84,6 +84,12 @@ object Client {
             // This has to be set before connect().
             controlEncoding = authority.encoding
             listHiddenFiles = true
+            // Classic FTP servers mishandle EPSV on IPv4 and then the data connection
+            // fails with "failed to connect". PASV is what those servers implement.
+            setAutodetectUTF8(false)
+            setUseEPSVwithIPv4(false)
+            setRemoteVerificationEnabled(false)
+            connectTimeout = 30_000
             connect(authority.host, authority.port)
             try {
                 if (!FTPReply.isPositiveCompletion(replyCode)) {
