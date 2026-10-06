@@ -264,6 +264,11 @@ class FileListViewModel : ViewModel() {
         init {
             addSource(pathLiveData) { updateSource() }
             addSource(searchStateLiveData) { updateSource() }
+            // Search only watches the directory it started in, so a create, delete, or rename
+            // further down the tree never arrives. File jobs already signal this live data.
+            addSource(NavigationStorageRefreshLiveData) {
+                (liveData as? SearchFileListLiveData)?.loadValue()
+            }
         }
 
         private fun updateSource() {
