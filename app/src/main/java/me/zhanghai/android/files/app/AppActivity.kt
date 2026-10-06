@@ -10,6 +10,7 @@ import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.coil.ThumbnailGeneration
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.theme.night.NightModeHelper
 
@@ -40,6 +41,16 @@ abstract class AppActivity : AppCompatActivity() {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
+    }
+
+    override fun onStart() {
+        ThumbnailGeneration.onActivityStarted()
+        super.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        ThumbnailGeneration.onActivityStopped()
     }
 
     override fun onSupportNavigateUp(): Boolean {
