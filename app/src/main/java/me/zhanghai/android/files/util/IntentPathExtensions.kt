@@ -60,6 +60,13 @@ val Intent.saveAsPaths: List<Path>
 private fun Uri.toPathOrNull(): Path? =
     when (scheme) {
         ContentResolver.SCHEME_FILE, null -> path?.takeIfNotEmpty()?.let { Paths.get(it) }
+        "materialfiles" -> {
+            if (host != null && host != "view") {
+                null
+            } else {
+                path?.takeIfNotEmpty()?.let { Paths.get(it) }
+            }
+        }
         ContentResolver.SCHEME_CONTENT -> {
             val uri = URI::class.createOrLog(toString())
                 // Some people use Uri.parse() without encoding their path. Let's try saving

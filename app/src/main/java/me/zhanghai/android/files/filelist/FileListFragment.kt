@@ -68,6 +68,7 @@ import com.leinardi.android.speeddial.SpeedDialView
 import java8.nio.file.AccessDeniedException
 import java8.nio.file.NoSuchFileException
 import java8.nio.file.NotDirectoryException
+import java8.nio.file.LinkOption
 import java8.nio.file.Path
 import java8.nio.file.Paths
 import java.net.ConnectException
@@ -109,6 +110,7 @@ import me.zhanghai.android.files.navigation.NavigationRootMapLiveData
 import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
 import me.zhanghai.android.files.provider.archive.createArchiveRootPath
 import me.zhanghai.android.files.provider.archive.isArchivePath
+import me.zhanghai.android.files.provider.common.isDirectory
 import me.zhanghai.android.files.provider.linux.isLinuxPath
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.terminal.Terminal
@@ -493,8 +495,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 else ->
                     if (path != null) {
                         val mimeType = intent.type?.asMimeTypeOrNull()
-                        if (mimeType != null && path.isArchiveFile(mimeType)) {
-                            path = path.createArchiveRootPath()
+                        path = when {
+                            mimeType != null && path.isArchiveFile(mimeType) ->
+                                path.createArchiveRootPath()
+                            path.isDirectory(LinkOption.NOFOLLOW_LINKS) -> path
+                            else -> path.parent ?: path
                         }
                     }
             }
