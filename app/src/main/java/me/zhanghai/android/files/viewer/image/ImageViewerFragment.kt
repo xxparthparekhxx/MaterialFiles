@@ -25,7 +25,6 @@ import androidx.viewpager2.widget.ViewPager2
 import dev.chrisbanes.insetter.applySystemWindowInsetsToPadding
 import java8.nio.file.Path
 import kotlinx.parcelize.Parcelize
-import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.ImageViewerFragmentBinding
 import me.zhanghai.android.files.file.FileItem
@@ -38,12 +37,10 @@ import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.provider.common.delete
 import me.zhanghai.android.files.ui.DepthPageTransformer
 import me.zhanghai.android.files.util.ParcelableArgs
-import me.zhanghai.android.files.util.ParcelableListParceler
 import me.zhanghai.android.files.util.ParcelableState
 import me.zhanghai.android.files.util.args
 import me.zhanghai.android.files.util.createSendImageIntent
 import me.zhanghai.android.files.util.extraPath
-import me.zhanghai.android.files.util.extraPathList
 import me.zhanghai.android.files.util.finish
 import me.zhanghai.android.files.util.getState
 import me.zhanghai.android.files.util.mediumAnimTime
@@ -59,7 +56,8 @@ import me.zhanghai.android.systemuihelper.SystemUiHelper
 class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
     RenameFileDialogFragment.Listener {
     private val args by args<Args>()
-    private val argsPaths by lazy { args.intent.extraPathList }
+
+    private var pathListId = 0
 
     private lateinit var paths: MutableList<Path>
 
@@ -75,7 +73,9 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
         super.onCreate(savedInstanceState)
 
         val state = savedInstanceState?.getState<State>()
-        paths = (state?.paths ?: argsPaths).toMutableList()
+        pathListId = args.intent.getIntExtra(ImageViewerPaths.EXTRA_ID, 0)
+        paths = ImageViewerPaths.get(pathListId)
+            ?: mutableListOf<Path>().apply { args.intent.extraPath?.let { add(it) } }
         isAppBarVisible = state?.isAppBarVisible ?: true
 
         setHasOptionsMenu(true)
@@ -146,7 +146,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
             offscreenPageLimit = 1
             adapter = this@ImageViewerFragment.adapter
             // ViewPager saves its position and will restore it later.
-            setCurrentItem(args.position, false)
+            setCurrentItem(args.position.coerceIn(0, paths.lastIndex), false)
             setPageTransformer(DepthPageTransformer)
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
@@ -171,7 +171,15 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putState(State(paths, isAppBarVisible))
+        outState.putState(State(isAppBarVisible))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (activity?.isFinishing == true) {
+            ImageViewerPaths.remove(pathListId)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -418,7 +426,6 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
 
     @Parcelize
     private class State(
-        val paths: @WriteWith<ParcelableListParceler> List<Path>,
         val isAppBarVisible: Boolean = true
     ) : ParcelableState
 }
