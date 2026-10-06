@@ -288,6 +288,11 @@ object Settings {
             R.bool.pref_default_value_file_list_show_permissions
         )
 
+    val FULL_DATE_TIME: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_full_date_time, R.bool.pref_default_value_full_date_time
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

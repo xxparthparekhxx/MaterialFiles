@@ -114,6 +114,10 @@
             android:title="@string/settings_file_list_show_permissions_title"
             android:summary="@string/settings_file_list_show_permissions_summary"
             android:defaultValue="@bool/pref_default_value_file_list_show_permissions" />
+            android:key="@string/pref_key_full_date_time"
+            android:title="@string/settings_full_date_time_title"
+            android:summary="@string/settings_full_date_time_summary"
+            android:defaultValue="@bool/pref_default_value_full_date_time" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
