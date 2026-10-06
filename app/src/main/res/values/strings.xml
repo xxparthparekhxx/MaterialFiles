@@ -838,6 +838,16 @@
         <item>5</item>
         <item>6</item>
     </string-array>
+    <string name="settings_text_editor_font_size_title">Text editor font size</string>
+    <string-array name="settings_text_editor_font_size_entries">
+        <item>Default</item>
+        <item>12 sp</item>
+        <item>14 sp</item>
+        <item>16 sp</item>
+        <item>18 sp</item>
+        <item>20 sp</item>
+        <item>24 sp</item>
+    </string-array>
     <string name="settings_file_list_loading_indicator_title">File list loading indicator</string>
     <string name="settings_open_files_in_new_task_title">Open files in a new task</string>
     <string name="settings_open_files_in_new_task_summary">Start the app that opens a file in its own task, so it shows up separately in recent apps instead of inside Material Files</string>

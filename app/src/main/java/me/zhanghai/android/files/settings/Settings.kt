@@ -102,6 +102,12 @@ object Settings {
             R.bool.pref_default_value_text_editor_monospace
         )
 
+    val TEXT_EDITOR_FONT_SIZE: SettingLiveData<String> =
+        StringSettingLiveData(
+            R.string.pref_key_text_editor_font_size,
+            R.string.pref_default_value_text_editor_font_size
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,

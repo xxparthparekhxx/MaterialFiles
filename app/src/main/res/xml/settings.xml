@@ -123,6 +123,14 @@
             android:entries="@array/settings_file_list_grid_span_count_entries"
             android:entryValues="@array/pref_entry_values_file_list_grid_span_count"
             app:useSimpleSummaryProvider="true" />
+
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_text_editor_font_size"
+            android:title="@string/settings_text_editor_font_size_title"
+            android:defaultValue="@string/pref_default_value_text_editor_font_size"
+            android:entries="@array/settings_text_editor_font_size_entries"
+            android:entryValues="@array/pref_entry_values_text_editor_font_size"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_behavior_title">
