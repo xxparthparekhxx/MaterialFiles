@@ -57,6 +57,9 @@ import java.io.InterruptedIOException
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedByInterruptException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import me.zhanghai.android.files.util.closeSafe
 
 class FileProvider : ContentProvider() {
     private lateinit var callbackThread: HandlerThread
@@ -96,47 +99,51 @@ class FileProvider : ContentProvider() {
         val path = uri.fileProviderPath
         val columns = mutableListOf<String>()
         val values = mutableListOf<Any?>()
-        loop@ for (column in projectionColumns) {
-            @Suppress("DEPRECATION")
-            when (column) {
-                OpenableColumns.DISPLAY_NAME -> {
-                    columns += column
-                    values += path.fileName.toString()
-                }
-                OpenableColumns.SIZE -> {
-                    val size = try {
-                        path.size()
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                        null
+        StrictMode::class.withoutPenaltyDeathOnNetwork {
+            runBlocking(Dispatchers.IO) {
+                loop@ for (column in projectionColumns) {
+                    @Suppress("DEPRECATION")
+                    when (column) {
+                        OpenableColumns.DISPLAY_NAME -> {
+                            columns += column
+                            values += path.fileName.toString()
+                        }
+                        OpenableColumns.SIZE -> {
+                            val size = try {
+                                path.size()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
+                            }
+                            columns += column
+                            values += size
+                        }
+                        MediaStore.MediaColumns.DATA -> {
+                            val file = try {
+                                path.toFile()
+                            } catch (e: UnsupportedOperationException) {
+                                continue@loop
+                            }
+                            columns += column
+                            values += file.absolutePath
+                        }
+                        // TODO: We should actually implement a DocumentsProvider since we are handling
+                        //  ACTION_OPEN_DOCUMENT.
+                        DocumentsContract.Document.COLUMN_MIME_TYPE -> {
+                            columns += column
+                            values += MimeType.guessFromPath(path.toString()).value
+                        }
+                        DocumentsContract.Document.COLUMN_LAST_MODIFIED -> {
+                            val lastModified = try {
+                                path.getLastModifiedTime().toMillis()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
+                            }
+                            columns += column
+                            values += lastModified
+                        }
                     }
-                    columns += column
-                    values += size
-                }
-                MediaStore.MediaColumns.DATA -> {
-                    val file = try {
-                        path.toFile()
-                    } catch (e: UnsupportedOperationException) {
-                        continue@loop
-                    }
-                    columns += column
-                    values += file.absolutePath
-                }
-                // TODO: We should actually implement a DocumentsProvider since we are handling
-                //  ACTION_OPEN_DOCUMENT.
-                DocumentsContract.Document.COLUMN_MIME_TYPE -> {
-                    columns += column
-                    values += MimeType.guessFromPath(path.toString()).value
-                }
-                DocumentsContract.Document.COLUMN_LAST_MODIFIED -> {
-                    val lastModified = try {
-                        path.getLastModifiedTime().toMillis()
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                        null
-                    }
-                    columns += column
-                    values += lastModified
                 }
             }
         }
@@ -197,16 +204,24 @@ class FileProvider : ContentProvider() {
             // Strict mode thread policy is passed through binder, but some apps (notably music
             // players) like to open file on their main thread.
             StrictMode::class.withoutPenaltyDeathOnNetwork {
-                path.newByteChannel(options)
+                runBlocking(Dispatchers.IO) {
+                    path.newByteChannel(options)
+                }
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             throw e.toFileNotFoundException()
+        }
+        val proxyMode = when {
+            modeBits.hasBits(ParcelFileDescriptor.MODE_READ_WRITE) -> ParcelFileDescriptor.MODE_READ_WRITE
+            modeBits.hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY) -> ParcelFileDescriptor.MODE_WRITE_ONLY
+            else -> ParcelFileDescriptor.MODE_READ_ONLY
         }
         return try {
             storageManager.openProxyFileDescriptorCompat(
-                modeBits, ChannelCallback(channel), callbackHandler
+                proxyMode, ChannelCallback(channel), callbackHandler
             )
-        } catch (e: IOException) {
+        } catch (e: Exception) {
+            channel.closeSafe()
             throw e.toFileNotFoundException()
         }
     }
@@ -216,25 +231,21 @@ class FileProvider : ContentProvider() {
             return false
         }
         val file = toFile()
-        val readOnly = mode.hasBits(ParcelFileDescriptor.MODE_READ_ONLY)
-        val writeOnly = mode.hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
-        val readWrite = mode.hasBits(ParcelFileDescriptor.MODE_READ_WRITE)
-        val needRead = readOnly || readWrite
-        val needWrite = writeOnly || readWrite
+        val isReadWrite = mode.hasBits(ParcelFileDescriptor.MODE_READ_WRITE)
+        val isWriteOnly = mode.hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
+        val needRead = isReadWrite || !isWriteOnly
+        val needWrite = isReadWrite || isWriteOnly
         return !((needRead && !file.canRead()) || (needWrite && !file.canWrite()))
     }
 
     private fun Int.toOpenOptions(): Set<OpenOption> =
         mutableSetOf<OpenOption>().apply {
-            // May be "r" for read-only access, "rw" for read and write access, or "rwt" for
-            // read and write access that truncates any existing file.
-            require(!hasBits(ParcelFileDescriptor.MODE_APPEND)) { "mode ${this@toOpenOptions}" }
-            if (hasBits(ParcelFileDescriptor.MODE_READ_ONLY)
-                || hasBits(ParcelFileDescriptor.MODE_READ_WRITE)) {
+            val isReadWrite = hasBits(ParcelFileDescriptor.MODE_READ_WRITE)
+            val isWriteOnly = hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
+            if (isReadWrite || !isWriteOnly) {
                 this += StandardOpenOption.READ
             }
-            if (hasBits(ParcelFileDescriptor.MODE_WRITE_ONLY)
-                || hasBits(ParcelFileDescriptor.MODE_READ_WRITE)) {
+            if (isReadWrite || isWriteOnly) {
                 this += StandardOpenOption.WRITE
             }
             if (hasBits(ParcelFileDescriptor.MODE_CREATE)) {
@@ -243,9 +254,12 @@ class FileProvider : ContentProvider() {
             if (hasBits(ParcelFileDescriptor.MODE_TRUNCATE)) {
                 this += StandardOpenOption.TRUNCATE_EXISTING
             }
+            if (hasBits(ParcelFileDescriptor.MODE_APPEND)) {
+                this += StandardOpenOption.APPEND
+            }
         }
 
-    private fun IOException.toFileNotFoundException(): FileNotFoundException =
+    private fun Exception.toFileNotFoundException(): FileNotFoundException =
         if (this is FileNotFoundException) {
             this
         } else {
@@ -263,7 +277,7 @@ class FileProvider : ContentProvider() {
             ensureNotReleased()
             return try {
                 channel.size()
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 throw e.toErrnoException()
             }
         }
@@ -274,7 +288,7 @@ class FileProvider : ContentProvider() {
             if (this.offset != offset) {
                 try {
                     channel.position(offset)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
                 this.offset = offset
@@ -285,7 +299,7 @@ class FileProvider : ContentProvider() {
             while (buffer.hasRemaining()) {
                 val channelSize = try {
                     channel.read(buffer)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
                 if (channelSize == -1) {
@@ -302,7 +316,7 @@ class FileProvider : ContentProvider() {
             if (this.offset != offset) {
                 try {
                     channel.position(offset)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
                 this.offset = offset
@@ -310,7 +324,7 @@ class FileProvider : ContentProvider() {
             val buffer = ByteBuffer.wrap(data, 0, size)
             return try {
                 channel.write(buffer)
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 throw e.toErrnoException()
             }.also { this.offset += it.toLong() }
         }
@@ -321,7 +335,7 @@ class FileProvider : ContentProvider() {
             if (channel.isForceable) {
                 try {
                     channel.force(true)
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     throw e.toErrnoException()
                 }
             }
@@ -340,13 +354,13 @@ class FileProvider : ContentProvider() {
             }
             try {
                 channel.close()
-            } catch (e: IOException) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
             released = true
         }
 
-        private fun IOException.toErrnoException(): ErrnoException {
+        private fun Throwable.toErrnoException(): ErrnoException {
             val cause = cause
             return if (this is FileSystemException && cause is SyscallException) {
                 ErrnoException(cause.functionName, cause.errno, this)

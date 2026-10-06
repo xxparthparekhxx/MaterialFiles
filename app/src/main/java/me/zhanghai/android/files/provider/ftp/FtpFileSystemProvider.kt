@@ -37,6 +37,7 @@ import me.zhanghai.android.files.provider.common.Searchable
 import me.zhanghai.android.files.provider.common.WalkFileTreeSearchable
 import me.zhanghai.android.files.provider.common.WatchServicePathObservable
 import me.zhanghai.android.files.provider.common.decodedPathByteString
+import me.zhanghai.android.files.provider.common.parsedAuthority
 import me.zhanghai.android.files.provider.common.decodedQueryByteString
 import me.zhanghai.android.files.provider.common.toAccessModes
 import me.zhanghai.android.files.provider.common.toByteString
@@ -108,16 +109,17 @@ object FtpFileSystemProvider : FileSystemProvider(), PathObservableProvider, Sea
 
     private val URI.ftpAuthority: Authority
         get() {
+            val parsed = parsedAuthority()
             val protocol = Protocol.fromScheme(scheme)
-            val port = if (port != -1) port else protocol.defaultPort
-            val username = userInfo.orEmpty()
+            val port = if (parsed.port != -1) parsed.port else protocol.defaultPort
+            val username = parsed.userInfo.orEmpty()
             val queryUri = decodedQueryByteString?.toString()?.let { Uri.parse(it) }
             val mode = queryUri?.getQueryParameter(FtpPath.QUERY_PARAMETER_MODE)
                 ?.let { mode -> Mode.entries.first { it.name.equals(mode, true) } }
                 ?: Authority.DEFAULT_MODE
             val encoding = queryUri?.getQueryParameter(FtpPath.QUERY_PARAMETER_ENCODING)
                 ?: Authority.DEFAULT_ENCODING
-            return Authority(protocol, host, port, username, mode, encoding)
+            return Authority(protocol, parsed.host, port, username, mode, encoding)
         }
 
     @Throws(IOException::class)

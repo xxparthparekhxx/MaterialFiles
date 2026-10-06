@@ -26,8 +26,10 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.google.android.material.progressindicator.BaseProgressIndicator
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,7 +41,10 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.core.view.updatePaddingRelative
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
@@ -49,6 +54,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.leinardi.android.speeddial.SpeedDialView
+import java8.nio.file.NoSuchFileException
+import java8.nio.file.NotDirectoryException
 import java8.nio.file.Path
 import java8.nio.file.Paths
 import kotlin.math.roundToInt
@@ -58,6 +65,7 @@ import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.app.clipboardManager
 import me.zhanghai.android.files.compat.checkSelfPermissionCompat
 import me.zhanghai.android.files.compat.setGroupDividerEnabledCompat
+import me.zhanghai.android.files.databinding.FileJobProgressCardBinding
 import me.zhanghai.android.files.databinding.FileListFragmentAppBarIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentBinding
 import me.zhanghai.android.files.databinding.FileListFragmentBottomBarIncludeBinding
@@ -71,6 +79,8 @@ import me.zhanghai.android.files.file.extension
 import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.file.isImage
+import me.zhanghai.android.files.filejob.FileJobProgress
+import me.zhanghai.android.files.filejob.FileJobProgresses
 import me.zhanghai.android.files.filejob.FileJobService
 import me.zhanghai.android.files.filelist.FileSortOptions.By
 import me.zhanghai.android.files.filelist.FileSortOptions.Order
@@ -120,6 +130,7 @@ import me.zhanghai.android.files.util.fadeToVisibilityUnsafe
 import me.zhanghai.android.files.util.getDimensionDp
 import me.zhanghai.android.files.util.getQuantityString
 import me.zhanghai.android.files.util.hasSw600Dp
+import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isOrientationLandscape
 import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.setOnEditorConfirmActionListener
@@ -178,6 +189,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private lateinit var bottomActionMode: ToolbarActionMode
 
     private lateinit var layoutManager: GridLayoutManager
+
+    private var userRequestedRefresh = false
+
+    private val fileJobProgressCards = mutableMapOf<Int, FileJobProgressCardBinding>()
+
+    private var fileListBasePaddingBottom = -1
+
+    private var fabBaseBottomMargin = -1
 
     private lateinit var adapter: FileListAdapter
 
@@ -239,7 +258,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 true, binding.swipeRefreshLayout.progressViewEndOffset
             )
         }
-        binding.swipeRefreshLayout.setOnRefreshListener { this.refresh() }
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            userRequestedRefresh = true
+            refresh()
+        }
         layoutManager = GridLayoutManager(activity, 1)
         binding.recyclerView.layoutManager = layoutManager
         adapter = FileListAdapter(this)
@@ -248,6 +270,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.recyclerView.setOnApplyWindowInsetsListener(
             ScrollingViewOnApplyWindowInsetsListener(binding.recyclerView, fastScroller)
         )
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_DRAGGING && viewModel.isSearchViewExpanded) {
+                    val searchView = if (this@FileListFragment::menuBinding.isInitialized) {
+                        menuBinding.searchItem.actionView as? SearchView
+                    } else {
+                        null
+                    }
+                    searchView?.clearFocus()
+                    recyclerView.hideSoftInput()
+                }
+            }
+        })
         binding.speedDialView.inflate(R.menu.file_list_speed_dial)
         binding.speedDialView.setOnActionSelectedListener {
             when (it.id) {
@@ -270,6 +305,32 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 .also { callback ->
                     viewModel.breadcrumbLiveData.observe(viewLifecycleOwner) {
                         callback.isEnabled = viewModel.canNavigateUpBreadcrumb
+                    }
+                }
+        )
+        addOnBackPressedCallback(
+            object : OnBackPressedCallback(false) {
+                override fun handleOnBackPressed() {
+                    val searchView = if (this@FileListFragment::menuBinding.isInitialized) {
+                        menuBinding.searchItem.actionView as? SearchView
+                    } else {
+                        null
+                    }
+                    val searchSrcText = searchView?.findViewById<View>(androidx.appcompat.R.id.search_src_text)
+                    val isKeyboardVisible = searchSrcText?.let {
+                        ViewCompat.getRootWindowInsets(it)?.isVisible(WindowInsetsCompat.Type.ime())
+                    } ?: false
+                    if (searchView != null && (isKeyboardVisible || searchView.hasFocus())) {
+                        searchView.clearFocus()
+                        searchSrcText?.hideSoftInput()
+                    } else {
+                        collapseSearchView()
+                    }
+                }
+            }
+                .also { callback ->
+                    viewModel.searchViewExpandedLiveData.observe(viewLifecycleOwner) {
+                        callback.isEnabled = it
                     }
                 }
         )
@@ -365,6 +426,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         viewModel.pasteStateLiveData.observe(viewLifecycleOwner) { onPasteStateChanged(it) }
         Settings.FILE_NAME_ELLIPSIZE.observe(viewLifecycleOwner) { onFileNameEllipsizeChanged(it) }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
+        FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }
+        binding.fileJobProgressLayout.addOnLayoutChangeListener { sheet, _, _, _, _, _, _, _, _ ->
+            positionFabAboveFileJobs(sheet)
+        }
         Settings.FILE_LIST_SHOW_HIDDEN_FILES.observe(viewLifecycleOwner) {
             onShowHiddenFilesChanged(it)
         }
@@ -586,19 +651,129 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateViewSortMenuItems()
     }
 
+    private fun onFileJobProgressChanged(progresses: List<FileJobProgress>) {
+        val layout = binding.fileJobProgressCardsLayout
+        val ids = progresses.mapTo(mutableSetOf()) { it.id }
+        for (id in fileJobProgressCards.keys.toList()) {
+            if (id !in ids) {
+                layout.removeView(fileJobProgressCards.remove(id)!!.root)
+            }
+        }
+        progresses.forEachIndexed { index, progress ->
+            val card = fileJobProgressCards.getOrPut(progress.id) {
+                FileJobProgressCardBinding.inflate(layoutInflater, layout, false).also { binding ->
+                    binding.root.tag = progress.id
+                    binding.fileJobProgressCancel.setOnClickListener {
+                        FileJobService.cancelJob(binding.root.tag as Int)
+                    }
+                    layout.addView(binding.root)
+                }
+            }
+            card.root.tag = progress.id
+            bindFileJobProgressCard(card, progress)
+            if (layout.indexOfChild(card.root) != index) {
+                layout.removeView(card.root)
+                layout.addView(card.root, index)
+            }
+        }
+        binding.fileJobProgressLayout.isVisible = progresses.isNotEmpty()
+    }
+
+    private fun positionFabAboveFileJobs(sheet: View) {
+        val sheetHeight = if (sheet.isVisible) sheet.height else 0
+        val fab = binding.speedDialView
+        fab.translationY = 0f
+        val params = fab.layoutParams as ViewGroup.MarginLayoutParams
+        if (fabBaseBottomMargin < 0) {
+            fabBaseBottomMargin = params.bottomMargin
+        }
+        val gap = (8 * resources.displayMetrics.density).toInt()
+        val desiredMargin = fabBaseBottomMargin + sheetHeight + if (sheetHeight > 0) gap else 0
+        if (params.bottomMargin != desiredMargin) {
+            params.bottomMargin = desiredMargin
+            fab.layoutParams = params
+        }
+        val recycler = binding.recyclerView
+        if (fileListBasePaddingBottom < 0) {
+            fileListBasePaddingBottom = recycler.paddingBottom.coerceAtLeast(
+                resources.getDimensionPixelSize(R.dimen.list_bottom_padding_with_fab)
+            )
+        }
+        val desiredPadding = fileListBasePaddingBottom + sheetHeight
+        if (recycler.paddingBottom != desiredPadding) {
+            recycler.updatePadding(bottom = desiredPadding)
+        }
+    }
+
+    private fun bindFileJobProgressCard(card: FileJobProgressCardBinding, progress: FileJobProgress) {
+        card.fileJobProgressFile.text = progress.fileName ?: progress.title
+        val speed = progress.speedText
+        val speedLines = speed?.split('\n', limit = 2)
+        if (speedLines != null && speedLines.size == 2) {
+            card.fileJobProgressSpeed.text = speedLines[0]
+            card.fileJobProgressSpeedUnit.isVisible = true
+            card.fileJobProgressSpeedUnit.text = speedLines[1]
+        } else {
+            card.fileJobProgressSpeed.text = speed ?: progress.fileText ?: progress.text
+            card.fileJobProgressSpeedUnit.isVisible = false
+        }
+        val primaryMax: Int
+        val primaryProgress: Int
+        val primaryIndeterminate: Boolean
+        if (progress.showFileProgress) {
+            primaryMax = progress.fileMax
+            primaryProgress = progress.fileProgress
+            primaryIndeterminate = false
+        } else {
+            primaryMax = progress.max
+            primaryProgress = progress.progress
+            primaryIndeterminate = progress.indeterminate
+        }
+        bindProgressBar(
+            card.fileJobProgressCircle, primaryMax, primaryProgress, primaryIndeterminate
+        )
+        val overall = if (progress.showFileProgress) progress.text else null
+        card.fileJobProgressText.isVisible = !overall.isNullOrEmpty()
+        card.fileJobProgressText.text = overall
+    }
+
+    private fun bindProgressBar(
+        bar: BaseProgressIndicator<*>,
+        max: Int,
+        progress: Int,
+        indeterminate: Boolean
+    ) {
+        bar.isIndeterminate = indeterminate
+        if (!indeterminate) {
+            bar.max = max.coerceAtLeast(1)
+            bar.setProgressCompat(progress.coerceIn(0, bar.max), true)
+        }
+    }
+
     private fun onFileListChanged(stateful: Stateful<List<FileItem>>) {
         val files = stateful.value
         val isSearching = viewModel.searchState.isSearching
-        when {
-            stateful is Failure -> binding.toolbar.setSubtitle(R.string.error)
-            stateful is Loading && !isSearching -> binding.toolbar.setSubtitle(R.string.loading)
-            else -> binding.toolbar.subtitle = getSubtitle(files!!)
+        val isLoading = stateful is Loading
+        val showUserRefresh = userRequestedRefresh && isLoading
+        if (!isLoading) {
+            userRequestedRefresh = false
         }
         val hasFiles = !files.isNullOrEmpty()
-        binding.swipeRefreshLayout.isRefreshing = stateful is Loading && (hasFiles || isSearching)
+        when {
+            stateful is Failure -> binding.toolbar.setSubtitle(R.string.error)
+            isLoading && !isSearching && (!hasFiles || showUserRefresh) ->
+                binding.toolbar.setSubtitle(R.string.loading)
+            else -> binding.toolbar.subtitle = getSubtitle(files!!)
+        }
+        binding.swipeRefreshLayout.isRefreshing = showUserRefresh && (hasFiles || isSearching)
         binding.progress.fadeToVisibilityUnsafe(stateful is Loading && !(hasFiles || isSearching))
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
+        if (throwable != null && !isSearching && throwable.isMissingDirectory() &&
+            viewModel.dropMissingCurrentPath()
+        ) {
+            return
+        }
         if (throwable != null) {
             throwable.printStackTrace()
             val error = throwable.toString()
@@ -1668,6 +1843,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val emptyView: View,
         val swipeRefreshLayout: SwipeRefreshLayout,
         val recyclerView: RecyclerView,
+        val fileJobProgressLayout: LinearLayout,
+        val fileJobProgressCardsLayout: LinearLayout,
         val bottomBarLayout: ViewGroup,
         val bottomToolbar: Toolbar,
         val bottomCreateFileNameEdit: EditText,
@@ -1693,11 +1870,23 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     appBarBinding.breadcrumbLayout, contentBinding.contentLayout,
                     contentBinding.progress, contentBinding.errorText, contentBinding.emptyView,
                     contentBinding.swipeRefreshLayout, contentBinding.recyclerView,
+                    contentBinding.fileJobProgressLayout, contentBinding.fileJobProgressCards,
                     bottomBarBinding.bottomBarLayout, bottomBarBinding.bottomToolbar,
                     bottomBarBinding.bottomCreateFileNameEdit, speedDialBinding.speedDialView
                 )
             }
         }
+    }
+
+    private fun Throwable.isMissingDirectory(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            if (current is NoSuchFileException || current is NotDirectoryException) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
     }
 
     private class MenuBinding private constructor(

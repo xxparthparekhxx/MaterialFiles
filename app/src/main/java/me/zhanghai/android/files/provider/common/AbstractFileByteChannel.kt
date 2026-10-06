@@ -19,6 +19,7 @@ import java.io.InterruptedIOException
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.NonReadableChannelException
+import java.util.ArrayDeque
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
@@ -26,7 +27,9 @@ import java.util.concurrent.Future
 abstract class AbstractFileByteChannel(
     private val isAppend: Boolean,
     private val shouldCancelRead: Boolean = true,
-    private val joinCancelledRead: Boolean = false
+    private val joinCancelledRead: Boolean = false,
+    private val bufferSize: Int = DEFAULT_BUFFER_SIZE,
+    private val readAhead: Int = 1
 ) : ForceableChannel, SeekableByteChannel {
     private var position = 0L
     private val readBuffer = ReadBuffer()
@@ -199,10 +202,11 @@ abstract class AbstractFileByteChannel(
     protected open fun onClose() {}
 
     private inner class ReadBuffer : Closeable {
-        private val buffer = ByteBuffer.allocate(BUFFER_SIZE).apply { limit(0) }
-        private var bufferedPosition = 0L
-
-        private var pendingRead: Future<ByteBuffer>? = null
+        private var buffer = ByteBuffer::class.EMPTY
+        private val pendingReads = ArrayDeque<PendingRead>()
+        private var nextOffset = 0L
+        private var inFlightLimit = 1
+        private var endOfFile = false
         private val pendingReadLock = Any()
 
         @Throws(IOException::class)
@@ -223,10 +227,58 @@ abstract class AbstractFileByteChannel(
 
         @Throws(IOException::class)
         private fun readIntoBuffer() {
-            val future = synchronized(pendingReadLock) {
-                pendingRead?.also { pendingRead = null }
-            } ?: readIntoBufferAsync()
-            val newBuffer = try {
+            if (endOfFile) {
+                buffer = ByteBuffer::class.EMPTY
+                return
+            }
+            val pending = synchronized(pendingReadLock) {
+                fillAhead()
+                if (pendingReads.isEmpty()) {
+                    null
+                } else {
+                    pendingReads.removeFirst()
+                }
+            } ?: return
+            val chunk = await(pending.future)
+            val received = chunk.remaining()
+            buffer = chunk
+            if (received == bufferSize) {
+                // The server filled the chunk, so the offsets already queued line up.
+                inFlightLimit = readAhead
+                synchronized(pendingReadLock) {
+                    fillAhead()
+                }
+                return
+            }
+            // A short read means any request queued past this chunk is aimed at the wrong
+            // offset. Drop those and keep reading from the byte that actually arrived.
+            dropPending()
+            inFlightLimit = 1
+            if (received == 0) {
+                endOfFile = true
+                return
+            }
+            nextOffset = pending.offset + received
+            synchronized(pendingReadLock) {
+                fillAhead()
+            }
+        }
+
+        private fun fillAhead() {
+            if (endOfFile) {
+                return
+            }
+            while (pendingReads.size < inFlightLimit) {
+                val offset = nextOffset
+                nextOffset += bufferSize
+                pendingReads.add(
+                    PendingRead(offset, onReadAsync(offset, bufferSize, TIMEOUT_MILLIS))
+                )
+            }
+        }
+
+        private fun await(future: Future<ByteBuffer>): ByteBuffer =
+            try {
                 future.get()
             } catch (e: CancellationException) {
                 throw InterruptedIOException().apply { initCause(e) }
@@ -240,20 +292,6 @@ abstract class AbstractFileByteChannel(
                     throw IOException(exception)
                 }
             }
-            buffer.clear()
-            buffer.put(newBuffer)
-            buffer.flip()
-            if (!buffer.hasRemaining()) {
-                return
-            }
-            bufferedPosition += buffer.remaining()
-            synchronized(pendingReadLock) {
-                pendingRead = readIntoBufferAsync()
-            }
-        }
-
-        private fun readIntoBufferAsync(): Future<ByteBuffer> =
-            onReadAsync(bufferedPosition, BUFFER_SIZE, TIMEOUT_MILLIS)
 
         fun reposition(oldPosition: Long, newPosition: Long) {
             if (newPosition == oldPosition) {
@@ -263,37 +301,40 @@ abstract class AbstractFileByteChannel(
             if (newBufferPosition in 0..buffer.limit()) {
                 buffer.position(newBufferPosition.toInt())
             } else {
-                cancelPendingRead()
-                buffer.limit(0)
-                bufferedPosition = newPosition
+                dropPending()
+                endOfFile = false
+                buffer = ByteBuffer::class.EMPTY
+                nextOffset = newPosition
             }
         }
 
         override fun close() {
-            cancelPendingRead()
+            dropPending()
         }
 
-        private fun cancelPendingRead() {
+        private fun dropPending() {
             synchronized(pendingReadLock) {
-                pendingRead?.let {
-                    if (shouldCancelRead) {
-                        it.cancel(true)
+                if (shouldCancelRead) {
+                    for (pending in pendingReads) {
+                        pending.future.cancel(true)
                         if (joinCancelledRead) {
                             try {
-                                it.get()
+                                pending.future.get()
                             } catch (e: Exception) {
                                 // Ignored
                             }
                         }
                     }
-                    pendingRead = null
                 }
+                pendingReads.clear()
             }
         }
     }
 
+    private class PendingRead(val offset: Long, val future: Future<ByteBuffer>)
+
     companion object {
-        private const val BUFFER_SIZE = 1024 * 1024
+        private const val DEFAULT_BUFFER_SIZE = 1024 * 1024
         private const val TIMEOUT_MILLIS = 15_000L
     }
 }
