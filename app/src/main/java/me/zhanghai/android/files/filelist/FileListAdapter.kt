@@ -279,6 +279,11 @@ class FileListAdapter(
                 }
                 true
             }
+            // A right click with a mouse or touchpad opens the item menu.
+            setOnContextClickListener {
+                holder.menuButton.performClick()
+                true
+            }
         }
         holder.iconLayout.setOnClickListener { selectFile(file) }
         val iconRes = file.mimeType.iconRes
