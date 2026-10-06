@@ -23,6 +23,8 @@ import me.zhanghai.android.files.file.asMimeTypeOrNull
 import me.zhanghai.android.files.filejob.FileJobService
 import me.zhanghai.android.files.filelist.FileListActivity
 import me.zhanghai.android.files.provider.common.newInputStream
+import me.zhanghai.android.files.util.createIntent
+import me.zhanghai.android.files.util.isDirectoryView
 import me.zhanghai.android.files.util.saveAsPath
 import me.zhanghai.android.files.util.saveAsPaths
 import me.zhanghai.android.files.util.showToast
@@ -53,6 +55,24 @@ class SaveAsActivity : AppActivity() {
                     ).path
                 )
             openDirectoryLauncher.launch(initialPath)
+            return
+        }
+        if (savedInstanceState == null && intent.isDirectoryView()) {
+            startActivity(
+                FileListActivity::class.createIntent().apply {
+                    action = Intent.ACTION_VIEW
+                    setDataAndType(intent.data, intent.type)
+                    addFlags(
+                        intent.flags and (
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
+                            )
+                    )
+                }
+            )
+            finish()
             return
         }
         val mimeType = intent.type?.asMimeTypeOrNull() ?: MimeType.ANY

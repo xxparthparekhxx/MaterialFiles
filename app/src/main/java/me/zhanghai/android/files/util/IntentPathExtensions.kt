@@ -11,7 +11,12 @@ import android.net.Uri
 import java8.nio.file.Path
 import java8.nio.file.Paths
 import me.zhanghai.android.files.BuildConfig
+import me.zhanghai.android.files.app.storageManager
 import me.zhanghai.android.files.compat.DocumentsContractCompat
+import me.zhanghai.android.files.compat.directoryCompat
+import me.zhanghai.android.files.compat.isPrimaryCompat
+import me.zhanghai.android.files.compat.storageVolumesCompat
+import me.zhanghai.android.files.compat.uuidCompat
 import me.zhanghai.android.files.storage.createOrLog
 import java.io.Serializable
 import java.net.URI
@@ -36,6 +41,39 @@ var Intent.extraPath: Path?
         // which doesn't support Serializable.
         putExtra(EXTRA_PATH_URI, value?.toUri()?.toString())
     }
+
+private val DIRECTORY_MIME_TYPES = setOf(
+    "inode/directory",
+    "resource/folder",
+    "vnd.android.document/directory",
+    "vnd.android.document/root"
+)
+
+fun Intent.isDirectoryView(): Boolean =
+    externalStorageRootPath() != null || type in DIRECTORY_MIME_TYPES
+
+/**
+ * USB storage notifications open `content://…/root/<uuid>`. That is the volume, not a file to save.
+ */
+fun Intent.externalStorageRootPath(): Path? {
+    val uri = data ?: return null
+    if (uri.authority != DocumentsContractCompat.EXTERNAL_STORAGE_PROVIDER_AUTHORITY) {
+        return null
+    }
+    val segments = uri.pathSegments
+    if (segments.size != 2 || segments[0] != "root") {
+        return null
+    }
+    val rootId = segments[1]
+    val volumes = storageManager.storageVolumesCompat
+    val volume = if (rootId == DocumentsContractCompat.EXTERNAL_STORAGE_PRIMARY_EMULATED_ROOT_ID) {
+        volumes.firstOrNull { it.isPrimaryCompat }
+    } else {
+        volumes.firstOrNull { it.uuidCompat?.equals(rootId, ignoreCase = true) == true }
+    } ?: return null
+    val directory = volume.directoryCompat ?: return null
+    return Paths.get(directory.path)
+}
 
 val Intent.saveAsPath: Path?
     get() {
