@@ -148,7 +148,8 @@ import me.zhanghai.android.files.viewer.image.ImageViewerActivity
 class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.Listener,
     ConfirmReplaceFileDialogFragment.Listener, OpenApkDialogFragment.Listener,
     ConfirmDeleteFilesDialogFragment.Listener, CreateArchiveDialogFragment.Listener,
-    RenameFileDialogFragment.Listener, CreateFileDialogFragment.Listener,
+    RenameFileDialogFragment.Listener, RenameFilesDialogFragment.Listener,
+    CreateFileDialogFragment.Listener,
     CreateDirectoryDialogFragment.Listener, NavigateToPathDialogFragment.Listener,
     NavigationFragment.Listener, ShowRequestAllFilesAccessRationaleDialogFragment.Listener,
     ShowRequestNotificationPermissionRationaleDialogFragment.Listener,
@@ -1129,6 +1130,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     }
                 )
             menu.findItem(R.id.action_delete).isVisible = !isAnyFileReadOnly
+            menu.findItem(R.id.action_rename).isVisible = !isAnyFileReadOnly && files.size >= 2
             val areAllFilesArchiveFiles = files.all { it.isArchiveFile }
             menu.findItem(R.id.action_extract).isVisible = areAllFilesArchiveFiles
             val isCurrentPathReadOnly = viewModel.currentPath.fileSystem.isReadOnly
@@ -1172,6 +1174,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             R.id.action_delete -> {
                 confirmDeleteFiles(viewModel.selectedFiles)
+                true
+            }
+            R.id.action_rename -> {
+                RenameFilesDialogFragment.show(viewModel.selectedFiles, this)
                 true
             }
             R.id.action_extract -> {
@@ -1623,6 +1629,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         FileJobService.rename(file.path, newName, requireContext())
         viewModel.selectFile(file, false)
+    }
+
+    override fun renameFiles(newNames: List<Pair<FileItem, String>>) {
+        if (!isAdded) {
+            return
+        }
+        for ((file, newName) in newNames) {
+            if (newName != file.name) {
+                FileJobService.rename(file.path, newName, requireContext())
+            }
+        }
+        viewModel.selectFiles(newNames.mapTo(fileItemSetOf()) { it.first }, false)
     }
 
     override fun extractFile(file: FileItem) {
