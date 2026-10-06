@@ -124,9 +124,15 @@ class FileJobService : Service() {
             format: Int,
             filter: Int,
             password: String?,
+            compressionLevel: Int,
             context: Context
         ) {
-            startJob(ArchiveFileJob(sources, archiveFile, format, filter, password), context)
+            startJob(
+                ArchiveFileJob(
+                    sources, archiveFile, format, filter, password, compressionLevel
+                ),
+                context
+            )
         }
 
         fun copy(sources: List<Path>, targetDirectory: Path, context: Context) {

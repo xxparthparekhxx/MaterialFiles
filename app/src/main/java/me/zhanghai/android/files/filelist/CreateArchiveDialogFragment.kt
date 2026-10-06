@@ -87,6 +87,15 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
         binding.passwordLayout.isGone = !isPasswordSupported
     }
 
+    private val compressionLevel: Int
+        get() = when (val checkedId = binding.compressionGroup.checkedRadioButtonId) {
+            R.id.compressionStoreRadio -> 0
+            R.id.compressionFastRadio -> 1
+            R.id.compressionMaximumRadio -> 9
+            R.id.compressionNormalRadio -> 6
+            else -> throw AssertionError(checkedId)
+        }
+
     override fun onOk(name: String) {
         val (format, filter) = when (val checkedId = binding.typeGroup.checkedRadioButtonId) {
             R.id.zipRadio -> Archive.FORMAT_ZIP to Archive.FILTER_NONE
@@ -99,7 +108,7 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
         } else {
             null
         }
-        listener.archive(args.files, name, format, filter, password)
+        listener.archive(args.files, name, format, filter, password, compressionLevel)
     }
 
     companion object {
@@ -120,7 +129,8 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
         extensionEdit: EditText,
         val typeGroup: RadioGroup,
         val passwordLayout: TextInputLayout,
-        val passwordEdit: TextInputEditText
+        val passwordEdit: TextInputEditText,
+        val compressionGroup: RadioGroup
     ) : NameDialogFragment.Binding(
         root, nameLayout, nameEdit, extensionDot, extensionLayout, extensionEdit
     ) {
@@ -132,13 +142,21 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
                 return Binding(
                     bindingRoot, nameBinding.nameLayout, nameBinding.nameEdit,
                     nameBinding.extensionDot, nameBinding.extensionLayout, nameBinding.extensionEdit,
-                    binding.typeGroup, binding.passwordLayout, binding.passwordEdit
+                    binding.typeGroup, binding.passwordLayout, binding.passwordEdit,
+                    binding.compressionGroup
                 )
             }
         }
     }
 
     interface Listener : FileNameDialogFragment.Listener {
-        fun archive(files: FileItemSet, name: String, format: Int, filter: Int, password: String?)
+        fun archive(
+            files: FileItemSet,
+            name: String,
+            format: Int,
+            filter: Int,
+            password: String?,
+            compressionLevel: Int
+        )
     }
 }
