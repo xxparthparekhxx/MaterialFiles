@@ -23,6 +23,7 @@ import me.zhanghai.android.files.compat.pathCompat
 import me.zhanghai.android.files.file.JavaFile
 import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.ftpserver.FtpServerActivity
+import me.zhanghai.android.files.provider.root.RootAvailability
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.settings.SettingsActivity
 import me.zhanghai.android.files.settings.StandardDirectoryListActivity
@@ -65,9 +66,11 @@ val navigationItems: List<NavigationItem?>
 private val storageItems: List<NavigationItem>
     @Size(min = 0)
     get() =
-        Settings.STORAGES.valueCompat.filter { it.isVisible }.map {
-            if (it.path != null) PathStorageItem(it) else IntentStorageItem(it)
-        }
+        Settings.STORAGES.valueCompat.filter { it.isVisible }
+            .filterNot { it is FileSystemRoot && !RootAvailability.isAvailable }
+            .map {
+                if (it.path != null) PathStorageItem(it) else IntentStorageItem(it)
+            }
 
 private abstract class PathItem(val path: Path) : NavigationItem() {
     override fun isChecked(listener: Listener): Boolean = listener.currentPath == path
