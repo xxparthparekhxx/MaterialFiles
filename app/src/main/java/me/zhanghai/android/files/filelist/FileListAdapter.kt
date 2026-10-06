@@ -62,11 +62,9 @@ class FileListAdapter(
         get() = _sortOptions
         set(value) {
             _sortOptions = value
-            if (!isSearching) {
-                val sortedList = list.sortedWith(value.createComparator())
-                super.replace(sortedList, true)
-                rebuildFilePositionMap()
-            }
+            val sortedList = list.sortedWith(value.createComparator())
+            super.replace(sortedList, true)
+            rebuildFilePositionMap()
         }
 
     var pickOptions: PickOptions? = null
@@ -156,7 +154,7 @@ class FileListAdapter(
     fun replaceListAndIsSearching(list: List<FileItem>, isSearching: Boolean) {
         val clear = this.isSearching != isSearching
         this.isSearching = isSearching
-        val sortedList = if (!isSearching) list.sortedWith(sortOptions.createComparator()) else list
+        val sortedList = list.sortedWith(sortOptions.createComparator())
         super.replace(sortedList, clear)
         rebuildFilePositionMap()
     }
