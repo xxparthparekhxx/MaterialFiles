@@ -247,11 +247,17 @@ object Client {
     }
 
     @Throws(DavException::class)
-    fun put(path: Path): OutputStream =
+    fun put(path: Path, mtimeEpochSeconds: Long? = null): OutputStream =
         try {
             collectionMemberCache -= path
+            val headers = if (mtimeEpochSeconds != null) {
+                mapOf("X-OC-Mtime" to mtimeEpochSeconds.toString())
+            } else {
+                emptyMap()
+            }
             NotifyEntryModifiedOutputStream(
-                DavResource(getClient(path.authority), path.url).putCompat(), path as Java8Path
+                DavResource(getClient(path.authority), path.url).putCompat(headers = headers),
+                path as Java8Path
             )
         } catch (e: IOException) {
             throw e.toDavException()

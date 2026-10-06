@@ -68,7 +68,7 @@ internal object WebDavCopyMove {
                 }
                 try {
                     val targetOutputStream = try {
-                        Client.put(target)
+                        Client.put(target, sourceResponse.lastModifiedTime?.epochSecond)
                     } catch (e: DavException) {
                         throw e.toFileSystemException(target.toString())
                     }
