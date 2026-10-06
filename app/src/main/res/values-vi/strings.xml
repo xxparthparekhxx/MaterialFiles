@@ -509,6 +509,7 @@
         <item>Rút ngắn ở giữa</item>
         <item>Rút ngắn ở cuối</item>
         <item>Marquee</item>
+        <item>Xuống dòng</item>
     </string-array>
     <string name="settings_behavior_title">Hành vi</string>
     <string name="settings_default_directory_title">Thư mục mặc định</string>

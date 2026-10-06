@@ -530,6 +530,7 @@
         <item>پیچاندن وسط</item>
         <item>پیچاندن انتها</item>
         <item>متحرک</item>
+        <item>شکست خط</item>
     </string-array>
     <string name="settings_behavior_title">رفتار</string>
     <string name="settings_default_directory_title">شاخهٔ پیش‌گزیده</string>

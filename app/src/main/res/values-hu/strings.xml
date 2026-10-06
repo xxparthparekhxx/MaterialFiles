@@ -635,6 +635,7 @@
         <item>Kipontozás a közepén</item>
         <item>Kipontozás a végén</item>
         <item>Futó szöveg</item>
+        <item>Tördelés</item>
     </string-array>
     <string name="settings_behavior_title">Viselkedés</string>
     <string name="settings_default_directory_title">Alapértelmezett mappa</string>

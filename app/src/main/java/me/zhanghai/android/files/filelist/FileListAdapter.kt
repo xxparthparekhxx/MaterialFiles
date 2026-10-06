@@ -30,7 +30,6 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.coil.AppIconPackageName
 import me.zhanghai.android.files.compat.foregroundCompat
 import me.zhanghai.android.files.compat.getDrawableCompat
-import me.zhanghai.android.files.compat.isSingleLineCompat
 import me.zhanghai.android.files.databinding.FileItemCompactListBinding
 import me.zhanghai.android.files.databinding.FileItemGridBinding
 import me.zhanghai.android.files.databinding.FileItemListBinding
@@ -204,8 +203,8 @@ class FileListAdapter(
         activePopupMenu = null
     }
 
-    private lateinit var _nameEllipsize: TextUtils.TruncateAt
-    var nameEllipsize: TextUtils.TruncateAt
+    private lateinit var _nameEllipsize: FileNameEllipsize
+    var nameEllipsize: FileNameEllipsize
         get() = _nameEllipsize
         set(value) {
             _nameEllipsize = value
@@ -415,16 +414,8 @@ class FileListAdapter(
         holder.descriptionText?.setTextSize(
             TypedValue.COMPLEX_UNIT_PX, holder.descriptionTextBaseSize * fontScale
         )
-        holder.nameText.apply {
-            if (isSingleLineCompat) {
-                val nameEllipsize = nameEllipsize
-                ellipsize = nameEllipsize
-                isSelected = nameEllipsize == TextUtils.TruncateAt.MARQUEE
-            } else {
-                // End ellipsis hides the extension on a wrapped name.
-                ellipsize = TextUtils.TruncateAt.MIDDLE
-                isSelected = false
-            }
+        if (viewType != FileViewType.GRID) {
+            holder.nameText.applyNameEllipsize(nameEllipsize)
         }
         applyListDensity(holder)
         bindDescription(holder, file, isDirectory)
@@ -807,9 +798,13 @@ class FileListAdapter(
             }
         }
         val heightPx = (heightDp * holder.itemLayout.resources.displayMetrics.density).toInt()
+        // The row grows when a long file name wraps, so the density is only its minimum height.
         val layoutParams = holder.itemLayout.layoutParams
-        if (layoutParams.height != heightPx) {
-            layoutParams.height = heightPx
+        if (holder.itemLayout.minimumHeight != heightPx ||
+            layoutParams.height != ViewGroup.LayoutParams.WRAP_CONTENT
+        ) {
+            holder.itemLayout.minimumHeight = heightPx
+            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
             holder.itemLayout.requestLayout()
         }
         val nameSp = when (listDensity) {
@@ -870,3 +865,22 @@ private fun countDirectoryItems(path: Path, showHidden: Boolean): Int? =
     } catch (e: Exception) {
         null
     }
+
+private const val WRAPPED_FILE_NAME_MAX_LINES = 2
+
+private fun TextView.applyNameEllipsize(mode: FileNameEllipsize) {
+    when (mode) {
+        FileNameEllipsize.WRAP -> {
+            isSingleLine = false
+            maxLines = WRAPPED_FILE_NAME_MAX_LINES
+            // End ellipsis would hide the extension of a wrapped name.
+            ellipsize = TextUtils.TruncateAt.MIDDLE
+            isSelected = false
+        }
+        else -> {
+            isSingleLine = true
+            ellipsize = mode.toTruncateAt()
+            isSelected = mode == FileNameEllipsize.MARQUEE
+        }
+    }
+}

@@ -689,6 +689,7 @@
         <item>Zobrazit začátek a konec</item>
         <item>Zobrazit od začátku</item>
         <item>Posouvání názvu</item>
+        <item>Zalomení</item>
     </string-array>
     <string name="settings_behavior_title">Chování</string>
     <string name="settings_default_directory_title">Výchozí složka</string>

@@ -576,6 +576,7 @@
         <item>Escurça al mig</item>
         <item>Escurça el final</item>
         <item>Marquesina</item>
+        <item>Ajust</item>
     </string-array>
     <string name="settings_behavior_title">Comportament</string>
     <string name="settings_default_directory_title">Carpeta predeterminada</string>

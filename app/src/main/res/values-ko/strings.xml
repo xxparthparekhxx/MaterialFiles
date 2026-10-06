@@ -605,6 +605,7 @@
         <item>중간 부분 생략</item>
         <item>뒷부분 생략</item>
         <item>애니메이션으로 표시</item>
+        <item>줄바꿈</item>
     </string-array>
     <string name="settings_behavior_title">세부 기능</string>
     <string name="settings_default_directory_title">기본 폴더</string>

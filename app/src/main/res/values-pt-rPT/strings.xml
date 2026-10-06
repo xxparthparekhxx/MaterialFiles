@@ -660,6 +660,7 @@
         <item>Elipse no centro</item>
         <item>Elipse no final</item>
         <item>Marquee</item>
+        <item>Quebrar linha</item>
     </string-array>
     <string name="settings_behavior_title">Comportamento</string>
     <string name="settings_default_directory_title">Pasta padrão</string>

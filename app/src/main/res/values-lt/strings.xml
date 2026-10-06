@@ -595,6 +595,7 @@
         <item>Elipsuok vidurį</item>
         <item>Elipsuok pabaigą</item>
         <item>Stendas</item>
+        <item>Laužymas</item>
     </string-array>
     <string name="settings_behavior_title">Elgsena</string>
     <string name="settings_default_directory_title">Numatytas aplankas</string>

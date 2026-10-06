@@ -755,6 +755,7 @@
         <item>قلل من المنتصف</item>
         <item>قلل من النهاية</item>
         <item>شاشة اسمية</item>
+        <item>التفاف</item>
     </string-array>
     <string name="settings_behavior_title">السلوك</string>
     <string name="settings_default_directory_title">المجلد الإفتراضى</string>
