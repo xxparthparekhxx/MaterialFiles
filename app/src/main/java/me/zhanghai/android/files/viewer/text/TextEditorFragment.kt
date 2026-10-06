@@ -8,6 +8,7 @@ package me.zhanghai.android.files.viewer.text
 import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -126,6 +127,16 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         Settings.TEXT_EDITOR_WORD_WRAP.observe(viewLifecycleOwner) {
             binding.textEdit.setHorizontallyScrolling(!it)
             requireActivity().invalidateOptionsMenu()
+        }
+
+        val defaultTextSize = binding.textEdit.textSize
+        Settings.TEXT_EDITOR_FONT_SIZE.observe(viewLifecycleOwner) {
+            val sp = it.toFloatOrNull() ?: 0f
+            if (sp > 0f) {
+                binding.textEdit.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+            } else {
+                binding.textEdit.setTextSize(TypedValue.COMPLEX_UNIT_PX, defaultTextSize)
+            }
         }
 
         // TODO: Move reload-prevent here so that we can also handle save-as, etc. Or maybe just get
