@@ -50,6 +50,7 @@ import java.net.UnknownHostException
 import java.util.Collections
 import java.util.WeakHashMap
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 object Client {
     // smbj's default buffer is 1 MiB. Each read keeps that packet and a second copy of the
@@ -67,6 +68,13 @@ object Client {
         SmbConfig.builder()
             .withReadBufferSize(SMB_IO_BUFFER_SIZE)
             .withWriteBufferSize(SMB_IO_BUFFER_SIZE)
+            // The default minute is shorter than a slow server needs to acknowledge a finished
+            // transfer, so the copy was reported as failed after the file was already here.
+            .withTimeout(5, TimeUnit.MINUTES)
+            .withSoTimeout(5, TimeUnit.MINUTES)
+            .withReadTimeout(5, TimeUnit.MINUTES)
+            .withWriteTimeout(5, TimeUnit.MINUTES)
+            .withTransactTimeout(5, TimeUnit.MINUTES)
             .build()
     )
 
