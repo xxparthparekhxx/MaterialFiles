@@ -59,6 +59,7 @@ import me.zhanghai.android.files.util.setDataSource as appSetDataSource
 // pull a whole video through the process; either one kills the app on a large file.
 internal const val MAX_THUMBNAIL_FILE_SIZE = 16L * 1024 * 1024
 internal const val MAX_REMOTE_THUMBNAIL_SIZE = MAX_THUMBNAIL_FILE_SIZE
+private const val VIDEO_THUMBNAIL_SETTLE_MILLIS = 5_000L
 
 class PathAttributesKeyer : Keyer<Pair<Path, BasicFileAttributes>> {
     override fun key(data: Pair<Path, BasicFileAttributes>, options: Options): String {
@@ -131,6 +132,15 @@ class PathAttributesFetcher(
                 )
             }
             mimeType.isMedia && path.isMediaMetadataRetrieverCompatible -> {
+                // A video that is still being copied is not a valid file yet, and opening it
+                // for a preview can crash the process.
+                if (isThumbnail && mimeType.isVideo) {
+                    val ageMillis = System.currentTimeMillis() -
+                        attributes.lastModifiedInstant.toEpochMilli()
+                    if (ageMillis in 0..VIDEO_THUMBNAIL_SETTLE_MILLIS) {
+                        error("Cannot read $path for thumbnail")
+                    }
+                }
                 val embeddedPicture = try {
                     MediaMetadataRetriever().use { retriever ->
                         retriever.setDataSource(path)
