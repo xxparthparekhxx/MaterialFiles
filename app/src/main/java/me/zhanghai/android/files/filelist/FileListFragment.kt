@@ -9,8 +9,9 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.media.ThumbnailUtils
 import android.net.Uri
@@ -45,8 +46,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -91,6 +94,7 @@ import me.zhanghai.android.files.databinding.FileListFragmentSpeedDialIncludeBin
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.asFileSize
+import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.file.asMimeTypeOrNull
 import me.zhanghai.android.files.file.extension
 import me.zhanghai.android.files.file.fileProviderUri
@@ -2125,14 +2129,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             .setIcon(
                 if (thumbnail != null) {
                     IconCompat.createWithBitmap(thumbnail)
+                } else if (isDirectory) {
+                    IconCompat.createWithResource(context, R.mipmap.directory_shortcut_icon)
                 } else {
-                    IconCompat.createWithResource(
-                        context, if (isDirectory) {
-                            R.mipmap.directory_shortcut_icon
-                        } else {
-                            R.mipmap.file_shortcut_icon
-                        }
-                    )
+                    createFileShortcutIcon(context, mimeType.iconRes)
                 }
             )
             .build()
@@ -2140,6 +2140,21 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             showToast(R.string.shortcut_created)
         }
+    }
+
+    private fun createFileShortcutIcon(context: Context, iconRes: Int): IconCompat {
+        val density = context.resources.displayMetrics.density
+        val size = (108 * density).toInt().coerceAtLeast(1)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(ContextCompat.getColor(context, R.color.shortcut_icon_background))
+        val drawable = AppCompatResources.getDrawable(context, iconRes)?.mutate()
+            ?: return IconCompat.createWithResource(context, R.mipmap.file_shortcut_icon)
+        val iconSize = (48 * density).toInt().coerceAtLeast(1)
+        val inset = (size - iconSize) / 2
+        drawable.setBounds(inset, inset, inset + iconSize, inset + iconSize)
+        drawable.draw(canvas)
+        return IconCompat.createWithAdaptiveBitmap(bitmap)
     }
 
     override fun showPropertiesDialog(file: FileItem) {
