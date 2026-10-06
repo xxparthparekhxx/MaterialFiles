@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.filelist
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import java8.nio.file.Path
@@ -48,8 +49,10 @@ class OpenFileActivity : AppActivity() {
 
         fun createIntent(path: Path, mimeType: MimeType): Intent =
             Intent(ACTION_OPEN_FILE)
-                .setPackage(application.packageName)
+                .setComponent(ComponentName(application, OpenFileActivity::class.java))
+                .addCategory(Intent.CATEGORY_DEFAULT)
                 .setType(mimeType.value)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 .apply { extraPath = path }
     }
 }
