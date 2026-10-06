@@ -1738,7 +1738,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun ensureNotificationPermission() {
-        if (viewModel.isNotificationPermissionRequested) {
+        if (viewModel.isNotificationPermissionRequested || Settings.NOTIFICATION_PERMISSION_DISMISSED.valueCompat) {
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1761,7 +1761,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (shouldRequest) {
             requestNotificationPermission()
         } else {
-            viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(true)
         }
     }
 
@@ -1774,6 +1774,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private fun onRequestNotificationPermissionResult(isGranted: Boolean) {
         if (isGranted) {
             viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(false)
         } else if (shouldShowRequestPermissionRationale(
             android.Manifest.permission.POST_NOTIFICATIONS
         )) {
@@ -1790,7 +1791,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (shouldRequest) {
             requestNotificationPermissionInSettings()
         } else {
-            viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(true)
         }
     }
 
@@ -1803,6 +1804,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private fun onRequestNotificationPermissionInSettingsResult(isGranted: Boolean) {
         if (isGranted) {
             viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(false)
+        } else {
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(true)
         }
     }
 
