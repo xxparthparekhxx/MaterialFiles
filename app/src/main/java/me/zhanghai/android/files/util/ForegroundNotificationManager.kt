@@ -22,16 +22,13 @@ class ForegroundNotificationManager(private val service: Service) {
         synchronized(notifications) {
             if (notifications.isEmpty()) {
                 service.startForeground(id, notification)
-                notifications[id] = notification
                 foregroundId = id
             } else {
-                if (id == foregroundId) {
-                    service.startForeground(id, notification)
-                } else {
-                    notificationManager.notify(id, notification)
-                }
-                notifications[id] = notification
+                // Updating the foreground notification through startForeground again makes some
+                // launchers drop the other in-progress notifications.
+                notificationManager.notify(id, notification)
             }
+            notifications[id] = notification
         }
     }
 

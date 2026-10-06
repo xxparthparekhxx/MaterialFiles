@@ -9,10 +9,10 @@ import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
 import me.zhanghai.android.files.util.showToast
 import java.io.IOException
 import java.io.InterruptedIOException
-import java.util.Random
+import java.util.concurrent.atomic.AtomicInteger
 
 abstract class FileJob {
-    val id = Random().nextInt()
+    val id = nextId.getAndIncrement()
 
     internal lateinit var service: FileJobService
         private set
@@ -37,4 +37,9 @@ abstract class FileJob {
 
     @Throws(IOException::class)
     protected abstract fun run()
+
+    companion object {
+        // 1 is reserved for the FTP server notification.
+        private val nextId = AtomicInteger(2)
+    }
 }

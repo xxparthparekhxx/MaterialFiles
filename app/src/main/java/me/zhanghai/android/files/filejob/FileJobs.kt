@@ -146,6 +146,8 @@ private fun FileJob.postNotification(
         setSubText(subText)
         setContentInfo(info)
         setProgress(max, progress, indeterminate)
+        // A shared group makes two progress notifications collapse into one broken entry.
+        setGroup("file_job_$id")
         // TODO
         //setContentIntent()
         if (showCancel) {
