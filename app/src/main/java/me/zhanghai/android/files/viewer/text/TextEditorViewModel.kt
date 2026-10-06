@@ -78,7 +78,7 @@ class TextEditorViewModel(file: Path) : ViewModel() {
             val bytes = runInterruptible(Dispatchers.IO) {
                 val size = file.size()
                 if (size > MAX_FILE_SIZE) {
-                    throw IOException("File size $size is too large")
+                    throw FileTooLargeException(size, MAX_FILE_SIZE)
                 }
                 file.readAllBytes()
             }
@@ -176,11 +176,14 @@ class TextEditorViewModel(file: Path) : ViewModel() {
     }
 
     companion object {
-        private const val MAX_FILE_SIZE = 1024 * 1024.toLong()
+        private const val MAX_FILE_SIZE = 4 * 1024 * 1024.toLong()
     }
 }
 
 class BinaryFileException : IOException("Binary file cannot be opened as text")
+
+class FileTooLargeException(val size: Long, val maxSize: Long) :
+    IOException("File size $size is too large (maximum $maxSize)")
 
 private val ByteArray.isBinary: Boolean
     get() {
