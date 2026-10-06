@@ -23,6 +23,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
+import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.filejob.FileJobService
 import me.zhanghai.android.files.provider.common.readAllBytes
 import me.zhanghai.android.files.provider.common.size
@@ -32,9 +33,11 @@ import me.zhanghai.android.files.util.isFinished
 import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.toError
 import me.zhanghai.android.files.util.toLoading
+import java.io.File
 import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 
 class TextEditorViewModel(file: Path) : ViewModel() {
     private val _file = MutableStateFlow(file)
@@ -149,6 +152,49 @@ class TextEditorViewModel(file: Path) : ViewModel() {
 
     val isTextChanged = MutableStateFlow(false)
 
+    var draftText: String? = null
+        private set
+
+    init {
+        loadDraft(file)
+    }
+
+    fun updateDraft(text: String) {
+        draftText = text
+    }
+
+    fun persistDraft() {
+        val text = draftText ?: return
+        if (!isTextChanged.value) {
+            return
+        }
+        try {
+            val draft = draftFile(_file.value)
+            draft.parentFile?.mkdirs()
+            draft.writeText(text, StandardCharsets.UTF_8)
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    fun discardDraft() {
+        draftText = null
+        draftFile(_file.value).delete()
+    }
+
+    private fun loadDraft(file: Path) {
+        val draft = draftFile(file)
+        if (!draft.isFile) {
+            return
+        }
+        try {
+            draftText = draft.readText(StandardCharsets.UTF_8)
+            isTextChanged.value = true
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
     private val _writeFileState =
         MutableStateFlow<ActionState<Path, Unit>>(ActionState.Ready())
     val writeFileState = _writeFileState.asStateFlow()
@@ -164,6 +210,7 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                 if (successful) {
                     loadJob?.cancel()?.also { loadJob = null }
                     reloadJob?.cancel()?.also { reloadJob = null }
+                    discardDraft()
                     _bytesState.value = DataState.Success(bytes)
                 }
                 _writeFileState.value = if (successful) {
@@ -198,6 +245,13 @@ class TextEditorViewModel(file: Path) : ViewModel() {
 
     companion object {
         private const val MAX_FILE_SIZE = 4 * 1024 * 1024.toLong()
+
+        private fun draftFile(path: Path): File {
+            val digest = MessageDigest.getInstance("SHA-256")
+                .digest(path.toString().toByteArray(StandardCharsets.UTF_8))
+            val name = digest.joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            return File(application.cacheDir, "text-editor-drafts/$name")
+        }
     }
 }
 
