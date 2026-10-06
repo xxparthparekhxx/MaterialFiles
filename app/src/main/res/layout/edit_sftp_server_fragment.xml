@@ -216,6 +216,50 @@
                                 android:inputType="textPassword" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
+
+                    <CheckBox
+                        android:id="@+id/socksProxyCheck"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/storage_edit_sftp_server_socks_proxy" />
+
+                    <LinearLayout
+                        android:id="@+id/socksProxyLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/socksHostLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/storage_edit_sftp_server_socks_host"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/socksHostEdit"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textUri" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/socksPortLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/storage_edit_sftp_server_socks_port"
+                            app:errorEnabled="true"
+                            app:expandedHintEnabled="false"
+                            app:placeholderText="@string/storage_edit_sftp_server_socks_port_placeholder">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/socksPortEdit"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
         </FrameLayout>

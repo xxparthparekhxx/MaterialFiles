@@ -688,6 +688,10 @@
     <string name="storage_edit_sftp_server_private_key_password">Private key password</string>
     <string name="storage_edit_sftp_server_private_key_password_placeholder">Can be left empty</string>
     <string name="storage_edit_sftp_server_private_key_password_error_invalid">Invalid private key password</string>
+    <string name="storage_edit_sftp_server_socks_proxy">Use SOCKS5 proxy</string>
+    <string name="storage_edit_sftp_server_socks_host">SOCKS5 host</string>
+    <string name="storage_edit_sftp_server_socks_port">SOCKS5 port</string>
+    <string name="storage_edit_sftp_server_socks_port_placeholder">1080</string>
     <string name="storage_edit_sftp_server_connect_and_add">Connect and add</string>
     <string name="storage_edit_sftp_server_add">Add</string>
     <string name="storage_add_lan_smb_server_title" translatable="false">@string/storage_edit_smb_server_title_add</string>

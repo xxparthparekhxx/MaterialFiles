@@ -258,7 +258,13 @@ object Client {
             }
             SecurityProviderHelper.init()
             val hostKeyVerifier = SftpKnownHosts.Verifier()
-            val sshClient = SSHClient().apply { addHostKeyVerifier(hostKeyVerifier) }
+            val socksProxy = authenticator.getSocksProxy(authority)
+            val sshClient = SSHClient().apply {
+                addHostKeyVerifier(hostKeyVerifier)
+                if (socksProxy != null) {
+                    socketFactory = SocksSocketFactory(socksProxy)
+                }
+            }
             try {
                 sshClient.connect(authority.host, authority.port)
             } catch (e: IOException) {
@@ -301,6 +307,12 @@ object Client {
             }
         }
         client.closeSafe()
+    }
+
+    fun close(authority: Authority) {
+        synchronized(clients) {
+            clients.remove(authority)?.closeSafe()
+        }
     }
 
     interface Path {
