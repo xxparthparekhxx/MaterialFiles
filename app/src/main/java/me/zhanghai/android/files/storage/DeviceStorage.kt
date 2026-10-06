@@ -16,7 +16,9 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.getDescriptionCompat
 import me.zhanghai.android.files.compat.isPrimaryCompat
 import me.zhanghai.android.files.compat.pathCompat
+import me.zhanghai.android.files.compat.uuidCompat
 import me.zhanghai.android.files.util.createIntent
+import me.zhanghai.android.files.util.isMounted
 import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.valueCompat
 
@@ -40,6 +42,7 @@ sealed class DeviceStorage : Storage() {
         when (this) {
             is FileSystemRoot -> copy(customName, isVisible)
             is PrimaryStorageVolume -> copy(customName, isVisible)
+            is ExternalStorageVolume -> copy(customName = customName, isVisible = isVisible)
         }
 }
 
@@ -86,4 +89,35 @@ data class PrimaryStorageVolume(
 
     private val storageVolume: StorageVolume
         get() = StorageVolumeListLiveData.valueCompat.find { it.isPrimaryCompat }!!
+}
+
+@Parcelize
+data class ExternalStorageVolume(
+    val volumeId: String,
+    override val customName: String?,
+    override val isVisible: Boolean
+) : DeviceStorage() {
+    override val id: Long
+        get() = "ExternalStorageVolume:$volumeId".hashCode().toLong()
+
+    override val iconRes: Int
+        @DrawableRes
+        get() = R.drawable.sd_card_icon_white_24dp
+
+    override fun getDefaultName(context: Context): String =
+        volume?.getDescriptionCompat(context) ?: volumeId
+
+    override val linuxPath: String
+        get() = volume?.pathCompat ?: volumeId
+
+    val isCurrentlyMounted: Boolean
+        get() = volume?.isMounted == true
+
+    private val volume: StorageVolume?
+        get() = StorageVolumeListLiveData.valueCompat.find { volumeId(it) == volumeId }
+
+    companion object {
+        fun volumeId(volume: StorageVolume): String =
+            volume.uuidCompat?.takeIf { it.isNotEmpty() } ?: volume.pathCompat
+    }
 }
