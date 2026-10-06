@@ -124,6 +124,12 @@
             android:title="@string/settings_storages_title"
             android:summary="@string/settings_storages_summary_empty" />
 
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_storage_reveal_saved_password"
+            android:title="@string/settings_storage_reveal_saved_password_title"
+            android:summary="@string/settings_storage_reveal_saved_password_summary"
+            android:defaultValue="@bool/pref_default_value_storage_reveal_saved_password" />
+
         <me.zhanghai.android.files.settings.StandardDirectoriesPreference
             android:title="@string/settings_standard_directories_title"
             android:summary="@string/settings_standard_directories_summary_empty" />

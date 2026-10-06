@@ -102,6 +102,12 @@ object Settings {
             R.bool.pref_default_value_ftp_server_tile_confirm_start
         )
 
+    val STORAGE_REVEAL_SAVED_PASSWORD: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_storage_reveal_saved_password,
+            R.bool.pref_default_value_storage_reveal_saved_password
+        )
+
     val FTP_SERVER_ANONYMOUS_LOGIN: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_ftp_server_anonymous_login,
