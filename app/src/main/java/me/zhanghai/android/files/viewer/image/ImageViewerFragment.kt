@@ -29,6 +29,8 @@ import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.ImageViewerFragmentBinding
 import me.zhanghai.android.files.file.fileProviderUri
+import me.zhanghai.android.files.file.loadFileItem
+import me.zhanghai.android.files.fileproperties.FilePropertiesDialogFragment
 import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.provider.common.delete
 import me.zhanghai.android.files.ui.DepthPageTransformer
@@ -184,6 +186,10 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
                 share()
                 true
             }
+            R.id.action_properties -> {
+                showProperties()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
 
@@ -202,6 +208,28 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
             binding.viewPager.setCurrentItem(target, true)
         }
         return true
+    }
+
+    private fun showProperties() {
+        val path = currentPath
+        viewLifecycleOwner.lifecycleScope.launch {
+            val fileItem = withContext(Dispatchers.IO) {
+                try {
+                    path.loadFileItem()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (fileItem == null) {
+                showToast(R.string.image_viewer_properties_error)
+                return@launch
+            }
+            FilePropertiesDialogFragment.show(fileItem, this@ImageViewerFragment)
+        }
     }
 
     private fun confirmDelete() {

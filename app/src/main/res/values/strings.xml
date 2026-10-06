@@ -375,6 +375,7 @@
     <string name="file_item_action_create_shortcut" translatable="false">@string/file_list_action_create_shortcut</string>
     <string name="file_item_action_properties">Properties</string>
     <string name="file_properties_apk_error_unreadable">Couldn’t read this APK. It may be damaged, or Android may not allow reading it from this location.</string>
+    <string name="image_viewer_properties_error">Couldn’t load file properties</string>
 
     <string name="file_properties_title_format">“%1$s” properties</string>
     <string name="file_properties_basic">Basic</string>
