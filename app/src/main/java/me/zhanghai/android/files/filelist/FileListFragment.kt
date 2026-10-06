@@ -38,6 +38,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
@@ -57,6 +58,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.leinardi.android.speeddial.SpeedDialView
 import java8.nio.file.AccessDeniedException
 import java8.nio.file.NoSuchFileException
@@ -208,6 +210,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private var lastPath: Path? = null
     private var pendingHighlightPath: Path? = null
 
+    private var errorDialog: AlertDialog? = null
+
     private var userRequestedRefresh = false
 
     private var hasPromptedUsbStorageAccess = false
@@ -253,6 +257,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         super.onDestroyView()
 
         adapter.dismissActivePopupMenu()
+        errorDialog?.dismiss()
+        errorDialog = null
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -904,7 +910,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             throwable.printStackTrace()
             val error = throwable.toUserFriendlyMessage()
             if (hasFiles) {
-                showToast(error)
+                if (Settings.ERRORS_IN_DIALOG.valueCompat) {
+                    errorDialog?.dismiss()
+                    errorDialog = MaterialAlertDialogBuilder(requireContext())
+                        .setMessage(error)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
+                } else {
+                    showToast(error)
+                }
             } else {
                 binding.errorText.text = error
             }
