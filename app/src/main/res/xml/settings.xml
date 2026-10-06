@@ -50,6 +50,10 @@
             android:key="@string/pref_key_file_list_drawer_swipe"
             android:title="@string/settings_file_list_drawer_swipe_title"
             android:defaultValue="@bool/pref_default_value_file_list_drawer_swipe" />
+            android:key="@string/pref_key_errors_in_dialog"
+            android:title="@string/settings_errors_in_dialog_title"
+            android:summary="@string/settings_errors_in_dialog_summary"
+            android:defaultValue="@bool/pref_default_value_errors_in_dialog" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_lock_header"
