@@ -7,8 +7,13 @@ package me.zhanghai.android.files.settings
 
 import android.os.Build
 import android.os.Bundle
+import androidx.preference.Preference
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java8.nio.file.Paths
 import me.zhanghai.android.files.R
+import me.zhanghai.android.files.filelist.toUserFriendlyString
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
+import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.theme.custom.ThemeColor
 import me.zhanghai.android.files.theme.night.NightMode
 import me.zhanghai.android.files.theme.night.NightModeHelper
@@ -25,6 +30,11 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
             val activity = requireActivity() as SettingsActivity
             activity.setApplicationLocalesPre33(locales)
         }
+        findPreference<Preference>(getString(R.string.pref_key_file_list_hidden_paths_manage))
+            ?.setOnPreferenceClickListener {
+                showHiddenPathsDialog()
+                true
+            }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -60,6 +70,34 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
 
     private fun onBlackNightModeChanged(blackNightMode: Boolean) {
         CustomThemeHelper.sync()
+    }
+
+    private fun showHiddenPathsDialog() {
+        val hiddenPaths = Settings.FILE_LIST_HIDDEN_PATHS.valueCompat
+        if (hiddenPaths.isEmpty()) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setMessage(R.string.file_list_hidden_paths_empty)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+        val paths = hiddenPaths.toList()
+        val labels = paths.map { value ->
+            try {
+                Paths.get(java.net.URI.create(value)).toUserFriendlyString()
+            } catch (e: Exception) {
+                value
+            }
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.settings_file_list_hidden_paths_title)
+            .setItems(labels) { _, which ->
+                val updated = Settings.FILE_LIST_HIDDEN_PATHS.valueCompat.toMutableSet()
+                updated -= paths[which]
+                Settings.FILE_LIST_HIDDEN_PATHS.putValue(updated)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     override fun onResume() {
