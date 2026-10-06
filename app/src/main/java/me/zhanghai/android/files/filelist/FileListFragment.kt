@@ -367,7 +367,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         addOnBackPressedCallback(
             object : OnBackPressedCallback(false) {
                 override fun handleOnBackPressed() {
-                    viewModel.navigateUp()
+                    if (Settings.FILE_LIST_BACK_EXITS.valueCompat) {
+                        requireActivity().finish()
+                    } else {
+                        viewModel.navigateUp()
+                    }
                 }
             }
                 .also { callback ->
