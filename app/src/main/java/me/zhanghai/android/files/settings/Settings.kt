@@ -57,6 +57,12 @@ object Settings {
             FileViewType::class.java
         )
 
+    val FILE_LIST_LOCK_HEADER: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_lock_header,
+            R.bool.pref_default_value_file_list_lock_header
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,
