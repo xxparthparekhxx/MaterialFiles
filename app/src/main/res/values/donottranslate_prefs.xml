@@ -111,6 +111,8 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string name="pref_key_show_thumbnails">key_show_thumbnails</string>
+    <bool name="pref_default_value_show_thumbnails">true</bool>
     <string name="pref_key_show_pdf_thumbnail">key_show_pdf_thumbnail</string>
     <bool name="pref_default_value_show_pdf_thumbnail">true</bool>
     <string name="pref_key_show_pdf_thumbnail_pre_28">key_show_pdf_thumbnail_pre_28</string>
