@@ -17,6 +17,8 @@ import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.Success
 import me.zhanghai.android.files.util.getPackageArchiveInfoCompat
 import me.zhanghai.android.files.util.sha1Digest
+import me.zhanghai.android.files.R
+import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.util.toHexString
 import me.zhanghai.android.files.util.valueCompat
 import java.io.IOException
@@ -44,7 +46,9 @@ class ApkInfoLiveData(path: Path) : PathObserverLiveData<Stateful<ApkInfo>>(path
                     packageManager.getPackageArchiveInfoCompat(path, packageInfoFlags)
                 val apkInfo = closeable.use {
                     val applicationInfo = packageInfo?.applicationInfo
-                        ?: throw IOException("ApplicationInfo is null")
+                        ?: throw IOException(
+                            application.getString(R.string.file_properties_apk_error_unreadable)
+                        )
                     val label = applicationInfo.loadLabel(packageManager).toString()
                     val signingCertificates = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // PackageInfo.signatures returns only the oldest certificate if there are
