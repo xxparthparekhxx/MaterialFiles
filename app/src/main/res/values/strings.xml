@@ -333,6 +333,9 @@
     <string name="file_list_rescan_media_started">Rescanning media in this folder</string>
     <string name="file_list_paste_started">Pasting files</string>
     <string name="file_list_paste_go_back_format">Back to %s</string>
+    <string name="file_list_action_toggle_ftp_server">Start or stop FTP server</string>
+    <string name="file_list_ftp_server_starting">Starting FTP server</string>
+    <string name="file_list_ftp_server_stopping">Stopping FTP server</string>
     <string name="file_list_action_open_in_terminal">Open in terminal</string>
     <string name="file_list_action_add_bookmark">Add bookmark</string>
     <string name="file_list_action_create_shortcut">Create shortcut</string>
