@@ -160,6 +160,8 @@
     <bool name="pref_default_value_file_list_fit_thumbnails">false</bool>
     <string name="pref_key_file_list_back_exits">key_file_list_back_exits</string>
     <bool name="pref_default_value_file_list_back_exits">false</bool>
+    <string name="pref_key_copy_path_shell_escape">key_copy_path_shell_escape</string>
+    <bool name="pref_default_value_copy_path_shell_escape">false</bool>
 
     <string name="pref_key_binary_file_size_unit">key_binary_file_size_unit</string>
     <bool name="pref_default_value_binary_file_size_unit">false</bool>

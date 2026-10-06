@@ -90,6 +90,10 @@
             android:title="@string/settings_file_list_back_exits_title"
             android:summary="@string/settings_file_list_back_exits_summary"
             android:defaultValue="@bool/pref_default_value_file_list_back_exits" />
+            android:key="@string/pref_key_copy_path_shell_escape"
+            android:title="@string/settings_copy_path_shell_escape_title"
+            android:summary="@string/settings_copy_path_shell_escape_summary"
+            android:defaultValue="@bool/pref_default_value_copy_path_shell_escape" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"

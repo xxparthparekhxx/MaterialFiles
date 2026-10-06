@@ -1127,7 +1127,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun copyPath(path: Path) {
-        clipboardManager.copyText(path.toUserFriendlyString(), requireContext())
+        clipboardManager.copyText(path.toClipboardString(), requireContext())
     }
 
     override fun openInNewTask(path: Path) {
@@ -1431,8 +1431,21 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         viewModel.selectFiles(files, false)
     }
 
+    private fun Path.toClipboardString(): String {
+        val string = toUserFriendlyString()
+        return if (Settings.COPY_PATH_SHELL_ESCAPE.valueCompat) string.escapeForShell() else string
+    }
+
+    private fun String.escapeForShell(): String =
+        if (isNotEmpty() && all { it.isLetterOrDigit() && it.code < 128 || it in "_@%+=:,./-" }) {
+            this
+        } else {
+            "'" + replace("'", "'\\''") + "'"
+        }
+
     private fun copyPaths(files: FileItemSet) {
-        val paths = files.map { it.path.toUserFriendlyString() }.joinToString("\n")
+        val paths = files.map { it.path.toClipboardString() }
+            .joinToString(if (Settings.COPY_PATH_SHELL_ESCAPE.valueCompat) " " else "\n")
         clipboardManager.copyText(paths, requireContext())
         viewModel.selectFiles(files, false)
     }

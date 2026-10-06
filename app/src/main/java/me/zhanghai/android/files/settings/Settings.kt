@@ -249,6 +249,11 @@ object Settings {
             R.string.pref_key_file_list_back_exits, R.bool.pref_default_value_file_list_back_exits
         )
 
+    val COPY_PATH_SHELL_ESCAPE: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_copy_path_shell_escape, R.bool.pref_default_value_copy_path_shell_escape
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
