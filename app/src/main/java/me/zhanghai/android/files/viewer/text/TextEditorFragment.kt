@@ -10,6 +10,7 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
+import android.text.method.KeyListener
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -202,6 +203,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         updateSaveMenuItem()
         updateMonospaceMenuItem()
         menu.findItem(R.id.action_word_wrap).isChecked = Settings.TEXT_EDITOR_WORD_WRAP.valueCompat
+        menu.findItem(R.id.action_read_only).isChecked = isReadOnly
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -226,6 +228,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             }
             R.id.action_redo -> {
                 binding.textEdit.onTextContextMenuItem(android.R.id.redo)
+                true
+            }
+            R.id.action_read_only -> {
+                setReadOnly(!item.isChecked)
                 true
             }
             R.id.action_reload -> {
@@ -271,6 +277,30 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         }
         editText.requestFocus()
         editText.setSelection(index, index + lastFindQuery.length)
+    }
+
+    private var isReadOnly = false
+    private var editableKeyListener: KeyListener? = null
+
+    private fun setReadOnly(readOnly: Boolean) {
+        if (readOnly == isReadOnly) {
+            return
+        }
+        isReadOnly = readOnly
+        val textEdit = binding.textEdit
+        if (readOnly) {
+            editableKeyListener = textEdit.keyListener
+            // Removing the key listener stops typing while keeping selection and scrolling.
+            textEdit.keyListener = null
+            textEdit.hideSoftInput()
+        } else {
+            textEdit.keyListener = editableKeyListener
+        }
+        // Making the text selectable re-sets the same text, which must not count as an edit.
+        isSettingText = true
+        textEdit.setTextIsSelectable(true)
+        isSettingText = false
+        requireActivity().invalidateOptionsMenu()
     }
 
     fun onSupportNavigateUp(): Boolean {
