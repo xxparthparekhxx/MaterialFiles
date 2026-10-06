@@ -143,6 +143,8 @@
     <bool name="pref_default_value_iso_date_format">false</bool>
     <string name="pref_key_file_list_hidden_first">key_file_list_hidden_first</string>
     <bool name="pref_default_value_file_list_hidden_first">false</bool>
+    <string name="pref_key_auto_calculate_checksums">key_auto_calculate_checksums</string>
+    <bool name="pref_default_value_auto_calculate_checksums">true</bool>
 
     <string name="pref_key_binary_file_size_unit">key_binary_file_size_unit</string>
     <bool name="pref_default_value_binary_file_size_unit">false</bool>
