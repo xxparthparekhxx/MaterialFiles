@@ -827,6 +827,13 @@
     <string name="settings_show_pdf_thumbnail_pre_28_title">Show thumbnail for PDF documents on older Android versions</string>
     <string name="settings_show_pdf_thumbnail_pre_28_summary">Might make the app unstable on older versions of Android</string>
     <string name="settings_read_remote_files_for_thumbnail_title">Read remote files for thumbnail</string>
+    <string name="settings_backup_restore_title">Backup and restore</string>
+    <string name="settings_backup_restore_summary">Saves storages and other settings. The file includes passwords.</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_restore">Restore</string>
+    <string name="settings_restore_confirm">Replace the settings on this device with the backup?</string>
+    <string name="settings_backup_success">Settings saved</string>
+    <string name="settings_restore_success">Settings restored</string>
 
     <string name="about_title">About</string>
     <string name="about_version_title">Version</string>
