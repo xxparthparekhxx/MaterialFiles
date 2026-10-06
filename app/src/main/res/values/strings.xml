@@ -296,6 +296,8 @@
     <string name="file_list_pick_local_only_error">Only local files can be picked here</string>
     <string name="file_list_error_directory_not_found">Folder not found</string>
     <string name="file_list_action_view_sort">View and sort</string>
+    <string name="view_sort_section_view">View</string>
+    <string name="view_sort_section_sort">Sort</string>
     <string name="file_list_action_view_list">List</string>
     <string name="file_list_action_view_compact_list">Compact list</string>
     <string name="file_list_action_view_grid">Grid</string>
