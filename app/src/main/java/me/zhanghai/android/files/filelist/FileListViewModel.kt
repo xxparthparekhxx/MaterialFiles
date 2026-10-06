@@ -9,6 +9,7 @@ import android.os.Parcelable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
 import java8.nio.file.Path
@@ -80,11 +81,30 @@ class FileListViewModel : ViewModel() {
     val fileListStateful: Stateful<List<FileItem>>
         get() = _fileListLiveData.valueCompat
 
+    private var reloadNotifiedStorage = false
+
+    private val storageRefreshObserver = Observer<Long> {
+        if (reloadNotifiedStorage) {
+            reloadNotifiedStorage = false
+            return@Observer
+        }
+        // Directory watches are not recursive, so a rename or delete of a search hit in a
+        // subdirectory never refreshes the result list. File jobs already signal completion here.
+        if (searchState.isSearching) {
+            _fileListLiveData.reload()
+        }
+    }
+
+    init {
+        NavigationStorageRefreshLiveData.observeForever(storageRefreshObserver)
+    }
+
     fun reload() {
         val path = currentPath
         if (path.isArchivePath) {
             path.archiveRefresh()
         }
+        reloadNotifiedStorage = true
         _fileListLiveData.reload()
         NavigationStorageRefreshLiveData.notifyChanged()
     }
@@ -247,6 +267,7 @@ class FileListViewModel : ViewModel() {
         }
 
     override fun onCleared() {
+        NavigationStorageRefreshLiveData.removeObserver(storageRefreshObserver)
         RemovedPaths.removeListener(removedPathsListener)
         _fileListLiveData.close()
     }
