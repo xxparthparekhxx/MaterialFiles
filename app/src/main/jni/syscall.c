@@ -27,6 +27,7 @@
 
 #include <jni.h>
 
+#include <android/api-level.h>
 #include <android/log.h>
 
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
@@ -1301,10 +1302,24 @@ static void assignTimespec(struct timespec *out, const struct files_statx_timest
     out->tv_nsec = (long) in->tv_nsec;
 }
 
+// Older Android versions may filter statx for apps, and a filtered call can kill the process
+// instead of failing with ENOSYS, so only use it where it is known to be allowed.
+static bool isStatxUsable(void) {
+    static int usable = -1;
+    if (usable < 0) {
+        usable = android_get_device_api_level() >= 30 ? 1 : 0;
+    }
+    return usable == 1;
+}
+
 // Returns 1 on success, 0 when statx is unavailable, and -1 on a real error.
 static int fillStatFromStatx(const char *path, bool isLstat, struct stat64 *out,
         struct timespec *btime) {
+    if (!isStatxUsable()) {
+        return 0;
+    }
     struct files_statx stx = {};
+    errno = 0;
     int flags = isLstat ? AT_SYMLINK_NOFOLLOW : 0;
     int rc = TEMP_FAILURE_RETRY(syscall(__NR_statx, AT_FDCWD, path, flags,
             (unsigned int) (STATX_BASIC_STATS | STATX_BTIME), &stx));
@@ -1347,6 +1362,9 @@ static jobject doStat(JNIEnv *env, jobject javaPath, bool isLstat) {
         return NULL;
     }
     if (statxResult == 0) {
+        // A statx that was unavailable leaves its errno behind, which must not look like a failure
+        // of the call below.
+        errno = 0;
         TEMP_FAILURE_RETRY((isLstat ? lstat64 : stat64)(path, &stat));
         if (errno) {
             free(path);
