@@ -51,15 +51,17 @@ internal object ForeignCopyMove {
                 source.newInputStream(*openOptions).use { inputStream ->
                     val lastModifiedTime = sourceAttributes.lastModifiedTime()
                         .takeIf { it != FileTime::class.EPOCH }
-                    val outputOptions = if (lastModifiedTime != null) {
-                        arrayOf(
-                            StandardOpenOption.CREATE_NEW,
-                            StandardOpenOption.WRITE,
-                            MtimeOpenOption(lastModifiedTime.toInstant().epochSecond)
-                        )
-                    } else {
-                        arrayOf(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
-                    }
+                    val outputOptions = buildList {
+                        this += StandardOpenOption.CREATE_NEW
+                        this += StandardOpenOption.WRITE
+                        if (lastModifiedTime != null) {
+                            this += MtimeOpenOption(lastModifiedTime.toInstant().epochSecond)
+                        }
+                        val size = sourceAttributes.size()
+                        if (size >= 0) {
+                            this += ContentLengthOpenOption(size)
+                        }
+                    }.toTypedArray()
                     val outputStream = target.newOutputStream(*outputOptions)
                     var successful = false
                     try {
