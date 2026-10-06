@@ -57,6 +57,18 @@ object Settings {
             FileViewType::class.java
         )
 
+    val FILE_LIST_LOCK_HEADER: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_lock_header,
+            R.bool.pref_default_value_file_list_lock_header
+        )
+
+    val FILE_LIST_GRID_SPAN_COUNT: SettingLiveData<String> =
+        StringSettingLiveData(
+            R.string.pref_key_file_list_grid_span_count,
+            R.string.pref_default_value_file_list_grid_span_count
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,
@@ -126,6 +138,18 @@ object Settings {
             R.string.pref_key_file_list_animation, R.bool.pref_default_value_file_list_animation
         )
 
+    val FILE_LIST_LOADING_INDICATOR: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_loading_indicator,
+            R.bool.pref_default_value_file_list_loading_indicator
+        )
+
+    val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_binary_file_size_unit,
+            R.bool.pref_default_value_binary_file_size_unit
+        )
+
     val FILE_NAME_ELLIPSIZE: SettingLiveData<TextUtils.TruncateAt> =
         EnumSettingLiveData(
             R.string.pref_key_file_name_ellipsize, R.string.pref_default_value_file_name_ellipsize,
@@ -171,6 +195,11 @@ object Settings {
             OpenApkDefaultAction::class.java
         )
 
+    val SHOW_PDF_THUMBNAIL: SettingLiveData<Boolean> = BooleanSettingLiveData(
+        R.string.pref_key_show_pdf_thumbnail,
+        R.bool.pref_default_value_show_pdf_thumbnail
+    )
+
     val SHOW_PDF_THUMBNAIL_PRE_28: SettingLiveData<Boolean> = BooleanSettingLiveData(
         R.string.pref_key_show_pdf_thumbnail_pre_28,
         R.bool.pref_default_value_show_pdf_thumbnail_pre_28
@@ -180,5 +209,11 @@ object Settings {
         BooleanSettingLiveData(
             R.string.pref_key_read_remote_files_for_thumbnail,
             R.bool.pref_default_value_read_remote_files_for_thumbnail
+        )
+
+    val NOTIFICATION_PERMISSION_DISMISSED: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_notification_permission_dismissed,
+            R.bool.pref_default_value_notification_permission_dismissed
         )
 }

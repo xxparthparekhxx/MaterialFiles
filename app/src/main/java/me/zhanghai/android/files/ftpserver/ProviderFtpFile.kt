@@ -26,9 +26,11 @@ import me.zhanghai.android.files.provider.common.newInputStream
 import me.zhanghai.android.files.provider.common.newOutputStream
 import me.zhanghai.android.files.provider.common.setLastModifiedTime
 import me.zhanghai.android.files.provider.common.size
+import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
 import org.apache.ftpserver.ftplet.FtpFile
 import org.apache.ftpserver.ftplet.User
 import org.apache.ftpserver.usermanager.impl.WriteRequest
+import java.io.FilterOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -139,6 +141,7 @@ class ProviderFtpFile(
         } else {
             try {
                 path.createDirectory()
+                NavigationStorageRefreshLiveData.notifyChanged()
                 true
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -152,6 +155,7 @@ class ProviderFtpFile(
         } else {
             try {
                 path.delete()
+                NavigationStorageRefreshLiveData.notifyChanged()
                 true
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -166,6 +170,7 @@ class ProviderFtpFile(
         val targetPath = (destination as ProviderFtpFile).path
         return try {
             path.moveTo(targetPath)
+            NavigationStorageRefreshLiveData.notifyChanged()
             true
         } catch (e: IOException) {
             e.printStackTrace()
@@ -190,7 +195,7 @@ class ProviderFtpFile(
         if (!isWritable) {
             throw IOException("Not writable: $absolutePath")
         }
-        return if (offset == 0L) {
+        val outputStream = if (offset == 0L) {
             path.newOutputStream()
         } else {
             val channel = path.newByteChannel(StandardOpenOption.WRITE)
@@ -206,12 +211,21 @@ class ProviderFtpFile(
                     channel.position(offset - 1)
                     channel.write(ByteBuffer.allocate(1))
                 }
-                val outputStream = channel.newOutputStream()
+                val os = channel.newOutputStream()
                 successful = true
-                outputStream
+                os
             } finally {
                 if (!successful) {
                     channel.close()
+                }
+            }
+        }
+        return object : FilterOutputStream(outputStream) {
+            override fun close() {
+                try {
+                    super.close()
+                } finally {
+                    NavigationStorageRefreshLiveData.notifyChanged()
                 }
             }
         }
