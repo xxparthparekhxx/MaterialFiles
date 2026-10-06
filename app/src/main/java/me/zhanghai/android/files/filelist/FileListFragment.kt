@@ -36,6 +36,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.BaseProgressIndicator
 import com.google.android.material.snackbar.Snackbar
 import androidx.activity.OnBackPressedCallback
@@ -63,7 +64,6 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.leinardi.android.speeddial.SpeedDialView
 import java8.nio.file.AccessDeniedException
 import java8.nio.file.NoSuchFileException
@@ -136,6 +136,7 @@ import me.zhanghai.android.files.util.asFileName
 import me.zhanghai.android.files.util.asFileNameOrNull
 import me.zhanghai.android.files.util.checkSelfPermission
 import me.zhanghai.android.files.util.copyText
+import me.zhanghai.android.files.util.primaryText
 import me.zhanghai.android.files.util.create
 import me.zhanghai.android.files.util.createInstallPackageIntent
 import me.zhanghai.android.files.util.createIntent
@@ -1183,7 +1184,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun copyPath(path: Path) {
-        clipboardManager.copyText(path.toClipboardString(), requireContext())
+        val text = path.toClipboardString()
+        clipboardManager.primaryText = text
+        val message = android.widget.TextView(requireContext()).apply {
+            this.text = text
+            setTextIsSelectable(true)
+            val padding = (20 * resources.displayMetrics.density).toInt()
+            setPadding(padding, padding / 2, padding, 0)
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.file_item_action_copy_path)
+            .setView(message)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     override fun openInNewTask(path: Path) {
