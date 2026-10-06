@@ -86,6 +86,10 @@
             android:title="@string/settings_file_list_fit_thumbnails_title"
             android:summary="@string/settings_file_list_fit_thumbnails_summary"
             android:defaultValue="@bool/pref_default_value_file_list_fit_thumbnails" />
+            android:key="@string/pref_key_file_list_back_exits"
+            android:title="@string/settings_file_list_back_exits_title"
+            android:summary="@string/settings_file_list_back_exits_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_back_exits" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
