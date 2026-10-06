@@ -7,6 +7,7 @@ package me.zhanghai.android.files.provider.smb.client
 
 import com.hierynomus.msdtyp.FileTime
 import com.hierynomus.msfscc.fileinformation.FileAllInformation
+import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation
 import com.hierynomus.msfscc.fileinformation.FileIdFullDirectoryInformation
 import com.hierynomus.msfscc.fileinformation.ShareInfo
 import com.hierynomus.smbj.common.SMBRuntimeException
@@ -22,6 +23,12 @@ class FileInformation(
     val fileAttributes: Long,
     val fileId: Long
 ) : PathInformation()
+
+@Throws(SMBRuntimeException::class)
+fun FileIdBothDirectoryInformation.toFileInformation(): FileInformation =
+    FileInformation(
+        creationTime, lastAccessTime, lastWriteTime, changeTime, endOfFile, fileAttributes, fileId
+    )
 
 @Throws(SMBRuntimeException::class)
 fun FileIdFullDirectoryInformation.toFileInformation(): FileInformation =
