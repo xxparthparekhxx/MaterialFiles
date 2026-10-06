@@ -16,7 +16,29 @@ data class FileSortOptions(
     val order: Order,
     val isDirectoriesFirst: Boolean
 ) : Parcelable {
-    fun createComparator(isHiddenFirst: Boolean = false): Comparator<FileItem> {
+    /**
+     * @param folderBy if not null, folders are sorted by this instead of [by] when folders are
+     *   listed first
+     */
+    fun createComparator(isHiddenFirst: Boolean = false, folderBy: By? = null): Comparator<FileItem> {
+        val fileComparator = createComparatorBy(by, isHiddenFirst)
+        if (!isDirectoriesFirst) {
+            return fileComparator
+        }
+        val folderComparator = if (folderBy != null) createComparatorBy(folderBy, isHiddenFirst) else fileComparator
+        return Comparator { first, second ->
+            val isFirstDirectory = first.attributes.isDirectory
+            val isSecondDirectory = second.attributes.isDirectory
+            when {
+                isFirstDirectory && !isSecondDirectory -> -1
+                !isFirstDirectory && isSecondDirectory -> 1
+                isFirstDirectory -> folderComparator.compare(first, second)
+                else -> fileComparator.compare(first, second)
+            }
+        }
+    }
+
+    private fun createComparatorBy(by: By, isHiddenFirst: Boolean): Comparator<FileItem> {
         var comparator = compareBy<FileItem> {
             NAME_UNIMPORTANT_PREFIXES.any { prefix -> it.name.startsWith(prefix) }
         }.thenBy { it.nameCollationKey }
@@ -38,11 +60,6 @@ data class FileSortOptions(
         }
         if (isHiddenFirst) {
             comparator = compareBy<FileItem> { !it.isHidden }.then(comparator)
-        }
-        if (isDirectoriesFirst) {
-            val isDirectoryComparator = compareBy<FileItem> { it.attributes.isDirectory }
-                .reversedCompat()
-            comparator = isDirectoryComparator.then(comparator)
         }
         return comparator
     }
