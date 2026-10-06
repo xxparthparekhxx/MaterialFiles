@@ -21,6 +21,7 @@ import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.valueCompat
 import java.io.IOException
 import java.io.InterruptedIOException
+import java.util.regex.PatternSyntaxException
 
 object WalkFileTreeSearchable {
     private val showHiddenFiles: Boolean
@@ -50,6 +51,7 @@ object WalkFileTreeSearchable {
         listener: (List<Path>) -> Unit
     ) {
         val paths = mutableListOf<Path>()
+        val matches = createNameMatcher(query)
         // We cannot use Files.find() or Files.walk() because it cannot ignore exceptions.
         walkFileTreeForSearch(directory, object : FileVisitor<Path> {
             private var lastProgressMillis = System.currentTimeMillis()
@@ -101,7 +103,7 @@ object WalkFileTreeSearchable {
                     return
                 }
                 val fileName = path.fileName
-                if (fileName != null && fileName.toString().contains(query, true)) {
+                if (fileName != null && matches(fileName.toString())) {
                     paths.add(path)
                 }
                 if (paths.isNotEmpty()) {
@@ -118,6 +120,36 @@ object WalkFileTreeSearchable {
             listener(paths)
         }
     }
+
+    /**
+     * Plain text matches names containing it, ignoring case. A query containing `*` or `?` is a
+     * wildcard pattern matched against the whole name, and a query starting with `re:` is a
+     * case-insensitive regular expression searched within the name.
+     */
+    private fun createNameMatcher(query: String): (String) -> Boolean {
+        if (query.startsWith(REGEX_PREFIX) && query.length > REGEX_PREFIX.length) {
+            try {
+                val regex = Regex(query.substring(REGEX_PREFIX.length), RegexOption.IGNORE_CASE)
+                return { regex.containsMatchIn(it) }
+            } catch (e: PatternSyntaxException) {
+                // Fall through to a plain text search for an incomplete expression.
+            }
+        } else if (query.any { it == '*' || it == '?' }) {
+            val pattern = StringBuilder()
+            for (char in query) {
+                when (char) {
+                    '*' -> pattern.append(".*")
+                    '?' -> pattern.append('.')
+                    else -> pattern.append(Regex.escape(char.toString()))
+                }
+            }
+            val regex = Regex(pattern.toString(), RegexOption.IGNORE_CASE)
+            return { regex.matches(it) }
+        }
+        return { it.contains(query, true) }
+    }
+
+    private const val REGEX_PREFIX = "re:"
 
     // This method traverses the first level first, before diving into child directories.
     // FileVisitResult returned from visitor may be ignored and always considered CONTINUE.
