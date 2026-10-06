@@ -82,6 +82,7 @@ import kotlin.math.roundToInt
 import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.application
+import me.zhanghai.android.files.provider.document.DocumentListingMessage
 import me.zhanghai.android.files.app.clipboardManager
 import me.zhanghai.android.files.compat.checkSelfPermissionCompat
 import me.zhanghai.android.files.compat.setGroupDividerEnabledCompat
@@ -239,6 +240,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private var hasPromptedUsbStorageAccess = false
     private var pendingScrollPath: Path? = null
     private var pendingScrollParent: Path? = null
+
+    private var documentListingMessage: String? = null
 
     private val fileJobProgressCards = mutableMapOf<Int, FileJobProgressCardBinding>()
 
@@ -568,6 +571,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_DIVIDERS.observe(viewLifecycleOwner) { updateDividers() }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
+        DocumentListingMessage.liveData.observe(viewLifecycleOwner) { message ->
+            documentListingMessage = message
+            if (!message.isNullOrBlank() && viewModel.fileListStateful is Loading &&
+                !viewModel.searchState.isSearching
+            ) {
+                binding.toolbar.subtitle = message
+            }
+        }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }
         binding.fileJobProgressLayout.addOnLayoutChangeListener { sheet, _, _, _, _, _, _, _, _ ->
             positionFabAboveFileJobs(sheet)
@@ -962,8 +973,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val hasFiles = !files.isNullOrEmpty()
         when {
             stateful is Failure -> binding.toolbar.setSubtitle(R.string.error)
-            isLoading && !isSearching && (!hasFiles || showUserRefresh) ->
-                binding.toolbar.setSubtitle(R.string.loading)
+            isLoading && !isSearching && (!hasFiles || showUserRefresh) -> {
+                val message = documentListingMessage
+                if (message.isNullOrBlank()) {
+                    binding.toolbar.setSubtitle(R.string.loading)
+                } else {
+                    binding.toolbar.subtitle = message
+                }
+            }
             else -> binding.toolbar.subtitle = getSubtitle(files!!)
         }
         binding.swipeRefreshLayout.isRefreshing = showUserRefresh && (hasFiles || isSearching)
