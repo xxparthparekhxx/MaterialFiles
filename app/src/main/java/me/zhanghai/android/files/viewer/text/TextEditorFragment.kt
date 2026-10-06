@@ -220,6 +220,14 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 findNext()
                 true
             }
+            R.id.action_undo -> {
+                binding.textEdit.onTextContextMenuItem(android.R.id.undo)
+                true
+            }
+            R.id.action_redo -> {
+                binding.textEdit.onTextContextMenuItem(android.R.id.redo)
+                true
+            }
             R.id.action_reload -> {
                 onReload()
                 true

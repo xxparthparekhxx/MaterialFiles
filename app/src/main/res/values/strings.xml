@@ -775,6 +775,8 @@
     <string name="text_editor_monospace">Monospace font</string>
     <string name="text_editor_encoding">Encoding</string>
     <string name="charset_picker_search_hint">Search</string>
+    <string name="text_editor_undo">Undo</string>
+    <string name="text_editor_redo">Redo</string>
     <string name="text_editor_close_message">Are you sure you want to discard unsaved changes to this document?</string>
     <string name="text_editor_error_file_too_large_format">File is too large to edit (%1$s, the limit is %2$s)</string>
     <string name="text_editor_error_binary_file">Binary file cannot be opened as text</string>
