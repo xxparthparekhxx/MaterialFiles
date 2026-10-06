@@ -33,6 +33,7 @@ import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.toError
 import me.zhanghai.android.files.util.toLoading
 import java.io.IOException
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 
 class TextEditorViewModel(file: Path) : ViewModel() {
@@ -91,7 +92,16 @@ class TextEditorViewModel(file: Path) : ViewModel() {
         }
     }
 
-    val encoding = MutableStateFlow(StandardCharsets.UTF_8)
+    val encoding = MutableStateFlow<Charset>(StandardCharsets.UTF_8)
+
+    private var isEncodingChosen = false
+    private var detectedBytes: ByteArray? = null
+
+    /** Set the encoding explicitly, which turns off automatic detection. */
+    fun chooseEncoding(charset: Charset) {
+        isEncodingChosen = true
+        encoding.value = charset
+    }
 
     private val _textState = MutableStateFlow<DataState<String>>(DataState.Loading())
     val textState = _textState.asStateFlow()
@@ -106,6 +116,17 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                             if (bytesState.data.isBinary) {
                                 _textState.value = _textState.value.toError(BinaryFileException())
                                 return@collectLatest
+                            }
+                            if (!isEncodingChosen && detectedBytes !== bytesState.data) {
+                                detectedBytes = bytesState.data
+                                val detected = withContext(Dispatchers.Default) {
+                                    detectTextEncoding(bytesState.data)
+                                }
+                                if (detected != encoding) {
+                                    // Setting this re-runs the collector with the detected value.
+                                    this@TextEditorViewModel.encoding.value = detected
+                                    return@collectLatest
+                                }
                             }
                             try {
                                 val text = withContext(Dispatchers.Default) {
