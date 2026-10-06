@@ -154,6 +154,9 @@ class PathAttributesFetcher(
                 }
             }
             mimeType.isPdf && (path.isLinuxPath || path.isDocumentPath) -> {
+                if (!Settings.SHOW_PDF_THUMBNAIL.valueCompat) {
+                    return null
+                }
                 try {
                     return pdfPageFetcherFactory.create(path, options, imageLoader).fetch()
                 } catch (e: Exception) {
