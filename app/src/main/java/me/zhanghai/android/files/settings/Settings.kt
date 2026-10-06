@@ -80,6 +80,8 @@ object Settings {
             R.string.pref_key_file_list_drawer_swipe,
             R.bool.pref_default_value_file_list_drawer_swipe
         )
+    val FILE_LIST_PINNED_PATHS: SettingLiveData<List<String>> =
+        ParcelValueSettingLiveData(R.string.pref_key_file_list_pinned_paths, emptyList())
 
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(

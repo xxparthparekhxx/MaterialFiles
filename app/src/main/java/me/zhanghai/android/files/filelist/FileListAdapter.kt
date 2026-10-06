@@ -64,10 +64,33 @@ class FileListAdapter(
         get() = _sortOptions
         set(value) {
             _sortOptions = value
-            val sortedList = list.sortedWith(value.createComparator())
+            val sortedList = list.sortedWith(createComparator())
             super.replace(sortedList, true)
             rebuildFilePositionMap()
         }
+
+    var pinnedPaths: Set<String> = emptySet()
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = value
+            if (!::_sortOptions.isInitialized) {
+                return
+            }
+            super.replace(list.sortedWith(createComparator()), false)
+            rebuildFilePositionMap()
+        }
+
+    // Pinned files are listed first, except in search results where they are not pinned.
+    private fun createComparator(): Comparator<FileItem> {
+        val comparator = sortOptions.createComparator()
+        return if (isSearching || pinnedPaths.isEmpty()) {
+            comparator
+        } else {
+            compareBy<FileItem> { it.path.toString() !in pinnedPaths }.then(comparator)
+        }
+    }
 
     var pickOptions: PickOptions? = null
         set(value) {
@@ -197,7 +220,7 @@ class FileListAdapter(
     fun replaceListAndIsSearching(list: List<FileItem>, isSearching: Boolean) {
         val clear = this.isSearching != isSearching
         this.isSearching = isSearching
-        val sortedList = list.sortedWith(sortOptions.createComparator())
+        val sortedList = list.sortedWith(createComparator())
         super.replace(sortedList, clear)
         rebuildFilePositionMap()
     }
