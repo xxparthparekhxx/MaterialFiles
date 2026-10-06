@@ -226,7 +226,11 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 state.throwable.printStackTrace()
                 binding.progress.fadeOutUnsafe()
                 binding.errorText.fadeInUnsafe()
-                binding.errorText.text = state.throwable.toString()
+                binding.errorText.text = if (state.throwable is BinaryFileException) {
+                    getString(R.string.text_editor_error_binary_file)
+                } else {
+                    state.throwable.localizedMessage ?: state.throwable.toString()
+                }
                 binding.textEdit.fadeOutUnsafe()
             }
         }
