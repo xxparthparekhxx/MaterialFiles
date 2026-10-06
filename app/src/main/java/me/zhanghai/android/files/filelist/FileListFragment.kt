@@ -433,6 +433,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_SHOW_HIDDEN_FILES.observe(viewLifecycleOwner) {
             onShowHiddenFilesChanged(it)
         }
+        Settings.FILE_LIST_LOADING_INDICATOR.observe(viewLifecycleOwner) {
+            if (!it) {
+                binding.progress.fadeToVisibilityUnsafe(false)
+            }
+        }
     }
 
     override fun onResume() {
@@ -766,7 +771,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             else -> binding.toolbar.subtitle = getSubtitle(files!!)
         }
         binding.swipeRefreshLayout.isRefreshing = showUserRefresh && (hasFiles || isSearching)
-        binding.progress.fadeToVisibilityUnsafe(stateful is Loading && !(hasFiles || isSearching))
+        binding.progress.fadeToVisibilityUnsafe(
+            Settings.FILE_LIST_LOADING_INDICATOR.valueCompat && stateful is Loading && !(hasFiles || isSearching)
+        )
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
         if (throwable != null && !isSearching && throwable.isMissingDirectory() &&
@@ -1200,8 +1207,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun copyPaths(files: FileItemSet) {
-        val paths = files.map { it.path.toUserFriendlyString() }.joinToString("
-")
+        val paths = files.map { it.path.toUserFriendlyString() }.joinToString("\n")
         clipboardManager.copyText(paths, requireContext())
         viewModel.selectFiles(files, false)
     }
