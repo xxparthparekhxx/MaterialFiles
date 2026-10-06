@@ -97,6 +97,7 @@ import me.zhanghai.android.files.filejob.FileJobService
 import me.zhanghai.android.files.filelist.FileSortOptions.By
 import me.zhanghai.android.files.filelist.FileSortOptions.Order
 import me.zhanghai.android.files.fileproperties.FilePropertiesDialogFragment
+import me.zhanghai.android.files.ftpserver.FtpServerService
 import me.zhanghai.android.files.navigation.BookmarkDirectories
 import me.zhanghai.android.files.navigation.BookmarkDirectory
 import me.zhanghai.android.files.navigation.NavigationFragment
@@ -325,6 +326,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             when (it.id) {
                 R.id.action_create_file -> showCreateFileDialog()
                 R.id.action_create_directory -> showCreateDirectoryDialog()
+                R.id.action_toggle_ftp_server -> toggleFtpServer()
             }
             // Returning false causes the speed dial to close without animation.
             //return false
@@ -2005,6 +2007,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         FilePropertiesDialogFragment.show(file, this)
+    }
+
+    private fun toggleFtpServer() {
+        when (FtpServerService.stateLiveData.valueCompat) {
+            FtpServerService.State.RUNNING -> showToast(R.string.file_list_ftp_server_stopping)
+            FtpServerService.State.STOPPED -> showToast(R.string.file_list_ftp_server_starting)
+            else -> {}
+        }
+        FtpServerService.toggle(requireContext())
     }
 
     private fun showCreateFileDialog() {
