@@ -299,6 +299,11 @@ object Settings {
             R.bool.pref_default_value_file_list_hide_add_button
         )
 
+    val FILE_LIST_DIVIDERS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_dividers, R.bool.pref_default_value_file_list_dividers
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

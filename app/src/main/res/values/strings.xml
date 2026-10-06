@@ -896,6 +896,8 @@
     <string name="settings_file_list_hide_add_button_summary">Remove the floating add button and offer New folder and New file in the toolbar menu instead</string>
     <string name="file_list_action_new_folder">New folder</string>
     <string name="file_list_action_new_file">New file</string>
+    <string name="settings_file_list_dividers_title">Show dividers in the list</string>
+    <string name="settings_file_list_dividers_summary">Draw a thin line between items in the list and compact list views</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
