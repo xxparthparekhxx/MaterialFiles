@@ -21,7 +21,7 @@ abstract class FileNameDialogFragment : NameDialogFragment() {
             return false
         }
         if (name.asFileNameOrNull() == null) {
-            binding.nameLayout.error = getString(R.string.file_name_error_invalid)
+            binding.nameLayout.error = getString(R.string.file_name_error_invalid_characters)
             return false
         }
         val listener = listener
