@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.util
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -95,6 +96,15 @@ fun <T : Parcelable?> Intent.getParcelableArrayListExtraSafe(key: String?): Arra
 fun Intent.withChooser(title: CharSequence? = null, vararg initialIntents: Intent): Intent =
     Intent.createChooser(this, title).apply {
         putExtra(Intent.EXTRA_INITIAL_INTENTS, initialIntents)
+        // The share sheet grants the other app access only from the chooser's own clip data.
+        val sharedClip = this@withChooser.clipData
+        if (sharedClip != null) {
+            clipData = sharedClip
+            addFlags(
+                this@withChooser.flags and
+                    (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            )
+        }
     }
 
 fun Intent.withChooser(vararg initialIntents: Intent) = withChooser(null, *initialIntents)
@@ -138,21 +148,31 @@ fun Uri.createSendImageIntent(text: CharSequence? = null): Intent =
 fun Uri.createSendStreamIntent(mimeType: MimeType): Intent =
     listOf(this).createSendStreamIntent(listOf(mimeType))
 
-fun Collection<Uri>.createSendStreamIntent(mimeTypes: Collection<MimeType>): Intent =
+fun Collection<Uri>.createSendStreamIntent(mimeTypes: Collection<MimeType>): Intent {
     // Use ShareCompat.IntentBuilder for its migrateExtraStreamToClipData() because
     // Intent.migrateExtraStreamToClipData() won't promote child ClipData and flags to the chooser
     // intent, breaking third party share sheets.
     // The context parameter here is only used for passing calling activity information and starting
     // chooser activity, neither of which we care about.
-    ShareCompat.IntentBuilder(application)
-        .setType(mimeTypes.intentType)
+    val type = mimeTypes.intentType
+    val uri = singleOrNull()
+    return ShareCompat.IntentBuilder(application)
+        .setType(type)
         .apply { forEach { addStream(it) } }
         .intent
         // FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET is unnecessarily added by ShareCompat.IntentBuilder.
         .apply {
             @Suppress("DEPRECATION")
             removeFlagsCompat(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
+            if (uri != null && type.startsWith("text/")) {
+                // A text type otherwise arrives with the type and without the file.
+                setDataAndType(uri, type)
+                putExtra(Intent.EXTRA_STREAM, uri)
+                clipData = ClipData(null, arrayOf(type), ClipData.Item(uri))
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
         }
+}
 
 fun Uri.createDocumentsUiViewDirectoryIntent(): Intent =
     createViewIntent(MimeType.DIRECTORY)
