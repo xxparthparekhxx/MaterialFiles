@@ -580,6 +580,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         super.onCreateOptionsMenu(menu, inflater)
 
         menuBinding = MenuBinding.inflate(menu, inflater)
+        showLabelsOnTablet(menu, R.id.action_view_sort)
         setUpSearchView()
     }
 
@@ -1220,6 +1221,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         adapter.replaceSelectedFiles(files)
     }
 
+    /** Android's guidelines allow labels next to toolbar icons on tablets. */
+    private fun showLabelsOnTablet(menu: Menu, vararg itemIds: Int) {
+        if (resources.configuration.smallestScreenWidthDp < 600) {
+            return
+        }
+        for (itemId in itemIds) {
+            menu.findItem(itemId)?.setShowAsAction(
+                MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_WITH_TEXT
+            )
+        }
+    }
+
     private fun updateOverlayToolbar() {
         val files = viewModel.selectedFiles
         if (files.isEmpty()) {
@@ -1246,6 +1259,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             overlayActionMode.title = getSelectTitle(files)
             overlayActionMode.setMenuResource(R.menu.file_list_select)
             val menu = overlayActionMode.menu
+            showLabelsOnTablet(menu, R.id.action_cut, R.id.action_copy, R.id.action_delete)
             val isAnyFileReadOnly = files.any { it.path.fileSystem.isReadOnly }
             menu.findItem(R.id.action_cut).isVisible = !isAnyFileReadOnly
             menu.findItem(R.id.action_select_range).isVisible = files.size >= 2
