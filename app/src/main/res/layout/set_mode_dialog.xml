@@ -26,9 +26,24 @@
             android:clipToPadding="false"
             android:orientation="vertical">
 
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/file_properties_permission_set_mode_octal">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/octalText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
             <me.zhanghai.android.files.ui.ReadOnlyTextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:hint="@string/file_properties_permission_owner">
 
                 <me.zhanghai.android.files.ui.ReadOnlyTextInputEditText
