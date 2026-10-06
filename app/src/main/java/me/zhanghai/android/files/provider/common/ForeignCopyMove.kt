@@ -10,6 +10,7 @@ import java8.nio.file.CopyOption
 import java8.nio.file.FileAlreadyExistsException
 import java8.nio.file.LinkOption
 import java8.nio.file.NoSuchFileException
+import java8.nio.file.OpenOption
 import java8.nio.file.Path
 import java8.nio.file.StandardCopyOption
 import java8.nio.file.StandardOpenOption
@@ -40,50 +41,55 @@ internal object ForeignCopyMove {
         }
         when {
             sourceAttributes.isRegularFile -> {
-                if (copyOptions.replaceExisting) {
-                    target.deleteIfExists()
+                val lastModifiedTime = sourceAttributes.lastModifiedTime()
+                    .takeIf { it != FileTime::class.EPOCH }
+                val mtimeOption = lastModifiedTime?.let {
+                    MtimeOpenOption(it.toInstant().epochSecond)
                 }
-                val openOptions = if (copyOptions.noFollowLinks) {
-                    arrayOf(LinkOption.NOFOLLOW_LINKS)
-                } else {
-                    emptyArray()
-                }
-                source.newInputStream(*openOptions).use { inputStream ->
-                    val lastModifiedTime = sourceAttributes.lastModifiedTime()
-                        .takeIf { it != FileTime::class.EPOCH }
-                    val outputOptions = buildList {
-                        this += StandardOpenOption.CREATE_NEW
-                        this += StandardOpenOption.WRITE
-                        if (lastModifiedTime != null) {
-                            this += MtimeOpenOption(lastModifiedTime.toInstant().epochSecond)
-                        }
-                        val size = sourceAttributes.size()
-                        if (size >= 0) {
-                            this += ContentLengthOpenOption(size)
-                        }
-                    }.toTypedArray()
-                    val outputStream = target.newOutputStream(*outputOptions)
-                    var successful = false
+                // A known size lets protocols such as WebDAV send a Content-Length header.
+                val contentLengthOption = sourceAttributes.size().takeIf { it >= 0 }
+                    ?.let { ContentLengthOpenOption(it) }
+                val createOptions = listOfNotNull(
+                    StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE,
+                    mtimeOption,
+                    contentLengthOption
+                ).toTypedArray()
+                val truncateOptions = listOfNotNull(
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                    mtimeOption,
+                    contentLengthOption
+                ).toTypedArray()
+                // Deleting a file on secondary storage and creating another with the same name
+                // fails on every other attempt: the document provider still lists the old name, so
+                // CREATE_NEW refuses, and the following attempt succeeds once that listing catches
+                // up. Overwrite the existing file in place instead.
+                if (copyOptions.replaceExisting && target.exists(LinkOption.NOFOLLOW_LINKS)) {
                     try {
-                        inputStream.copyTo(
-                            outputStream, copyOptions.progressIntervalMillis,
-                            copyOptions.progressListener
-                        )
-                        successful = true
-                    } finally {
+                        copyRegularFile(source, target, copyOptions, truncateOptions, false)
+                    } catch (e: IOException) {
                         try {
-                            outputStream.close()
-                        } finally {
-                            if (!successful) {
-                                try {
-                                    target.deleteIfExists()
-                                } catch (e: IOException) {
-                                    e.printStackTrace()
-                                } catch (e: UnsupportedOperationException) {
-                                    e.printStackTrace()
-                                }
-                            }
+                            target.deleteIfExists()
+                        } catch (deleteError: IOException) {
+                            e.addSuppressed(deleteError)
+                            throw e
                         }
+                        try {
+                            copyRegularFile(source, target, copyOptions, createOptions, true)
+                        } catch (exists: FileAlreadyExistsException) {
+                            exists.addSuppressed(e)
+                            copyRegularFile(source, target, copyOptions, truncateOptions, false)
+                        }
+                    }
+                } else {
+                    try {
+                        copyRegularFile(source, target, copyOptions, createOptions, true)
+                    } catch (exists: FileAlreadyExistsException) {
+                        if (!copyOptions.replaceExisting) {
+                            throw exists
+                        }
+                        copyRegularFile(source, target, copyOptions, truncateOptions, false)
                     }
                 }
             }
@@ -131,6 +137,45 @@ internal object ForeignCopyMove {
             e.printStackTrace()
         } catch (e: UnsupportedOperationException) {
             e.printStackTrace()
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun copyRegularFile(
+        source: Path,
+        target: Path,
+        copyOptions: CopyOptions,
+        outputOptions: Array<OpenOption>,
+        deleteOnFailure: Boolean
+    ) {
+        val openOptions = if (copyOptions.noFollowLinks) {
+            arrayOf(LinkOption.NOFOLLOW_LINKS)
+        } else {
+            emptyArray()
+        }
+        source.newInputStream(*openOptions).use { inputStream ->
+            val outputStream = target.newOutputStream(*outputOptions)
+            var successful = false
+            try {
+                inputStream.copyTo(
+                    outputStream, copyOptions.progressIntervalMillis, copyOptions.progressListener
+                )
+                successful = true
+            } finally {
+                try {
+                    outputStream.close()
+                } finally {
+                    if (!successful && deleteOnFailure) {
+                        try {
+                            target.deleteIfExists()
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                        } catch (e: UnsupportedOperationException) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            }
         }
     }
 
