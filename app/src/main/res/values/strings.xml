@@ -295,6 +295,11 @@
     <string name="file_list_path_error_invalid">Invalid path</string>
     <string name="file_list_pick_local_only_error">Only local files can be picked here</string>
     <string name="file_list_error_directory_not_found">Folder not found</string>
+    <string name="file_list_error_root_unavailable">Root access isn’t available. Grant root permission to this app, or choose another access method in settings.</string>
+    <string name="file_list_error_shizuku_unavailable">Shizuku isn’t available. Start Shizuku and grant it permission to this app, or choose another access method in settings.</string>
+    <string name="file_list_error_access_denied">Permission denied. This app isn’t allowed to read this folder.</string>
+    <string name="file_list_error_unknown_host">Couldn’t find the server. Check the host name and your network connection.</string>
+    <string name="file_list_error_connection_failed">Couldn’t connect to the server. Check that it is running and reachable from this device.</string>
     <string name="file_list_action_view_sort">View and sort</string>
     <string name="file_list_action_view_list">List</string>
     <string name="file_list_action_view_compact_list">Compact list</string>
