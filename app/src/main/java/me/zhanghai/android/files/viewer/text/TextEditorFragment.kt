@@ -6,6 +6,7 @@
 package me.zhanghai.android.files.viewer.text
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -26,6 +27,7 @@ import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.TextEditorFragmentBinding
 import me.zhanghai.android.files.file.asFileSize
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.ThemedFastScroller
 import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.DataState
@@ -39,6 +41,7 @@ import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.showCharsetPickerDialog
 import me.zhanghai.android.files.util.showToast
+import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import java.nio.charset.Charset
 
@@ -140,7 +143,22 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             viewModel.isTextChanged.value = true
         }
 
+        Settings.TEXT_EDITOR_MONOSPACE.observe(viewLifecycleOwner) { onMonospaceChanged(it) }
+
         // TODO: Request storage permission if not granted.
+    }
+
+    private fun onMonospaceChanged(monospace: Boolean) {
+        binding.textEdit.typeface = if (monospace) Typeface.MONOSPACE else Typeface.DEFAULT
+        updateMonospaceMenuItem()
+    }
+
+    private fun updateMonospaceMenuItem() {
+        if (!this::menuBinding.isInitialized) {
+            return
+        }
+        menuBinding.menu.findItem(R.id.action_monospace).isChecked =
+            Settings.TEXT_EDITOR_MONOSPACE.valueCompat
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -166,6 +184,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         super.onPrepareOptionsMenu(menu)
 
         updateSaveMenuItem()
+        updateMonospaceMenuItem()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -192,6 +211,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 requireContext().showCharsetPickerDialog(viewModel.encoding.value.name()) {
                     viewModel.chooseEncoding(it)
                 }
+                true
+            }
+            R.id.action_monospace -> {
+                Settings.TEXT_EDITOR_MONOSPACE.putValue(!Settings.TEXT_EDITOR_MONOSPACE.valueCompat)
                 true
             }
             else -> super.onOptionsItemSelected(item)
