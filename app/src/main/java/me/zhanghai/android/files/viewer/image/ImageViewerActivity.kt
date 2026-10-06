@@ -12,7 +12,6 @@ import android.view.View
 import androidx.fragment.app.commit
 import java8.nio.file.Path
 import me.zhanghai.android.files.app.AppActivity
-import me.zhanghai.android.files.util.extraPathList
 import me.zhanghai.android.files.util.putArgs
 
 class ImageViewerActivity : AppActivity() {
@@ -44,7 +43,8 @@ class ImageViewerActivity : AppActivity() {
 
         fun putExtras(intent: Intent, paths: List<Path>, position: Int) {
             // All extra put here must be framework classes, or we may crash the resolver activity.
-            intent.extraPathList = paths
+            // The path list itself stays in this process; a large folder overflows the binder.
+            intent.putExtra(ImageViewerPaths.EXTRA_ID, ImageViewerPaths.put(paths))
             intent.putExtra(EXTRA_POSITION, position)
         }
     }
