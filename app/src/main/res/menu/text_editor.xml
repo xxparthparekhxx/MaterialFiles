@@ -44,6 +44,13 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_read_only"
+        android:orderInCategory="100"
+        android:title="@string/text_editor_read_only"
+        android:checkable="true"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_reload"
         android:orderInCategory="100"
         android:title="@string/reload"
