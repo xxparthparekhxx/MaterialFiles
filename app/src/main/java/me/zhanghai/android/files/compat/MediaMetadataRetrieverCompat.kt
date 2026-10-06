@@ -9,9 +9,6 @@ import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.os.Build
 import androidx.annotation.RequiresApi
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 import kotlin.reflect.KClass
 
 val KClass<MediaMetadataRetriever>.METADATA_KEY_SAMPLERATE: Int
@@ -43,15 +40,19 @@ fun MediaMetadataRetriever.getScaledFrameAtTimeCompat(
         getScaledFrameAtTime(timeUs, option, dstWidth, dstHeight)
     }
 
-@OptIn(ExperimentalContracts::class)
-inline fun <R> MediaMetadataRetriever.use(block: (MediaMetadataRetriever) -> R): R {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+private val retrieverLock = Any()
+
+fun <R> MediaMetadataRetriever.use(block: (MediaMetadataRetriever) -> R): R =
+    // A folder of videos otherwise starts many decoders at once. One of them is then destroyed
+    // on the finalizer thread, and that native cleanup times out and crashes the app.
+    synchronized(retrieverLock) {
+        try {
+            block(this)
+        } finally {
+            try {
+                release()
+            } catch (e: RuntimeException) {
+                e.printStackTrace()
+            }
+        }
     }
-    val autoCloseable: AutoCloseable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        this
-    } else {
-        AutoCloseable { release() }
-    }
-    return autoCloseable.use { block(this) }
-}
