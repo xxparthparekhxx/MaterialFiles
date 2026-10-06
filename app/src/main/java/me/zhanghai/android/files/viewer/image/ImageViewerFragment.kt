@@ -126,10 +126,14 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         adapter = ImageViewerAdapter(
             viewLifecycleOwner,
             { toggleAppBar() },
-            { zoomed -> binding.viewPager.isUserInputEnabled = !zoomed }
+            { zoomed ->
+                binding.viewPager.isUserInputEnabled = !zoomed
+                binding.swipeToDismissLayout.isSwipeEnabled = !zoomed
+            }
         ).apply {
             replace(paths)
         }
+        binding.swipeToDismissLayout.onDismiss = { requireActivity().finish() }
         binding.viewPager.apply {
             // 1 is the default for the old androidx.viewpager.widget.ViewPager.
             offscreenPageLimit = 1
