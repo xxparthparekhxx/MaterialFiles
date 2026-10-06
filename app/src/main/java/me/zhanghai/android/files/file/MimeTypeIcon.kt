@@ -56,6 +56,7 @@ private val mimeTypeToIconMap = mapOf(
     "application/vnd.ms-cab-compressed" to MimeTypeIcon.ARCHIVE,
     "application/vnd.rar" to MimeTypeIcon.ARCHIVE,
     "application/x-7z-compressed" to MimeTypeIcon.ARCHIVE,
+    "application/x-ms-wim" to MimeTypeIcon.ARCHIVE,
     "application/x-apple-diskimage" to MimeTypeIcon.ARCHIVE,
     "application/x-bzip" to MimeTypeIcon.ARCHIVE,
     "application/x-bzip2" to MimeTypeIcon.ARCHIVE,
