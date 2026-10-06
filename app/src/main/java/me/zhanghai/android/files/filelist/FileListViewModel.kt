@@ -19,6 +19,7 @@ import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
 import me.zhanghai.android.files.provider.archive.archiveRefresh
 import me.zhanghai.android.files.provider.archive.isArchivePath
+import me.zhanghai.android.files.provider.common.UserActionRequiredException
 import me.zhanghai.android.files.util.CloseableLiveData
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.valueCompat
@@ -79,6 +80,8 @@ class FileListViewModel : ViewModel() {
         get() = _fileListLiveData
     val fileListStateful: Stateful<List<FileItem>>
         get() = _fileListLiveData.valueCompat
+
+    var promptedUserAction: UserActionRequiredException? = null
 
     fun reload() {
         val path = currentPath
