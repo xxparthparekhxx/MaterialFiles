@@ -18,6 +18,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.text.TextUtils
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
@@ -318,6 +319,32 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
 
         val viewLifecycleOwner = viewLifecycleOwner
+        // Added first so that it has the lowest priority, and is only reached when nothing else
+        // handles back.
+        addOnBackPressedCallback(
+            object : OnBackPressedCallback(Settings.FILE_LIST_DOUBLE_BACK_TO_EXIT.valueCompat) {
+                private var lastBackPressedUptimeMillis = 0L
+
+                override fun handleOnBackPressed() {
+                    val uptimeMillis = SystemClock.uptimeMillis()
+                    if (
+                        uptimeMillis - lastBackPressedUptimeMillis <=
+                        DOUBLE_BACK_TO_EXIT_TIMEOUT_MILLIS
+                    ) {
+                        isEnabled = false
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
+                        return
+                    }
+                    lastBackPressedUptimeMillis = uptimeMillis
+                    showToast(R.string.file_list_press_back_again_to_exit)
+                }
+            }
+                .also { callback ->
+                    Settings.FILE_LIST_DOUBLE_BACK_TO_EXIT.observe(viewLifecycleOwner) {
+                        callback.isEnabled = it
+                    }
+                }
+        )
         addOnBackPressedCallback(
             object : OnBackPressedCallback(false) {
                 override fun handleOnBackPressed() {
@@ -2024,6 +2051,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             "me.zhanghai.android.files.intent.action.VIEW_DOWNLOADS"
 
         private const val IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
+
+        private const val DOUBLE_BACK_TO_EXIT_TIMEOUT_MILLIS = 2000L
     }
 
     private class RequestAllFilesAccessContract : ActivityResultContract<Unit, Boolean>() {

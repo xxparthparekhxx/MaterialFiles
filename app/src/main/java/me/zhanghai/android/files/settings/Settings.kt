@@ -69,6 +69,12 @@ object Settings {
             R.string.pref_default_value_file_list_grid_span_count
         )
 
+    val FILE_LIST_DOUBLE_BACK_TO_EXIT: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_double_back_to_exit,
+            R.bool.pref_default_value_file_list_double_back_to_exit
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,
@@ -77,6 +83,18 @@ object Settings {
 
     val CREATE_ARCHIVE_TYPE: SettingLiveData<Int> =
         ResourceIdSettingLiveData(R.string.pref_key_create_archive_type, R.id.zipRadio)
+
+    val NAVIGATION_SHOW_FTP_SERVER: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_navigation_show_ftp_server,
+            R.bool.pref_default_value_navigation_show_ftp_server
+        )
+
+    val FTP_SERVER_TILE_CONFIRM_START: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_ftp_server_tile_confirm_start,
+            R.bool.pref_default_value_ftp_server_tile_confirm_start
+        )
 
     val FTP_SERVER_ANONYMOUS_LOGIN: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
