@@ -37,7 +37,12 @@ private val supportedArchiveMimeTypes = mutableListOf(
     "application/x-redhat-package-manager",
     "application/x-tar",
     "application/x-ustar",
-    "application/x-xz"
+    "application/x-xz",
+    // Aliases that some apps (e.g. chat apps) report for the same formats.
+    "application/x-gzip",
+    "application/x-rar-compressed",
+    "application/x-zip",
+    "application/x-zip-compressed"
 ).map { it.asMimeType() }.toSet()
 
 val MimeType.isImage: Boolean
