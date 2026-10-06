@@ -35,6 +35,8 @@ class FileByteChannel(
     bufferSize = Client.SMB_IO_BUFFER_SIZE,
     readAhead = Client.SMB_READ_AHEAD
 ) {
+    private var wrote = false
+
     @Throws(IOException::class)
     override fun onReadAsync(position: Long, size: Int, timeoutMillis: Long): Future<ByteBuffer> =
         try {
@@ -65,6 +67,7 @@ class FileByteChannel(
 
     @Throws(IOException::class)
     override fun onWrite(position: Long, source: ByteBuffer) {
+        wrote = true
         val sourcePosition = source.position()
         val bytesWritten = try {
             file.write(ByteBufferChunkProvider(source, position))
@@ -76,6 +79,7 @@ class FileByteChannel(
 
     @Throws(IOException::class)
     override fun onTruncate(size: Long) {
+        wrote = true
         try {
             file.setLength(size)
         } catch (e: SMBRuntimeException) {
@@ -119,12 +123,28 @@ class FileByteChannel(
         try {
             file.close()
         } catch (e: SMBRuntimeException) {
-            throw when {
-                e.findCauseByClass<InterruptedException>() != null ->
-                    InterruptedIOException().apply { initCause(e) }
-                else -> IOException(e)
+            if (e.findCauseByClass<InterruptedException>() != null) {
+                throw InterruptedIOException().apply { initCause(e) }
             }
+            // A download already has every byte. A late close reply must not fail the copy and
+            // delete the finished file. An upload still needs the server to accept the close.
+            if (!wrote && e.isTimeout()) {
+                e.printStackTrace()
+                return
+            }
+            throw IOException(e)
         }
+    }
+
+    private fun SMBRuntimeException.isTimeout(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            if (current.message?.contains("Timeout", ignoreCase = true) == true) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
     }
 
     private class ByteBufferChunkProvider(
