@@ -84,6 +84,7 @@ import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.provider.document.DocumentListingMessage
+import me.zhanghai.android.files.coil.ThumbnailGeneration
 import me.zhanghai.android.files.app.clipboardManager
 import me.zhanghai.android.files.compat.checkSelfPermissionCompat
 import me.zhanghai.android.files.compat.setGroupDividerEnabledCompat
@@ -256,6 +257,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private var appBarOffsetListener: AppBarLayout.OnOffsetChangedListener? = null
 
     private var drawerListener: DrawerLayout.DrawerListener? = null
+
+    private var thumbnailEpoch = ThumbnailGeneration.epoch
 
     private val debouncedSearchRunnable = DebouncedRunnable(Handler(Looper.getMainLooper()), 1000) {
         if (!isResumed || !viewModel.isSearchViewExpanded) {
@@ -615,6 +618,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             if (!it) {
                 binding.progress.fadeToVisibilityUnsafe(false)
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        val epoch = ThumbnailGeneration.epoch
+        if (epoch != thumbnailEpoch) {
+            thumbnailEpoch = epoch
+            adapter.reloadThumbnails()
         }
     }
 
