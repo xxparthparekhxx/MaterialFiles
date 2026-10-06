@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.provider.common
 
+import androidx.preference.PreferenceManager
 import java8.nio.file.DirectoryIteratorException
 import java8.nio.file.FileVisitOption
 import java8.nio.file.FileVisitResult
@@ -13,10 +14,33 @@ import java8.nio.file.Files
 import java8.nio.file.LinkOption
 import java8.nio.file.Path
 import java8.nio.file.attribute.BasicFileAttributes
+import me.zhanghai.android.files.R
+import me.zhanghai.android.files.provider.root.isRunningAsRoot
+import me.zhanghai.android.files.provider.root.rootContext
+import me.zhanghai.android.files.settings.Settings
 import java.io.IOException
 import java.io.InterruptedIOException
 
 object WalkFileTreeSearchable {
+    private val showHiddenFiles: Boolean
+        get() =
+            try {
+                if (isRunningAsRoot) {
+                    val sharedPreferences =
+                        PreferenceManager.getDefaultSharedPreferences(rootContext)
+                    val key = rootContext.getString(R.string.pref_key_file_list_show_hidden_files)
+                    val defaultValue = rootContext.resources.getBoolean(
+                        R.bool.pref_default_value_file_list_show_hidden_files
+                    )
+                    sharedPreferences.getBoolean(key, defaultValue)
+                } else {
+                    Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+
     @Throws(IOException::class)
     fun search(
         directory: Path,
@@ -98,6 +122,7 @@ object WalkFileTreeSearchable {
     // FileVisitResult returned from visitor may be ignored and always considered CONTINUE.
     @Throws(IOException::class)
     private fun walkFileTreeForSearch(start: Path, visitor: FileVisitor<in Path>): Path {
+        val showHiddenFiles = showHiddenFiles
         val attributes = try {
             start.readAttributes(BasicFileAttributes::class.java)
         } catch (ignored: IOException) {
@@ -123,6 +148,9 @@ object WalkFileTreeSearchable {
             visitor.preVisitDirectory(start, attributes)
             try {
                 for (path in directoryStream) {
+                    if (!showHiddenFiles && path.isHiddenSafely) {
+                        continue
+                    }
                     val attributes = try {
                         path.readAttributes(BasicFileAttributes::class.java)
                     } catch (ignored: IOException) {
@@ -157,6 +185,9 @@ object WalkFileTreeSearchable {
                         if (directory == path) {
                             return FileVisitResult.CONTINUE
                         }
+                        if (!showHiddenFiles && directory.isHiddenSafely) {
+                            return FileVisitResult.SKIP_SUBTREE
+                        }
                         return visitor.preVisitDirectory(directory, attributes)
                     }
 
@@ -166,6 +197,9 @@ object WalkFileTreeSearchable {
                         attributes: BasicFileAttributes
                     ): FileVisitResult {
                         if (file == path) {
+                            return FileVisitResult.CONTINUE
+                        }
+                        if (!showHiddenFiles && file.isHiddenSafely) {
                             return FileVisitResult.CONTINUE
                         }
                         return visitor.visitFile(file, attributes)
@@ -202,6 +236,14 @@ object WalkFileTreeSearchable {
         visitor.postVisitDirectory(start, null)
         return start
     }
+
+    private val Path.isHiddenSafely: Boolean
+        get() = try {
+            isHidden
+        } catch (e: IOException) {
+            false
+        }
+
 
     @Throws(InterruptedIOException::class)
     private fun throwIfInterrupted() {
