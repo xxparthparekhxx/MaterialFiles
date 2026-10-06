@@ -18,6 +18,7 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.provider.root.isRunningAsRoot
 import me.zhanghai.android.files.provider.root.rootContext
 import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.util.valueCompat
 import java.io.IOException
 import java.io.InterruptedIOException
 
