@@ -83,6 +83,12 @@ object Settings {
     val FILE_LIST_PINNED_PATHS: SettingLiveData<List<String>> =
         ParcelValueSettingLiveData(R.string.pref_key_file_list_pinned_paths, emptyList())
 
+    val TEXT_EDITOR_MONOSPACE: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_text_editor_monospace,
+            R.bool.pref_default_value_text_editor_monospace
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,

@@ -763,6 +763,7 @@
     <string name="text_editor_find_next_short">Find</string>
     <string name="text_editor_find_hint">Text to find</string>
     <string name="text_editor_find_not_found">Not found</string>
+    <string name="text_editor_monospace">Monospace font</string>
     <string name="text_editor_encoding">Encoding</string>
     <string name="charset_picker_search_hint">Search</string>
     <string name="text_editor_close_message">Are you sure you want to discard unsaved changes to this document?</string>
