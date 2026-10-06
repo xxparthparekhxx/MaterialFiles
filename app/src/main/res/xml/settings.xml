@@ -74,6 +74,14 @@
             android:defaultValue="@bool/pref_default_value_binary_file_size_unit" />
 
         <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_file_list_font_size"
+            android:title="@string/settings_file_list_font_size_title"
+            android:defaultValue="@string/pref_default_value_file_list_font_size"
+            android:entries="@array/settings_file_list_font_size_entries"
+            android:entryValues="@array/pref_entry_values_file_list_font_size"
+            app:useSimpleSummaryProvider="true" />
+
+        <rikka.preference.SimpleMenuPreference
             android:key="@string/pref_key_file_name_ellipsize"
             android:title="@string/settings_file_name_ellipsize_title"
             android:defaultValue="@string/pref_default_value_file_name_ellipsize"
