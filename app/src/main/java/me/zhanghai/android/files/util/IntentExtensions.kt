@@ -93,19 +93,21 @@ fun <T : Parcelable?> Intent.getParcelableArrayListExtraSafe(key: String?): Arra
     return getParcelableArrayListExtra(key)
 }
 
-fun Intent.withChooser(title: CharSequence? = null, vararg initialIntents: Intent): Intent =
-    Intent.createChooser(this, title).apply {
+fun Intent.withChooser(title: CharSequence? = null, vararg initialIntents: Intent): Intent {
+    val grantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+        Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
+    return Intent.createChooser(this, title).apply {
         putExtra(Intent.EXTRA_INITIAL_INTENTS, initialIntents)
         // The share sheet grants the other app access only from the chooser's own clip data.
         val sharedClip = this@withChooser.clipData
         if (sharedClip != null) {
             clipData = sharedClip
-            addFlags(
-                this@withChooser.flags and
-                    (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            )
         }
+        addFlags(this@withChooser.flags and grantFlags)
     }
+}
 
 fun Intent.withChooser(vararg initialIntents: Intent) = withChooser(null, *initialIntents)
 
@@ -114,6 +116,7 @@ fun Uri.createEditIntent(mimeType: MimeType): Intent =
         // Calling setType() will clear data.
         .setDataAndType(this, mimeType.intentType)
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        .apply { clipData = ClipData.newRawUri("", this@createEditIntent) }
 
 fun MimeType.createPickFileIntent(allowMultiple: Boolean = false) =
     Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -185,6 +188,7 @@ fun Uri.createViewIntent(mimeType: MimeType): Intent =
         // Calling setType() will clear data.
         .setDataAndType(this, mimeType.intentType)
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        .apply { clipData = ClipData.newRawUri("", this@createViewIntent) }
 
 @Suppress("DEPRECATION")
 fun Uri.createInstallPackageIntent(): Intent =
