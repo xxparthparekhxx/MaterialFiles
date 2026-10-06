@@ -136,6 +136,12 @@ object Settings {
             Paths.get(Environment.getExternalStorageDirectory().absolutePath)
         )
 
+    val FTP_SERVER_ALLOW_EXTERNAL_CONTROL: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_ftp_server_allow_external_control,
+            R.bool.pref_default_value_ftp_server_allow_external_control
+        )
+
     val FTP_SERVER_WRITABLE: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_ftp_server_writable, R.bool.pref_default_value_ftp_server_writable
