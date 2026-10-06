@@ -26,9 +26,11 @@ import me.zhanghai.android.files.databinding.EditSftpServerFragmentBinding
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.filelist.FileListActivity
 import me.zhanghai.android.files.provider.sftp.client.Authority
+import me.zhanghai.android.files.provider.sftp.client.Client
 import me.zhanghai.android.files.provider.sftp.client.PasswordAuthentication
 import me.zhanghai.android.files.provider.sftp.client.PublicKeyAuthentication
 import me.zhanghai.android.files.provider.sftp.client.SftpKnownHosts
+import me.zhanghai.android.files.provider.sftp.client.SocksProxy
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.UnfilteredArrayAdapter
 import me.zhanghai.android.files.util.ActionState
@@ -117,6 +119,11 @@ class EditSftpServerFragment : Fragment() {
         binding.privateKeyPasswordEdit.hideTextInputLayoutErrorOnTextChange(
             binding.privateKeyLayout, binding.privateKeyPasswordLayout
         )
+        binding.socksProxyCheck.setOnCheckedChangeListener { _, isChecked ->
+            binding.socksProxyLayout.isVisible = isChecked
+        }
+        binding.socksHostEdit.hideTextInputLayoutErrorOnTextChange(binding.socksHostLayout)
+        binding.socksPortEdit.hideTextInputLayoutErrorOnTextChange(binding.socksPortLayout)
         binding.saveOrConnectAndAddButton.setText(
             if (args.server != null) {
                 R.string.save
@@ -171,6 +178,15 @@ class EditSftpServerFragment : Fragment() {
                 }
                 binding.pathEdit.setText(server.relativePath)
                 binding.nameEdit.setText(server.customName)
+                val socksProxy = Settings.SFTP_SOCKS_PROXIES.valueCompat
+                    .find { it.serverId == server.id }
+                if (socksProxy != null) {
+                    binding.socksProxyCheck.isChecked = true
+                    binding.socksHostEdit.setText(socksProxy.host)
+                    if (socksProxy.port != SocksProxy.DEFAULT_PORT) {
+                        binding.socksPortEdit.setText(socksProxy.port.toString())
+                    }
+                }
             }
         }
     }
@@ -247,10 +263,18 @@ class EditSftpServerFragment : Fragment() {
     }
 
     private fun saveOrAdd() {
-        val server = getServerOrSetError() ?: return
+        val form = getServerOrSetError() ?: return
+        val server = form.server
         // Saving the server again is the user's way of trusting a changed host key.
         SftpKnownHosts.forget(server.authority.host, server.authority.port)
         SftpServerAuthenticator.removeTransientPassword(server.authority)
+        SftpServerAuthenticator.saveSocksProxy(server.id, form.socksProxy)
+        Client.close(server.authority)
+        args.server?.authority?.let { previousAuthority ->
+            if (previousAuthority != server.authority) {
+                Client.close(previousAuthority)
+            }
+        }
         Storages.addOrReplace(server)
         finish()
     }
@@ -259,9 +283,10 @@ class EditSftpServerFragment : Fragment() {
         if (!viewModel.connectState.value.isReady) {
             return
         }
-        val server = getServerOrSetError() ?: return
-        SftpKnownHosts.forget(server.authority.host, server.authority.port)
-        viewModel.connect(server)
+        val form = getServerOrSetError() ?: return
+        SftpKnownHosts.forget(form.server.authority.host, form.server.authority.port)
+        SftpServerAuthenticator.setPendingSocksProxy(form.server.authority, form.socksProxy)
+        viewModel.connect(form.server)
     }
 
     private fun onConnectStateChanged(state: ActionState<SftpServer, Unit>) {
@@ -274,11 +299,16 @@ class EditSftpServerFragment : Fragment() {
                 binding.removeOrAddButton.isEnabled = !isConnecting
             }
             is ActionState.Success -> {
-                SftpServerAuthenticator.removeTransientPassword(state.argument.authority)
-                Storages.addOrReplace(state.argument)
+                val server = state.argument
+                val socksProxy = SftpServerAuthenticator.peekPendingSocksProxy(server.authority)
+                SftpServerAuthenticator.clearPendingSocksProxy(server.authority)
+                SftpServerAuthenticator.removeTransientPassword(server.authority)
+                SftpServerAuthenticator.saveSocksProxy(server.id, socksProxy)
+                Storages.addOrReplace(server)
                 finish()
             }
             is ActionState.Error -> {
+                SftpServerAuthenticator.clearPendingSocksProxy(state.argument.authority)
                 val throwable = state.throwable
                 throwable.printStackTrace()
                 showToast(throwable.toString())
@@ -288,11 +318,14 @@ class EditSftpServerFragment : Fragment() {
     }
 
     private fun remove() {
-        Storages.remove(args.server!!)
+        val server = args.server!!
+        SftpServerAuthenticator.removeSocksProxy(server.id)
+        Client.close(server.authority)
+        Storages.remove(server)
         finish()
     }
 
-    private fun getServerOrSetError(): SftpServer? {
+    private fun getServerOrSetError(): ServerForm? {
         var errorEdit: TextInputEditText? = null
         val host = binding.hostEdit.text.toString().takeIfNotEmpty()
             ?.let { URI::class.canonicalizeHost(it) }
@@ -379,9 +412,49 @@ class EditSftpServerFragment : Fragment() {
             errorEdit.requestFocus()
             return null
         }
+        val socksProxy = getSocksProxyOrSetError()
+        if (socksProxy == null && binding.socksProxyCheck.isChecked) {
+            return null
+        }
         val authority = Authority(host!!, port!!, username!!)
-        return SftpServer(args.server?.id, name, authority, authentication!!, path)
+        return ServerForm(
+            SftpServer(args.server?.id, name, authority, authentication!!, path), socksProxy
+        )
     }
+
+    private fun getSocksProxyOrSetError(): SocksProxy? {
+        if (!binding.socksProxyCheck.isChecked) {
+            return null
+        }
+        var errorEdit: TextInputEditText? = null
+        val host = binding.socksHostEdit.text.toString().takeIfNotEmpty()
+            ?.let { URI::class.canonicalizeHost(it) }
+        if (host == null) {
+            binding.socksHostLayout.error =
+                getString(R.string.storage_edit_sftp_server_host_error_empty)
+            errorEdit = binding.socksHostEdit
+        } else if (!URI::class.isValidHost(host)) {
+            binding.socksHostLayout.error =
+                getString(R.string.storage_edit_sftp_server_host_error_invalid)
+            errorEdit = binding.socksHostEdit
+        }
+        val portText = binding.socksPortEdit.text.toString().takeIfNotEmpty()
+        val port = if (portText != null) portText.toIntOrNull() else SocksProxy.DEFAULT_PORT
+        if (port == null || port !in 1..65535) {
+            binding.socksPortLayout.error =
+                getString(R.string.storage_edit_sftp_server_port_error_invalid)
+            if (errorEdit == null) {
+                errorEdit = binding.socksPortEdit
+            }
+        }
+        if (errorEdit != null) {
+            errorEdit.requestFocus()
+            return null
+        }
+        return SocksProxy(host!!, port!!)
+    }
+
+    private class ServerForm(val server: SftpServer, val socksProxy: SocksProxy?)
 
     @Parcelize
     class Args(val server: SftpServer? = null) : ParcelableArgs

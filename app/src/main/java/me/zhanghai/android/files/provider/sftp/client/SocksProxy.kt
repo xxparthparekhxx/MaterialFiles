@@ -5,8 +5,8 @@
 
 package me.zhanghai.android.files.provider.sftp.client
 
-interface Authenticator {
-    fun getAuthentication(authority: Authority): Authentication?
-
-    fun getSocksProxy(authority: Authority): SocksProxy?
+data class SocksProxy(val host: String, val port: Int) {
+    companion object {
+        const val DEFAULT_PORT = 1080
+    }
 }
