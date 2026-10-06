@@ -264,7 +264,6 @@ object DocumentFileSystemProvider : FileSystemProvider(), PathObservableProvider
         } catch (e: ResolverException) {
             throw e.toFileSystemException(directory.toString())
         }
-        // TODO: Handle DocumentsContract.EXTRA_LOADING, EXTRA_INFO and EXTRA_ERROR.
         return PathListDirectoryStream(children, filter)
     }
 

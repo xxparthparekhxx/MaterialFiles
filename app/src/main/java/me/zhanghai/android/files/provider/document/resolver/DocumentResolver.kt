@@ -24,6 +24,7 @@ import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.provider.common.copyTo
 import me.zhanghai.android.files.provider.content.resolver.Resolver
 import me.zhanghai.android.files.provider.content.resolver.ResolverException
+import me.zhanghai.android.files.provider.document.DocumentListingMessage
 import me.zhanghai.android.files.provider.content.resolver.getLong
 import me.zhanghai.android.files.provider.content.resolver.getString
 import me.zhanghai.android.files.provider.content.resolver.moveToFirstOrThrow
@@ -408,10 +409,15 @@ object DocumentResolver {
             // [DocumentsProvider.queryChildDocuments]. This is fine for functionality and
             // performance as DocumentsProviderHelper in DocumentsUI is doing the same thing.
             query(childrenUri, null, null).use { cursor ->
-                if (cursor.extras.getBoolean(DocumentsContract.EXTRA_LOADING)) {
+                val extras = cursor.extras
+                val info = extras.getString(DocumentsContract.EXTRA_INFO)
+                    ?.takeIf { it.isNotBlank() }
+                if (extras.getBoolean(DocumentsContract.EXTRA_LOADING)) {
+                    DocumentListingMessage.publish(info)
                     cursor.waitUntilChanged()
                     return@use
                 }
+                DocumentListingMessage.publish(null)
                 // Providers report listing failures through this extra; show their message
                 // instead of an empty directory.
                 val error = cursor.extras.getString(DocumentsContract.EXTRA_ERROR)
