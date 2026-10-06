@@ -24,8 +24,11 @@ import me.zhanghai.android.files.util.Success
 import me.zhanghai.android.files.util.getLocalAddress
 import me.zhanghai.android.files.util.toLinkedSet
 import me.zhanghai.android.files.util.valueCompat
+import java.io.IOException
 import java.net.Inet4Address
 import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.net.UnknownHostException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -129,14 +132,23 @@ class LanSmbServerListLiveData : CloseableLiveData<Stateful<List<LanSmbServer>>>
                 val nameServiceClient = SingletonContext.getInstance().nameServiceClient
                 for (address in localAddress.getSubnetAddresses()) {
                     launch {
-                        val nbtAddresses = try {
-                            nameServiceClient.getNbtAllByAddress(address.hostAddress)
+                        val hostAddress = address.hostAddress ?: return@launch
+                        val nbtHost = try {
+                            nameServiceClient.getNbtAllByAddress(hostAddress)
+                                .firstOrNull()?.hostName
                         } catch (e: UnknownHostException) {
-                            e.printStackTrace()
+                            null
+                        }
+                        if (nbtHost != null) {
+                            send(LanSmbServer(nbtHost, address))
                             return@launch
                         }
-                        val host = nbtAddresses.firstOrNull()?.hostName ?: return@launch
-                        send(LanSmbServer(host, address))
+                        // Windows often has NetBIOS turned off, so a name lookup misses it.
+                        // The file port still answers.
+                        if (!address.acceptsSmbPort()) {
+                            return@launch
+                        }
+                        send(LanSmbServer(hostAddress, address))
                     }
                 }
             }
@@ -148,13 +160,26 @@ class LanSmbServerListLiveData : CloseableLiveData<Stateful<List<LanSmbServer>>>
             for (i in 0..99) {
                 for (j in 0..2) {
                     val lastBit = 100 * j + i
-                    if (lastBit > 255) {
+                    // .0 is the network address and .255 is the broadcast address. A query to
+                    // the broadcast address is answered by some other host, and that host was
+                    // then shown as .255.
+                    if (lastBit == 0 || lastBit >= 255) {
                         continue
                     }
                     addressBytes[3] = lastBit.toByte()
                     yield(InetAddress.getByAddress(addressBytes) as Inet4Address)
                 }
             }
+        }
+
+    private fun InetAddress.acceptsSmbPort(): Boolean =
+        try {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress(this, SMB_PORT), SMB_PORT_TIMEOUT_MILLIS)
+            }
+            true
+        } catch (e: IOException) {
+            false
         }
 
     override fun close() {
@@ -164,5 +189,10 @@ class LanSmbServerListLiveData : CloseableLiveData<Stateful<List<LanSmbServer>>>
     private fun cancelLoadingValue() {
         loadFuture?.cancel(true)
         loadFuture = null
+    }
+
+    companion object {
+        private const val SMB_PORT = 445
+        private const val SMB_PORT_TIMEOUT_MILLIS = 500
     }
 }
