@@ -9,6 +9,7 @@ import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
 import me.zhanghai.android.files.provider.common.AbstractPathObservable
+import me.zhanghai.android.files.provider.content.resolver.ContentChangeSuppressor
 import me.zhanghai.android.files.provider.content.resolver.Resolver
 import me.zhanghai.android.files.provider.content.resolver.ResolverException
 
@@ -22,6 +23,9 @@ internal class ContentPathObservable(
         override fun deliverSelfNotifications(): Boolean = true
 
         override fun onChange(selfChange: Boolean) {
+            if (ContentChangeSuppressor.isSuppressed()) {
+                return
+            }
             notifyObservers()
         }
     }
