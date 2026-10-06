@@ -76,6 +76,9 @@
     <string name="file_action_archive_password_title">Password required</string>
     <string name="file_action_archive_password_message_format">“%1$s” is password-protected.</string>
     <string name="file_action_archive_password_error_empty">Password cannot be empty</string>
+    <string name="file_action_sftp_password_title" translatable="false">@string/file_action_archive_password_title</string>
+    <string name="file_action_sftp_password_message_format">Enter the password for “%1$s”.</string>
+    <string name="file_action_sftp_password_error_empty" translatable="false">@string/file_action_archive_password_error_empty</string>
 
     <plurals name="file_job_archive_scan_notification_title_format">
         <item quantity="one">Preparing to compress %1$,d file (%2$s)</item>
@@ -614,6 +617,7 @@
     <string name="storage_edit_sftp_server_username">Username</string>
     <string name="storage_edit_sftp_server_username_error_empty">Enter a username</string>
     <string name="storage_edit_sftp_server_password">Password</string>
+    <string name="storage_edit_sftp_server_save_password">Save password</string>
     <string name="storage_edit_sftp_server_private_key">Private key</string>
     <string name="storage_edit_sftp_server_private_key_open_file">Open file</string>
     <string name="storage_edit_sftp_server_private_key_error_empty">Enter a private key</string>

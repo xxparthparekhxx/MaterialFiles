@@ -169,6 +169,13 @@
                             android:inputType="textPassword" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <CheckBox
+                        android:id="@+id/savePasswordCheck"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/storage_edit_sftp_server_save_password" />
+
                     <LinearLayout
                         android:id="@+id/publicKeyAuthenticationLayout"
                         android:layout_width="match_parent"
