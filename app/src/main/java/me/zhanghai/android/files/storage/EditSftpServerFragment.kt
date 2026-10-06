@@ -16,6 +16,7 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.hierynomus.sshj.common.KeyDecryptionFailedException
 import java8.nio.file.Path
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ import me.zhanghai.android.files.filelist.FileListActivity
 import me.zhanghai.android.files.provider.sftp.client.Authority
 import me.zhanghai.android.files.provider.sftp.client.PasswordAuthentication
 import me.zhanghai.android.files.provider.sftp.client.PublicKeyAuthentication
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.UnfilteredArrayAdapter
 import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.ParcelableArgs
@@ -39,6 +41,7 @@ import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.launchSafe
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.takeIfNotEmpty
+import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import java.net.URI
 
@@ -137,6 +140,10 @@ class EditSftpServerFragment : Fragment() {
             } else {
                 saveOrAdd()
             }
+        }
+
+        if (args.server != null && !Settings.STORAGE_REVEAL_SAVED_PASSWORD.valueCompat) {
+            binding.passwordLayout.endIconMode = TextInputLayout.END_ICON_NONE
         }
 
         if (savedInstanceState == null) {
