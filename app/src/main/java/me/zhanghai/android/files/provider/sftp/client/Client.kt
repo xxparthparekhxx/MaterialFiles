@@ -240,6 +240,7 @@ object Client {
                 // The server was saved without a password; ask for it instead of failing.
                 throw SshPasswordRequiredException(authority)
             }
+            SecurityProviderHelper.init()
             val hostKeyVerifier = SftpKnownHosts.Verifier()
             val sshClient = SSHClient().apply { addHostKeyVerifier(hostKeyVerifier) }
             try {
