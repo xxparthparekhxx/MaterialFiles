@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import androidx.annotation.AttrRes
 import androidx.annotation.StyleRes
 import androidx.preference.ListPreference
+import me.zhanghai.android.files.util.showCharsetPickerDialog
 import java.nio.charset.Charset
 
 class CharsetPreference : ListPreference {
@@ -32,5 +33,15 @@ class CharsetPreference : ListPreference {
         val charsets = Charset.availableCharsets()
         entries = charsets.values.map { it.displayName() }.toTypedArray<CharSequence>()
         entryValues = charsets.keys.toTypedArray<CharSequence>()
+    }
+
+    // Show a searchable picker instead of the plain (very long) list dialog.
+    override fun onClick() {
+        context.showCharsetPickerDialog(value) { charset ->
+            val charsetName = charset.name()
+            if (callChangeListener(charsetName)) {
+                value = charsetName
+            }
+        }
     }
 }
