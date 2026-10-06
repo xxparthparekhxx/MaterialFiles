@@ -185,6 +185,11 @@ object Settings {
             R.bool.pref_default_value_binary_file_size_unit
         )
 
+    val FILE_LIST_FONT_SIZE: SettingLiveData<String> =
+        StringSettingLiveData(
+            R.string.pref_key_file_list_font_size, R.string.pref_default_value_file_list_font_size
+        )
+
     val FILE_NAME_ELLIPSIZE: SettingLiveData<TextUtils.TruncateAt> =
         EnumSettingLiveData(
             R.string.pref_key_file_name_ellipsize, R.string.pref_default_value_file_name_ellipsize,
