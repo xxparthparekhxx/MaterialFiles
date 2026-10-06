@@ -222,6 +222,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private var errorDialog: AlertDialog? = null
 
+    private var lastToastedFileListError: String? = null
+
     private var userRequestedRefresh = false
 
     private var hasPromptedUsbStorageAccess = false
@@ -973,12 +975,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                         .setMessage(error)
                         .setPositiveButton(android.R.string.ok, null)
                         .show()
-                } else {
+                } else if (error != lastToastedFileListError) {
+                    lastToastedFileListError = error
                     showToast(error)
                 }
             } else {
+                lastToastedFileListError = null
                 binding.errorText.text = error
             }
+        } else if (stateful is Success) {
+            lastToastedFileListError = null
         }
         binding.emptyView.fadeToVisibilityUnsafe(stateful is Success && !hasFiles)
         if (files != null) {

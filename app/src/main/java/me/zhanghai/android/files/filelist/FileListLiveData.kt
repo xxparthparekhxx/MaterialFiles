@@ -20,6 +20,7 @@ import me.zhanghai.android.files.util.Failure
 import me.zhanghai.android.files.util.Loading
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.Success
+import com.hierynomus.smbj.common.SMBRuntimeException
 import me.zhanghai.android.files.util.findCauseByClass
 import me.zhanghai.android.files.util.valueCompat
 import java.io.IOException
@@ -94,6 +95,15 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
                 if (task.isCancelled || Thread.currentThread().isInterrupted ||
                     e.findCauseByClass<InterruptedException>() != null
                 ) {
+                    return@submit
+                }
+                // A transfer refreshes this folder and the share can fail the listing while
+                // the copy itself succeeds. Keep the files already shown instead of toasting
+                // the same SMB error on every refresh.
+                if (valueCompat.value != null &&
+                    (e is SMBRuntimeException || e.findCauseByClass<SMBRuntimeException>() != null)
+                ) {
+                    e.printStackTrace()
                     return@submit
                 }
                 Failure(valueCompat.value, e)
