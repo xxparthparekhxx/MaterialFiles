@@ -43,23 +43,58 @@ fun FTPClient.mlistDirCompat(pathname: String): Array<FTPFile>? {
     // @see https://datatracker.ietf.org/doc/html/rfc3659#section-7.8
     // FTPClient silently returns an empty array even when server returns an error for unknown
     // command, so we have to rely on checking the feature.
+    val canUseMlsd = hasFeature(FTPCmd.MLST)
     // Some servers ignore the pathname on MLSD and list the working directory instead, so enter
     // the directory first and list it with no path. Changing directory also avoids globbing of
     // special characters (such as '[') in the pathname.
+    val files = listAfterChangingDirectory(pathname, allowMlsd = canUseMlsd)
+    if (files != null) {
+        return files
+    }
+    if (canUseMlsd && !pathname.hasSpecialFtpCharacters()) {
+        return mlistDir(pathname)
+    }
+    return null
+}
+
+private fun FTPClient.mlistDirOrNull(pathname: String?): Array<FTPFile>? =
+    try {
+        if (pathname == null) mlistDir() else mlistDir(pathname)
+    } catch (e: IOException) {
+        null
+    }
+
+private fun FTPClient.listingFailed(files: Array<FTPFile>): Boolean {
+    if (files.isNotEmpty()) {
+        return false
+    }
+    if (replyCode >= 400) {
+        return true
+    }
+    val reply = replyString ?: return false
+    return reply.contains("Out of memory", ignoreCase = true) ||
+        reply.contains("globbing", ignoreCase = true)
+}
+
+@Throws(IOException::class)
+private fun FTPClient.listAfterChangingDirectory(
+    pathname: String,
+    allowMlsd: Boolean
+): Array<FTPFile>? {
+    // Changing working directory avoids globbing and syntax issues with special characters
+    // (such as '[') in pathname on MLSD and LIST.
     val previousWorkingDirectory = printWorkingDirectory()
-    val changed = changeWorkingDirectory(pathname)
-    if (!changed) {
-        if (hasFeature(FTPCmd.MLST) && !pathname.hasSpecialFtpCharacters()) {
-            return mlistDir(pathname)
-        }
+    if (!changeWorkingDirectory(pathname)) {
         return null
     }
     try {
-        if (hasFeature(FTPCmd.MLST)) {
-            return mlistDir()
-        } else {
-            return listFiles()
+        if (allowMlsd) {
+            val files = mlistDirOrNull(null)
+            if (files != null && !listingFailed(files)) {
+                return files
+            }
         }
+        return listFiles()
     } finally {
         if (previousWorkingDirectory != null) {
             if (!changeWorkingDirectory(previousWorkingDirectory)) {
