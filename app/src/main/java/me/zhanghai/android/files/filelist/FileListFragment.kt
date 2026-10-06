@@ -1048,8 +1048,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun pickPaths(paths: LinkedHashSet<Path>) {
+        val pickOptions = viewModel.pickOptions!!
+        if (pickOptions.localOnly && paths.any { it.isRemotePath }) {
+            showToast(R.string.file_list_pick_local_only_error)
+            return
+        }
         val intent = Intent().apply {
-            val pickOptions = viewModel.pickOptions!!
             if (paths.size == 1) {
                 val path = paths.single()
                 data = path.fileProviderUri
