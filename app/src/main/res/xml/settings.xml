@@ -274,6 +274,12 @@
             android:entryValues="@array/pref_entry_values_open_apk_default_action"
             app:useSimpleSummaryProvider="true" />
 
+        <Preference
+            android:key="@string/pref_key_file_open_defaults"
+            android:persistent="false"
+            android:title="@string/settings_file_open_defaults_title"
+            android:summary="@string/settings_file_open_defaults_summary" />
+
         <SwitchPreferenceCompat
             android:key="@string/pref_key_show_thumbnails"
             android:title="@string/settings_show_thumbnails_title"

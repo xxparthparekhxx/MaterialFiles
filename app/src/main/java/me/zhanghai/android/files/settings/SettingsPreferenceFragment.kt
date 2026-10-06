@@ -5,6 +5,8 @@
 
 package me.zhanghai.android.files.settings
 
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.preference.Preference
@@ -12,6 +14,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java8.nio.file.Paths
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.filelist.toUserFriendlyString
+import me.zhanghai.android.files.filelist.FileOpenDefaults
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.theme.custom.ThemeColor
@@ -26,6 +29,11 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         addPreferencesFromResource(R.xml.settings)
 
         localePreference = preferenceScreen.findPreference(getString(R.string.pref_key_locale))!!
+        findPreference<Preference>(getString(R.string.pref_key_file_open_defaults))!!
+            .setOnPreferenceClickListener {
+                showFileOpenDefaultsDialog()
+                true
+            }
         localePreference.setApplicationLocalesPre33 = { locales ->
             val activity = requireActivity() as SettingsActivity
             activity.setApplicationLocalesPre33(locales)
@@ -55,6 +63,36 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         Settings.NIGHT_MODE.observe(viewLifecycleOwner, this::onNightModeChanged)
         Settings.BLACK_NIGHT_MODE.observe(viewLifecycleOwner, this::onBlackNightModeChanged)
     }
+
+    private fun showFileOpenDefaultsDialog() {
+        val entries = FileOpenDefaults.entries()
+        if (entries.isEmpty()) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.settings_file_open_defaults_title)
+                .setMessage(R.string.file_open_defaults_empty)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+        val packageManager = requireContext().packageManager
+        val labels = entries.map { (mimeType, component) ->
+            val app = activityLabel(packageManager, component)
+            "$mimeType — $app"
+        }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.settings_file_open_defaults_title)
+            .setItems(labels) { _, which -> FileOpenDefaults.forget(entries[which].first) }
+            .setNeutralButton(R.string.file_open_defaults_clear) { _, _ -> FileOpenDefaults.clear() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun activityLabel(packageManager: PackageManager, component: ComponentName): String =
+        try {
+            packageManager.getActivityInfo(component, 0).loadLabel(packageManager).toString()
+        } catch (e: PackageManager.NameNotFoundException) {
+            component.flattenToShortString()
+        }
 
     private fun onThemeColorChanged(themeColor: ThemeColor) {
         CustomThemeHelper.sync()
