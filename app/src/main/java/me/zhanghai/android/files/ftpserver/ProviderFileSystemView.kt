@@ -5,27 +5,20 @@
 
 package me.zhanghai.android.files.ftpserver
 
+import java8.nio.file.Path
 import java8.nio.file.Paths
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import org.apache.ftpserver.ftplet.FileSystemView
+import org.apache.ftpserver.ftplet.FtpFile
 import org.apache.ftpserver.ftplet.User
-import java.net.URI
 
 class ProviderFileSystemView(private val user: User) : FileSystemView {
-    private val homeDirectory: ProviderFtpFile
-    private var workingDirectory: ProviderFtpFile
+    private val homeDirectory: FtpFile = RootIndexFtpFile(user)
+    private var workingDirectory: FtpFile = homeDirectory
 
-    init {
-        val homeDirectoryPath = Paths.get(URI.create(user.homeDirectory))
-        homeDirectory = ProviderFtpFile(
-            homeDirectoryPath, homeDirectoryPath.relativize(homeDirectoryPath), user
-        )
-        workingDirectory = homeDirectory
-    }
+    override fun getHomeDirectory(): FtpFile = homeDirectory
 
-    override fun getHomeDirectory(): ProviderFtpFile = homeDirectory
-
-    override fun getWorkingDirectory(): ProviderFtpFile = workingDirectory
+    override fun getWorkingDirectory(): FtpFile = workingDirectory
 
     override fun changeWorkingDirectory(directoryString: String): Boolean {
         val directory = getFile(directoryString)
@@ -36,21 +29,36 @@ class ProviderFileSystemView(private val user: User) : FileSystemView {
         return true
     }
 
-    override fun getFile(fileString: String): ProviderFtpFile {
-        val isAbsolute = fileString.startsWith("/")
-        val homeDirectoryPath = homeDirectory.physicalFile
-        val parentPath = if (isAbsolute) homeDirectoryPath else workingDirectory.physicalFile
-        val relativeFileString = if (isAbsolute) fileString.drop(1) else fileString
-        val filePath = parentPath.resolve(relativeFileString).normalize()
-        if (!filePath.startsWith(homeDirectoryPath)) {
+    override fun getFile(fileString: String): FtpFile {
+        val combined = if (fileString.startsWith("/")) {
+            fileString
+        } else {
+            val base = workingDirectory.absolutePath.removePrefix("/")
+            if (base.isEmpty()) fileString else "$base/$fileString"
+        }
+        val parts = ArrayDeque<String>()
+        for (part in combined.split('/')) {
+            when (part) {
+                "", "." -> {}
+                ".." -> if (parts.isNotEmpty()) parts.removeLast()
+                else -> parts.addLast(part)
+            }
+        }
+        if (parts.isEmpty()) {
             return homeDirectory
         }
-        return ProviderFtpFile(filePath, homeDirectoryPath.relativize(filePath), user)
+        val root = FtpServerRoots.get().find { it.name == parts.first() } ?: return homeDirectory
+        val rest = parts.drop(1)
+        val filePath = rest.fold(root.path) { path, name -> path.resolve(name) }.normalize()
+        if (!filePath.startsWith(root.path)) {
+            return homeDirectory
+        }
+        val relativePath = rest.fold(Paths.get(root.name) as Path) { path, name -> path.resolve(name) }
+        return ProviderFtpFile(filePath, relativePath, user)
     }
 
     override fun isRandomAccessible(): Boolean =
-        // TODO: Better way of determining if the provider is random accessible.
-        !homeDirectory.physicalFile.isArchivePath
+        FtpServerRoots.get().none { it.path.isArchivePath }
 
     override fun dispose() {}
 }

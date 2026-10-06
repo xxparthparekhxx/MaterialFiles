@@ -68,8 +68,11 @@ class ProviderFtpFile(
         return !path.exists() || path.isWritable
     }
 
+    private val isVolumeRoot: Boolean
+        get() = relativePath.nameCount == 1 && relativePath.getName(0).toString().isNotEmpty()
+
     override fun isRemovable(): Boolean {
-        if (relativePath.nameCount == 1 && relativePath.getName(0).toString().isEmpty()) {
+        if (relativePath.nameCount == 0 || isVolumeRoot) {
             return false
         }
         if (user.authorize(WriteRequest(absolutePath)) == null) {
@@ -164,7 +167,7 @@ class ProviderFtpFile(
         }
 
     override fun move(destination: FtpFile): Boolean {
-        if (!(isRemovable && destination.isWritable)) {
+        if (isVolumeRoot || !(isRemovable && destination.isWritable)) {
             return false
         }
         val targetPath = (destination as ProviderFtpFile).path
