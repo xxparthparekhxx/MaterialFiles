@@ -46,6 +46,17 @@
         <item>5</item>
         <item>6</item>
     </string-array>
+    <string name="pref_key_text_editor_font_size">key_text_editor_font_size</string>
+    <string name="pref_default_value_text_editor_font_size">0</string>
+    <string-array name="pref_entry_values_text_editor_font_size">
+        <item>0</item>
+        <item>12</item>
+        <item>14</item>
+        <item>16</item>
+        <item>18</item>
+        <item>20</item>
+        <item>24</item>
+    </string-array>
     <string name="pref_key_file_list_sort_options">key_file_list_sort_options</string>
     <string name="pref_key_create_archive_type">key_create_archive_type</string>
 
