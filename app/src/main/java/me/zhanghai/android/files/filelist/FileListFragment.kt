@@ -211,6 +211,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private var userRequestedRefresh = false
 
     private var hasPromptedUsbStorageAccess = false
+    private var pendingScrollPath: Path? = null
+    private var pendingScrollParent: Path? = null
 
     private val fileJobProgressCards = mutableMapOf<Int, FileJobProgressCardBinding>()
 
@@ -917,6 +919,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (stateful is Success) {
             viewModel.pendingState?.let { layoutManager.onRestoreInstanceState(it) }
             highlightPendingPath()
+            scrollToPendingPath()
         }
     }
 
@@ -1830,6 +1833,30 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         copyPath(file.path)
+    }
+
+    override fun showInFolder(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        val parent = file.path.parent ?: return
+        pendingScrollPath = file.path
+        pendingScrollParent = parent
+        navigateTo(parent)
+    }
+
+    private fun scrollToPendingPath() {
+        val path = pendingScrollPath ?: return
+        // Ignore the list of the search that we are leaving, and only act on the target folder.
+        if (viewModel.searchState.isSearching || viewModel.currentPath != pendingScrollParent) {
+            return
+        }
+        pendingScrollPath = null
+        pendingScrollParent = null
+        val position = adapter.getFilePosition(path)
+        if (position != RecyclerView.NO_POSITION) {
+            binding.recyclerView.scrollToPosition(position)
+        }
     }
 
     override fun addBookmark(file: FileItem) {
