@@ -83,10 +83,12 @@ fun StorageVolume.createOpenDocumentTreeIntentCompat(): Intent =
             } else {
                 uuidCompat
             }
-            val rootUri = DocumentsContract.buildRootUri(
-                DocumentsContractCompat.EXTERNAL_STORAGE_PROVIDER_AUTHORITY, rootId
-            )
-            putExtra(DocumentsContractCompat.EXTRA_INITIAL_URI, rootUri)
+            if (!rootId.isNullOrEmpty()) {
+                val rootUri = DocumentsContract.buildRootUri(
+                    DocumentsContractCompat.EXTERNAL_STORAGE_PROVIDER_AUTHORITY, rootId
+                )
+                putExtra(DocumentsContractCompat.EXTRA_INITIAL_URI, rootUri)
+            }
             putExtra(DocumentsContractCompat.EXTRA_SHOW_ADVANCED, true)
         }
     }
