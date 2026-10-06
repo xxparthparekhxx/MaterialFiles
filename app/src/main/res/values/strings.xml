@@ -785,6 +785,12 @@
         <item>6</item>
     </string-array>
     <string name="settings_file_list_loading_indicator_title">File list loading indicator</string>
+    <string name="settings_file_list_show_directory_item_count_title">Show item count for folders</string>
+    <string name="settings_file_list_show_directory_item_count_summary">Count the files and folders directly inside each folder. Large folders can take a while.</string>
+    <plurals name="file_list_directory_item_count_format">
+        <item quantity="one">%1$,d item</item>
+        <item quantity="other">%1$,d items</item>
+    </plurals>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_name_ellipsize_title">Display long file name</string>

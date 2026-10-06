@@ -5,6 +5,9 @@
 
 package me.zhanghai.android.files.filelist
 
+import android.os.AsyncTask
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.view.View
 import android.view.ViewGroup
@@ -34,6 +37,8 @@ import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.provider.common.isEncrypted
+import me.zhanghai.android.files.provider.common.isHidden
+import me.zhanghai.android.files.provider.common.newDirectoryStream
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.AnimatedListAdapter
 import me.zhanghai.android.files.ui.CheckableForegroundLinearLayout
@@ -41,6 +46,7 @@ import me.zhanghai.android.files.ui.CheckableItemBackground
 import me.zhanghai.android.files.util.isMaterial3Theme
 import me.zhanghai.android.files.util.layoutInflater
 import me.zhanghai.android.files.util.valueCompat
+import java.io.IOException
 import java.util.Locale
 
 class FileListAdapter(
@@ -77,6 +83,20 @@ class FileListAdapter(
     private val selectedFiles = fileItemSetOf()
 
     private val filePositionMap = mutableMapOf<Path, Int>()
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val directoryItemCounts = mutableMapOf<Path, Int>()
+    private val directoryItemCountFailures = mutableSetOf<Path>()
+    private val directoryItemCountJobs = mutableSetOf<Path>()
+    private var directoryItemCountGeneration = 0
+
+    fun invalidateDirectoryItemCounts() {
+        directoryItemCountGeneration++
+        directoryItemCounts.clear()
+        directoryItemCountFailures.clear()
+        directoryItemCountJobs.clear()
+        notifyItemRangeChanged(0, itemCount, PAYLOAD_DIRECTORY_ITEM_COUNT)
+    }
 
     private var activePopupMenu: PopupMenu? = null
 
@@ -259,6 +279,7 @@ class FileListAdapter(
                 isSelected = nameEllipsize == TextUtils.TruncateAt.MARQUEE
             }
         }
+        bindDescription(holder, file, isDirectory)
         if (payloads.isNotEmpty()) {
             return
         }
@@ -345,16 +366,6 @@ class FileListAdapter(
             }
         }
         holder.nameText.text = file.name
-        holder.descriptionText?.text = if (isDirectory) {
-            null
-        } else {
-            val context = holder.descriptionText!!.context
-            val lastModificationTime = attributes.lastModifiedTime().toInstant()
-                .formatShort(context)
-            val size = attributes.fileSize.formatHumanReadable(context)
-            val descriptionSeparator = context.getString(R.string.file_item_description_separator)
-            listOf(lastModificationTime, size).joinToString(descriptionSeparator)
-        }
         val isArchivePath = path.isArchivePath
         menu.findItem(R.id.action_copy)
             .setTitle(if (isArchivePath) R.string.file_item_action_extract else R.string.copy)
@@ -432,8 +443,66 @@ class FileListAdapter(
     override val isAnimationEnabled: Boolean
         get() = Settings.FILE_LIST_ANIMATION.valueCompat
 
+    private fun bindDescription(holder: ViewHolder, file: FileItem, isDirectory: Boolean) {
+        val descriptionText = holder.descriptionText ?: return
+        if (!isDirectory) {
+            val context = descriptionText.context
+            val lastModificationTime = file.attributes.lastModifiedTime().toInstant()
+                .formatShort(context)
+            val size = file.attributes.fileSize.formatHumanReadable(context)
+            val descriptionSeparator = context.getString(R.string.file_item_description_separator)
+            descriptionText.text =
+                listOf(lastModificationTime, size).joinToString(descriptionSeparator)
+            return
+        }
+        if (!Settings.FILE_LIST_SHOW_DIRECTORY_ITEM_COUNT.valueCompat) {
+            descriptionText.text = null
+            return
+        }
+        val count = directoryItemCounts[file.path]
+        descriptionText.text = if (count != null) {
+            descriptionText.resources.getQuantityString(
+                R.plurals.file_list_directory_item_count_format, count, count
+            )
+        } else {
+            null
+        }
+        if (count == null) {
+            requestDirectoryItemCount(file.path)
+        }
+    }
+
+    private fun requestDirectoryItemCount(path: Path) {
+        if (path in directoryItemCountJobs || path in directoryItemCounts ||
+            path in directoryItemCountFailures
+        ) {
+            return
+        }
+        directoryItemCountJobs.add(path)
+        val generation = directoryItemCountGeneration
+        val showHidden = Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat
+        AsyncTask.THREAD_POOL_EXECUTOR.execute {
+            val count = countDirectoryItems(path, showHidden)
+            mainHandler.post {
+                if (generation != directoryItemCountGeneration) {
+                    return@post
+                }
+                directoryItemCountJobs.remove(path)
+                if (count == null) {
+                    directoryItemCountFailures.add(path)
+                    return@post
+                }
+                directoryItemCounts[path] = count
+                filePositionMap[path]?.let {
+                    notifyItemChanged(it, PAYLOAD_DIRECTORY_ITEM_COUNT)
+                }
+            }
+        }
+    }
+
     companion object {
         private val PAYLOAD_STATE_CHANGED = Any()
+        private val PAYLOAD_DIRECTORY_ITEM_COUNT = Any()
 
         private val CALLBACK = object : DiffUtil.ItemCallback<FileItem>() {
             override fun areItemsTheSame(oldItem: FileItem, newItem: FileItem): Boolean =
@@ -527,5 +596,29 @@ class FileListAdapter(
         fun addBookmark(file: FileItem)
         fun createShortcut(file: FileItem)
         fun showPropertiesDialog(file: FileItem)
+    }
+}
+
+private fun countDirectoryItems(path: Path, showHidden: Boolean): Int? {
+    return try {
+        var count = 0
+        path.newDirectoryStream().use { stream ->
+            for (child in stream) {
+                if (!showHidden) {
+                    val hidden = try {
+                        child.isHidden
+                    } catch (e: IOException) {
+                        false
+                    }
+                    if (hidden) {
+                        continue
+                    }
+                }
+                count++
+            }
+        }
+        count
+    } catch (e: Exception) {
+        null
     }
 }

@@ -66,6 +66,8 @@
     <bool name="pref_default_value_file_list_animation">true</bool>
     <string name="pref_key_file_list_loading_indicator">key_file_list_loading_indicator</string>
     <bool name="pref_default_value_file_list_loading_indicator">true</bool>
+    <string name="pref_key_file_list_show_directory_item_count">key_file_list_show_directory_item_count</string>
+    <bool name="pref_default_value_file_list_show_directory_item_count">false</bool>
     <string name="pref_key_file_name_ellipsize">key_file_name_ellipsize</string>
     <string name="pref_default_value_file_name_ellipsize">1</string>
     <string-array name="pref_entry_values_file_name_ellipsize">

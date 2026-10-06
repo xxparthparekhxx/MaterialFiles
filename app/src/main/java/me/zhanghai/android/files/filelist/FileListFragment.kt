@@ -448,6 +448,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_SHOW_HIDDEN_FILES.observe(viewLifecycleOwner) {
             onShowHiddenFilesChanged(it)
         }
+        Settings.FILE_LIST_SHOW_DIRECTORY_ITEM_COUNT.observe(viewLifecycleOwner) {
+            adapter.invalidateDirectoryItemCounts()
+        }
         Settings.FILE_LIST_LOCK_HEADER.observe(viewLifecycleOwner) {
             updateToolbarScrollFlags()
         }
@@ -954,6 +957,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun refresh() {
+        adapter.invalidateDirectoryItemCounts()
         viewModel.reload()
     }
 
@@ -962,6 +966,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun onShowHiddenFilesChanged(showHiddenFiles: Boolean) {
+        adapter.invalidateDirectoryItemCounts()
         updateAdapterFileList()
         updateShowHiddenFilesMenuItem()
     }
