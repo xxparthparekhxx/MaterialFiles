@@ -271,6 +271,11 @@ object Settings {
             R.string.pref_key_highlight_delete, R.bool.pref_default_value_highlight_delete
         )
 
+    val BLOCK_SCREENSHOTS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_block_screenshots, R.bool.pref_default_value_block_screenshots
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

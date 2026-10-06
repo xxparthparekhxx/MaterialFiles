@@ -878,6 +878,8 @@
     <string name="settings_open_with_built_in_viewers_summary">Open images and text files with the built-in image viewer and text editor instead of asking which app to use. \"Open with\" still lets you choose another app</string>
     <string name="settings_highlight_delete_title">Highlight delete in red</string>
     <string name="settings_highlight_delete_summary">Show the Delete entry of the item menu in the error color so it is easier to find</string>
+    <string name="settings_block_screenshots_title">Block screenshots</string>
+    <string name="settings_block_screenshots_summary">Prevent screenshots and screen recording, and hide the app content in recent apps</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
