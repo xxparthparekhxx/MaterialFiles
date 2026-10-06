@@ -852,6 +852,8 @@
         <item>Marquee</item>
     </string-array>
     <string name="settings_behavior_title">Behavior</string>
+    <string name="settings_file_list_remember_last_directory_title">Open last folder on start</string>
+    <string name="settings_file_list_remember_last_directory_summary">Start in the folder you last viewed on this device instead of the default folder</string>
     <string name="settings_default_directory_title">Default folder</string>
     <string name="settings_storages_title" translatable="false">@string/storage_list_title</string>
     <string name="settings_storages_summary_empty" translatable="false">@string/storage_list_empty</string>

@@ -152,6 +152,7 @@ import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import me.zhanghai.android.files.util.withChooser
 import me.zhanghai.android.files.viewer.image.ImageViewerActivity
+import java.io.File
 
 class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.Listener,
     ConfirmReplaceFileDialogFragment.Listener, OpenApkDialogFragment.Listener,
@@ -477,7 +478,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     }
             }
             if (path == null) {
-                path = Settings.FILE_LIST_DEFAULT_DIRECTORY.valueCompat
+                path = getStartPath(pickOptions)
             }
             viewModel.resetTo(path)
             if (pickOptions != null) {
@@ -716,6 +717,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateSpanCount()
     }
 
+    private fun getStartPath(pickOptions: PickOptions?): Path {
+        if (pickOptions == null && Settings.FILE_LIST_REMEMBER_LAST_DIRECTORY.valueCompat) {
+            val lastPath = Settings.FILE_LIST_LAST_DIRECTORY.valueCompat
+            // Only restore local directories that still exist, so that we neither stall on a
+            // remote server nor open a folder that was deleted since.
+            if (lastPath.isLinuxPath && File(lastPath.toString()).isDirectory) {
+                return lastPath
+            }
+        }
+        return Settings.FILE_LIST_DEFAULT_DIRECTORY.valueCompat
+    }
+
     private fun onCurrentPathChanged(path: Path) {
         // When going up to an ancestor, remember the child we came from so it can be highlighted.
         val previousPath = lastPath
@@ -730,6 +743,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             child
         } else {
             null
+        }
+        if (viewModel.pickOptions == null && path.isLinuxPath &&
+            Settings.FILE_LIST_REMEMBER_LAST_DIRECTORY.valueCompat) {
+            Settings.FILE_LIST_LAST_DIRECTORY.putValue(path)
         }
         binding.speedDialView.isVisible = !path.fileSystem.isReadOnly
         updateOverlayToolbar()
