@@ -635,6 +635,7 @@
         <item>Truncar no medio</item>
         <item>Truncar no remate</item>
         <item>Desprazamento automático</item>
+        <item>Axuste</item>
     </string-array>
     <string name="settings_behavior_title">Comportamento</string>
     <string name="settings_default_directory_title">Cartafol predeterminado</string>

@@ -606,6 +606,7 @@
         <item>省略中間</item>
         <item>省略結尾</item>
         <item>滾動</item>
+        <item>換行</item>
     </string-array>
     <string name="settings_behavior_title">行為</string>
     <string name="settings_default_directory_title">預設資料夾</string>

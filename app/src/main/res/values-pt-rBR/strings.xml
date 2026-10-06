@@ -667,6 +667,7 @@
         <item>Eliminar o meio</item>
         <item>Eliminar o final</item>
         <item>Texto deslizante</item>
+        <item>Quebrar linha</item>
     </string-array>
     <string name="settings_behavior_title">Comportamento</string>
     <string name="settings_default_directory_title">Pasta padrão</string>

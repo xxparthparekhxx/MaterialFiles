@@ -10,7 +10,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/itemLayout"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/two_line_list_item_height"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/two_line_list_item_height"
     android:foreground="?selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal">
@@ -77,7 +78,7 @@
         <!-- Lint says android:ellipsize="middle" and android:maxLines="1" crashes. -->
         <TextView
             android:id="@+id/nameText"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:duplicateParentState="true"
             android:marqueeRepeatLimit="marquee_forever"

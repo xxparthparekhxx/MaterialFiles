@@ -695,6 +695,7 @@
         <item>Skrócona w środku</item>
         <item>Skrócona na końcu</item>
         <item>Przewijanie nazwy</item>
+        <item>Zawijanie</item>
     </string-array>
     <string name="settings_behavior_title">Zachowanie</string>
     <string name="settings_default_directory_title">Domyślny katalog</string>

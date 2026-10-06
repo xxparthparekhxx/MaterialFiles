@@ -635,6 +635,7 @@
         <item>Ellips toevoegen middenin de naam</item>
         <item>Ellips toevoegen aan einde van naam</item>
         <item>Marquee</item>
+        <item>Terugloop</item>
     </string-array>
     <string name="settings_behavior_title">Gedrag</string>
     <string name="settings_default_directory_title">Standaardmap</string>

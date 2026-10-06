@@ -665,6 +665,7 @@
         <item>Puntini in mezzo</item>
         <item>Puntini alla fine</item>
         <item>Scorrimento</item>
+        <item>A capo</item>
     </string-array>
     <string name="settings_behavior_title">Comportamento</string>
     <string name="settings_default_directory_title">Cartella predefinita</string>

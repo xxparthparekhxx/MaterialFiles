@@ -697,6 +697,7 @@
         <item>Многоточие в середине</item>
         <item>Многоточие в конце</item>
         <item>Бегущая строка</item>
+        <item>Перенос</item>
     </string-array>
     <string name="settings_behavior_title">Поведение</string>
     <string name="settings_default_directory_title">Папка по умолчанию</string>

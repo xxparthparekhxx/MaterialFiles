@@ -635,6 +635,7 @@
         <item>Ελλειψομετρία στη μέση</item>
         <item>Ελλειψομετρία στο τέλος</item>
         <item>Μαρκίζα</item>
+        <item>Αναδίπλωση</item>
     </string-array>
     <string name="settings_behavior_title">Συμπεριφορά</string>
     <string name="settings_default_directory_title">Προεπιλεγμένος φάκελος</string>

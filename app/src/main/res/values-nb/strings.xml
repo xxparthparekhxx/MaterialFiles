@@ -635,6 +635,7 @@
         <item>Ellipse i midten</item>
         <item>Ellipse på slutten</item>
         <item>Rulletekst</item>
+        <item>Bryt linje</item>
     </string-array>
     <string name="settings_behavior_title">Atferd</string>
     <string name="settings_default_directory_title">Startmappe</string>

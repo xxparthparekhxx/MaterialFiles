@@ -635,6 +635,7 @@
         <item>Многоточие в средата</item>
         <item>Многоточие в края</item>
         <item>Плъзгане</item>
+        <item>Пренасяне</item>
     </string-array>
     <string name="settings_behavior_title">Поведение</string>
     <string name="settings_default_directory_title">Папка по подразбиране</string>

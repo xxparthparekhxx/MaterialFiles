@@ -605,6 +605,7 @@
         <item>中央を省略</item>
         <item>末尾を省略</item>
         <item>スクロール</item>
+        <item>折り返し</item>
     </string-array>
     <string name="settings_behavior_title">動作</string>
     <string name="settings_default_directory_title">デフォルトのフォルダ</string>
