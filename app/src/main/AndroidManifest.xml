@@ -105,6 +105,10 @@
                 <data android:mimeType="application/x-tar" />
                 <data android:mimeType="application/x-xz" />
                 <data android:mimeType="application/x-7z-compressed" />
+                <data android:mimeType="application/x-gzip" />
+                <data android:mimeType="application/x-rar-compressed" />
+                <data android:mimeType="application/x-zip" />
+                <data android:mimeType="application/x-zip-compressed" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.GET_CONTENT" />
