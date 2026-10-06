@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
 import android.widget.RadioGroup
+import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.core.view.isGone
 import androidx.fragment.app.Fragment
@@ -114,18 +115,24 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
         root: View,
         nameLayout: TextInputLayout,
         nameEdit: EditText,
+        extensionDot: TextView,
+        extensionLayout: TextInputLayout,
+        extensionEdit: EditText,
         val typeGroup: RadioGroup,
         val passwordLayout: TextInputLayout,
         val passwordEdit: TextInputEditText
-    ) : NameDialogFragment.Binding(root, nameLayout, nameEdit) {
+    ) : NameDialogFragment.Binding(
+        root, nameLayout, nameEdit, extensionDot, extensionLayout, extensionEdit
+    ) {
         companion object {
             fun inflate(inflater: LayoutInflater): Binding {
                 val binding = CreateArchiveDialogBinding.inflate(inflater)
                 val bindingRoot = binding.root
                 val nameBinding = NameDialogNameIncludeBinding.bind(bindingRoot)
                 return Binding(
-                    bindingRoot, nameBinding.nameLayout, nameBinding.nameEdit, binding.typeGroup,
-                    binding.passwordLayout, binding.passwordEdit
+                    bindingRoot, nameBinding.nameLayout, nameBinding.nameEdit,
+                    nameBinding.extensionDot, nameBinding.extensionLayout, nameBinding.extensionEdit,
+                    binding.typeGroup, binding.passwordLayout, binding.passwordEdit
                 )
             }
         }

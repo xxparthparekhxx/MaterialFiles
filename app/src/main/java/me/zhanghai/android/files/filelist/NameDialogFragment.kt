@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
+import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDialogFragment
@@ -66,10 +67,13 @@ abstract class NameDialogFragment : AppCompatDialogFragment() {
 
     protected open val initialName: String? = null
 
+    protected open val originalName: String?
+        get() = initialName
+
     protected open fun onInflateBinding(inflater: LayoutInflater): Binding =
         Binding.inflate(inflater)
 
-    private fun onOk() {
+    protected fun onOk() {
         val name = name
         if (!isNameValid(name)) {
             return
@@ -82,7 +86,7 @@ abstract class NameDialogFragment : AppCompatDialogFragment() {
         get() = binding.nameEdit.text.toString().trim()
 
     protected open fun isNameValid(name: String): Boolean {
-        if (name == initialName) {
+        if (name == originalName) {
             dismiss()
             return false
         }
@@ -94,14 +98,20 @@ abstract class NameDialogFragment : AppCompatDialogFragment() {
     protected open class Binding protected constructor(
         val root: View,
         val nameLayout: TextInputLayout,
-        val nameEdit: EditText
+        val nameEdit: EditText,
+        val extensionDot: TextView,
+        val extensionLayout: TextInputLayout,
+        val extensionEdit: EditText
     ) {
         companion object {
             fun inflate(inflater: LayoutInflater): Binding {
                 val binding = NameDialogBinding.inflate(inflater)
                 val bindingRoot = binding.root
                 val nameBinding = NameDialogNameIncludeBinding.bind(bindingRoot)
-                return Binding(bindingRoot, nameBinding.nameLayout, nameBinding.nameEdit)
+                return Binding(
+                    bindingRoot, nameBinding.nameLayout, nameBinding.nameEdit,
+                    nameBinding.extensionDot, nameBinding.extensionLayout, nameBinding.extensionEdit
+                )
             }
         }
     }

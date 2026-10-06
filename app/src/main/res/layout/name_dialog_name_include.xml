@@ -7,21 +7,56 @@
 
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/nameLayout"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="?dialogPreferredPadding"
         android:layout_marginEnd="?dialogPreferredPadding"
-        android:layout_marginTop="4dp">
+        android:layout_marginTop="4dp"
+        android:baselineAligned="false"
+        android:gravity="bottom"
+        android:orientation="horizontal">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/nameEdit"
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/nameLayout"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:importantForAutofill="no"
-            android:inputType="text">
-            <requestFocus />
-        </com.google.android.material.textfield.TextInputEditText>
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_weight="1">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nameEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="text">
+                <requestFocus />
+            </com.google.android.material.textfield.TextInputEditText>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/extensionDot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:layout_marginStart="4dp"
+            android:text="."
+            android:textAppearance="?textAppearanceBodyLarge"
+            android:visibility="gone" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/extensionLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/extensionEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:minEms="3" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
 </merge>
