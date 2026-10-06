@@ -7,6 +7,7 @@ package me.zhanghai.android.files.filelist
 
 import android.app.Activity
 import android.content.ClipData
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -1951,36 +1952,101 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val mimeType = file.mimeType
         if (path.isArchivePath) {
             FileJobService.open(path, mimeType, withChooser, requireContext())
+        } else if (withChooser) {
+            showOpenWithDialog(file)
         } else {
+            val override = FileOpenDefaults.componentFor(mimeType)
             val intent = path.fileProviderUri.createViewIntent(mimeType)
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 .apply {
                     extraPath = path
-                    maybeAddImageViewerActivityExtras(this, path, mimeType)
+                    if (override == null || override.packageName == requireContext().packageName) {
+                        maybeAddImageViewerActivityExtras(this, path, mimeType)
+                    }
                     if (Settings.OPEN_FILES_IN_NEW_TASK.valueCompat) {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
-                    if (!withChooser && Settings.OPEN_WITH_BUILT_IN_VIEWERS.valueCompat &&
+                    if (override == null && Settings.OPEN_WITH_BUILT_IN_VIEWERS.valueCompat &&
                         (mimeType.isImage || mimeType.value.startsWith("text/"))
                     ) {
                         // Restrict resolution to our own image viewer and text editor.
                         setPackage(requireContext().packageName)
                     }
-                }
-                .let {
-                    if (withChooser) {
-                        it.withChooser(
-                            EditFileActivity::class.createIntent()
-                                .putArgs(EditFileActivity.Args(path, mimeType)),
-                            OpenFileAsDialogActivity::class.createIntent()
-                                .putArgs(OpenFileAsDialogFragment.Args(path))
-                        )
-                    } else {
-                        it
-                    }
+                    override?.let { component = it }
                 }
             startActivitySafe(intent)
         }
+    }
+
+    private fun showOpenWithDialog(file: FileItem) {
+        val path = file.path
+        val mimeType = file.mimeType
+        val viewIntent = path.fileProviderUri.createViewIntent(mimeType)
+            .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            .apply { extraPath = path }
+        val packageManager = requireContext().packageManager
+        val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.queryIntentActivities(
+                viewIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_ALL.toLong())
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.queryIntentActivities(viewIntent, PackageManager.MATCH_ALL)
+        }
+        data class Choice(
+            val label: String,
+            val component: ComponentName?,
+            val launch: () -> Unit
+        )
+        val choices = mutableListOf<Choice>()
+        choices.add(
+            Choice(getString(R.string.file_edit_title), null) {
+                startActivitySafe(
+                    EditFileActivity::class.createIntent()
+                        .putArgs(EditFileActivity.Args(path, mimeType))
+                )
+            }
+        )
+        choices.add(
+            Choice(getString(R.string.file_open_as_title), null) {
+                startActivitySafe(
+                    OpenFileAsDialogActivity::class.createIntent()
+                        .putArgs(OpenFileAsDialogFragment.Args(path))
+                )
+            }
+        )
+        for (info in activities) {
+            val activityInfo = info.activityInfo ?: continue
+            val component = ComponentName(activityInfo.packageName, activityInfo.name)
+            choices.add(
+                Choice(info.loadLabel(packageManager).toString(), component) {
+                    startActivitySafe(
+                        Intent(viewIntent).apply {
+                            this.component = component
+                            if (component.packageName == requireContext().packageName) {
+                                maybeAddImageViewerActivityExtras(this, path, mimeType)
+                            }
+                        }
+                    )
+                }
+            )
+        }
+        choices.sortBy { it.label }
+        var selected = 0
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.file_item_action_open_with)
+            .setSingleChoiceItems(choices.map { it.label }.toTypedArray(), 0) { _, which ->
+                selected = which
+            }
+            .setPositiveButton(R.string.file_open_with_once) { _, _ ->
+                choices[selected].launch()
+            }
+            .setNeutralButton(R.string.file_open_with_always) { _, _ ->
+                val choice = choices[selected]
+                choice.component?.let { FileOpenDefaults.remember(mimeType, it) }
+                choice.launch()
+            }
+            .show()
     }
 
     private fun maybeAddImageViewerActivityExtras(intent: Intent, path: Path, mimeType: MimeType) {

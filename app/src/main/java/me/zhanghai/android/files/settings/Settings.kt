@@ -388,6 +388,11 @@ object Settings {
     val SHOW_THUMBNAILS: SettingLiveData<Boolean> = BooleanSettingLiveData(
         R.string.pref_key_show_thumbnails, R.bool.pref_default_value_show_thumbnails
     )
+    val FILE_OPEN_DEFAULTS: SettingLiveData<Set<String>> =
+        StringSetSettingLiveData(
+            R.string.pref_key_file_open_defaults,
+            R.array.pref_default_value_file_open_defaults
+        )
 
     val SHOW_PDF_THUMBNAIL: SettingLiveData<Boolean> = BooleanSettingLiveData(
         R.string.pref_key_show_pdf_thumbnail,

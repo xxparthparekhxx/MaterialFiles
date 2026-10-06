@@ -965,6 +965,12 @@
         <item>Root access only</item>
     </string-array>
     <string name="settings_archive_file_name_encoding_title">Archive file name encoding</string>
+    <string name="settings_file_open_defaults_title">File type defaults</string>
+    <string name="settings_file_open_defaults_summary">Apps remembered for one file type</string>
+    <string name="file_open_with_once">Just once</string>
+    <string name="file_open_with_always">Always</string>
+    <string name="file_open_defaults_empty">Nothing is remembered yet. Use Open with and Always to set one file type.</string>
+    <string name="file_open_defaults_clear">Clear all</string>
     <string name="settings_open_apk_default_action_title">Open Android package</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>Install</item>
