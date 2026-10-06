@@ -64,7 +64,11 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
         future?.cancel(false)
         val task = LoadTask()
         currentTask = task
-        value = Loading(value?.value)
+        // Keep the files on screen while refreshing. Replacing them with a loading state restarts
+        // thumbnail reads, and those reads make some providers report another change.
+        if (value?.value == null) {
+            value = Loading(null)
+        }
         future = (AsyncTask.THREAD_POOL_EXECUTOR as ExecutorService).submit<Unit> {
             if (task.isCancelled) {
                 return@submit
@@ -109,6 +113,12 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
                 Failure(valueCompat.value, e)
             }
             if (!task.isCancelled) {
+                val current = valueCompat
+                if (value is Success && current is Success &&
+                    sameListing(current.value, value.value)
+                ) {
+                    return@submit
+                }
                 postValue(value)
             }
         }
@@ -135,6 +145,19 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
         return fileList.map {
             if (!it.isHidden && it.name in hiddenNames) it.copy(isHidden = true) else it
         }
+    }
+
+    private fun sameListing(current: List<FileItem>, loaded: List<FileItem>): Boolean {
+        if (current.size != loaded.size) {
+            return false
+        }
+        val loadedKeys = loaded.mapTo(HashSet()) { it.listingKey() }
+        return current.all { it.listingKey() in loadedKeys }
+    }
+
+    private fun FileItem.listingKey(): String {
+        val attributes = attributesNoFollowLinks
+        return "$path\u0000${attributes.size()}\u0000${attributes.lastModifiedTime()}\u0000${attributes.isDirectory}"
     }
 
     fun reobserve() {

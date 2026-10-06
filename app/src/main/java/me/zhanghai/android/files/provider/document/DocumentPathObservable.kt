@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Build
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.provider.common.AbstractPathObservable
+import me.zhanghai.android.files.provider.content.resolver.ContentChangeSuppressor
 import me.zhanghai.android.files.provider.content.resolver.ResolverException
 import me.zhanghai.android.files.provider.document.resolver.DocumentResolver
 
@@ -24,6 +25,11 @@ internal class DocumentPathObservable(
         override fun deliverSelfNotifications(): Boolean = true
 
         override fun onChange(selfChange: Boolean) {
+            // Reading a file for its thumbnail notifies some providers, which would reload the
+            // directory and start the thumbnails over again.
+            if (ContentChangeSuppressor.isSuppressed()) {
+                return
+            }
             notifyObservers()
         }
     }

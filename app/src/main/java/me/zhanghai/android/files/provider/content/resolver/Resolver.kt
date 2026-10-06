@@ -33,7 +33,7 @@ object Resolver {
     @Throws(ResolverException::class)
     fun delete(uri: Uri) {
         val deletedRowCount = try {
-            contentResolver.delete(uri, null, null)
+            ContentChangeSuppressor.suppressing { contentResolver.delete(uri, null, null) }
         } catch (e: Exception) {
             throw ResolverException(e)
         }
@@ -69,7 +69,7 @@ object Resolver {
     @Throws(ResolverException::class)
     fun getMimeType(uri: Uri): String? =
         try {
-            contentResolver.getType(uri)
+            ContentChangeSuppressor.suppressing { contentResolver.getType(uri) }
         } catch (e: Exception) {
             throw ResolverException(e)
         }?.takeIf { it.isNotEmpty() && it != MimeType.GENERIC.value }
@@ -77,7 +77,9 @@ object Resolver {
     @Throws(ResolverException::class)
     fun openAssetFileDescriptor(uri: Uri, mode: String): AssetFileDescriptor =
         try {
-            contentResolver.openAssetFileDescriptor(uri, mode)
+            ContentChangeSuppressor.suppressing {
+                contentResolver.openAssetFileDescriptor(uri, mode)
+            }
         } catch (e: Exception) {
             throw ResolverException(e)
         } ?: throw ResolverException(
@@ -115,9 +117,9 @@ object Resolver {
     @Throws(ResolverException::class)
     fun openParcelFileDescriptor(uri: Uri, mode: String): ParcelFileDescriptor =
         try {
-            contentResolver.openFileDescriptor(
-                uri, mode
-            )
+            ContentChangeSuppressor.suppressing {
+                contentResolver.openFileDescriptor(uri, mode)
+            }
         } catch (e: Exception) {
             throw ResolverException(e)
         } ?: throw ResolverException("ContentResolver.openFileDescriptor() with $uri returned null")
@@ -131,7 +133,9 @@ object Resolver {
         sortOrder: String?
     ): Cursor =
         try {
-            contentResolver.query(uri, projection, selection, selectionArgs, sortOrder)
+            ContentChangeSuppressor.suppressing {
+                contentResolver.query(uri, projection, selection, selectionArgs, sortOrder)
+            }
         } catch (e: Exception) {
             throw ResolverException(e)
         } ?: throw ResolverException("ContentResolver.query() with $uri returned null")
