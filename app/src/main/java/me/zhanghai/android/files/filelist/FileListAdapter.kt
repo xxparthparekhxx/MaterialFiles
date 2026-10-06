@@ -155,6 +155,15 @@ class FileListAdapter(
             notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
         }
 
+    var hasPaste: Boolean = false
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = value
+            notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
+        }
+
     private val selectedFiles = fileItemSetOf()
 
     private val filePositionMap = mutableMapOf<Path, Int>()
@@ -367,6 +376,8 @@ class FileListAdapter(
         val isReadOnly = path.fileSystem.isReadOnly
         menu.findItem(R.id.action_cut).isVisible = !hasPickOptions && !isReadOnly
         menu.findItem(R.id.action_copy).isVisible = !hasPickOptions
+        menu.findItem(R.id.action_paste_into).isVisible =
+            isDirectory && !hasPickOptions && !isReadOnly && hasPaste
         val checked = file in selectedFiles
         holder.itemLayout.isChecked = checked
         holder.nameText.setTextSize(
@@ -546,6 +557,10 @@ class FileListAdapter(
                     listener.copyFile(file)
                     true
                 }
+                R.id.action_paste_into -> {
+                    listener.pasteInto(file.path)
+                    true
+                }
                 R.id.action_delete -> {
                     listener.confirmDeleteFile(file)
                     true
@@ -707,6 +722,7 @@ class FileListAdapter(
         fun openFileWith(file: FileItem)
         fun cutFile(file: FileItem)
         fun copyFile(file: FileItem)
+        fun pasteInto(directory: Path)
         fun confirmDeleteFile(file: FileItem)
         fun showRenameFileDialog(file: FileItem)
         fun extractFile(file: FileItem)
