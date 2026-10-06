@@ -71,6 +71,9 @@ object Client {
                 val authenticatorInterceptor =
                     OkHttpAuthenticatorInterceptor(authenticator, authority)
                 client = okHttpClient.newBuilder()
+                    // HTTP/2 makes some WebDAV servers, including ones that only fail over HTTPS,
+                    // answer PROPFIND with 405. Stay on HTTP/1.1.
+                    .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
                     // Turn off follow redirects for PROPFIND.
                     .followRedirects(false)
                     .cookieJar(MemoryCookieJar())
@@ -165,12 +168,28 @@ object Client {
     @Throws(DavException::class)
     fun findCollectionMembers(path: Path): List<Path> =
         buildList {
+            var url = path.url
             try {
-                var url = path.url
                 if (!url.encodedPath.endsWith("/")) {
                     url = url.newBuilder().addPathSegment("").build()
                 }
                 DavCollection(getClient(path.authority), url)
+                    .propfind(1, *FILE_PROPERTIES) { response, relation ->
+                        if (relation != Response.HrefRelation.MEMBER) {
+                            return@propfind
+                        }
+                        val memberPath = path.resolve(response.hrefName())
+                        this += memberPath
+                        if (response.isSuccess()) {
+                            collectionMemberCache[memberPath] = response
+                        }
+                    }
+            } catch (e: HttpException) {
+                if (e.code != HttpURLConnection.HTTP_BAD_METHOD || url.encodedPath.endsWith("/")) {
+                    throw e
+                }
+                val retryUrl = url.newBuilder().addPathSegment("").build()
+                DavCollection(getClient(path.authority), retryUrl)
                     .propfind(1, *FILE_PROPERTIES) { response, relation ->
                         if (relation != Response.HrefRelation.MEMBER) {
                             return@propfind
@@ -210,6 +229,20 @@ object Client {
                     collectionMemberCache[path] = response
                 }
             }
+        } catch (e: HttpException) {
+            if (e.code == HttpURLConnection.HTTP_BAD_METHOD &&
+                !path.url.encodedPath.endsWith("/")
+            ) {
+                val url = path.url.newBuilder().addPathSegment("").build()
+                return findProperties(
+                    DavResource(getClient(path.authority), url), *FILE_PROPERTIES
+                ).also { response ->
+                    if (response.isSuccess()) {
+                        collectionMemberCache[path] = response
+                    }
+                }
+            }
+            throw e
         } catch (e: IOException) {
             throw e.toDavException()
         }
@@ -264,7 +297,11 @@ object Client {
     }
 
     @Throws(DavException::class)
-    fun put(path: Path, mtimeEpochSeconds: Long? = null): OutputStream =
+    fun put(
+        path: Path,
+        mtimeEpochSeconds: Long? = null,
+        contentLength: Long? = null
+    ): OutputStream =
         try {
             collectionMemberCache -= path
             val headers = if (mtimeEpochSeconds != null) {
@@ -273,7 +310,9 @@ object Client {
                 emptyMap()
             }
             NotifyEntryModifiedOutputStream(
-                DavResource(getClient(path.authority), path.url).putCompat(headers = headers),
+                DavResource(getClient(path.authority), path.url).putCompat(
+                    headers = headers, contentLength = contentLength
+                ),
                 path as Java8Path
             )
         } catch (e: IOException) {

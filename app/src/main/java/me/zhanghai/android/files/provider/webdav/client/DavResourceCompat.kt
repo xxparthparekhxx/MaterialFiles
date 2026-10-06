@@ -66,11 +66,13 @@ fun DavResource.putCompat(
     ifScheduleTag: String? = null,
     ifNoneMatch: Boolean = false,
     headers: Map<String, String> = emptyMap(),
+    contentLength: Long? = null,
 ): OutputStream {
     val pipe = Pipe(DEFAULT_BUFFER_SIZE.toLong())
     val body = object : RequestBody() {
         override fun contentType(): MediaType? = null
         override fun isOneShot() = true
+        override fun contentLength(): Long = contentLength ?: -1
         override fun writeTo(sink: BufferedSink) {
             sink.writeAll(pipe.source)
         }
