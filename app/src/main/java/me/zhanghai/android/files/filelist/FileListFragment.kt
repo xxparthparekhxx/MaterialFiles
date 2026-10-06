@@ -34,6 +34,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.progressindicator.BaseProgressIndicator
+import com.google.android.material.snackbar.Snackbar
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -1600,6 +1601,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun pasteFiles(targetDirectory: Path) {
         val pasteState = viewModel.pasteState
+        val sourceDirectory = pasteState.files.firstOrNull()?.path?.parent
         if (viewModel.pasteState.copy) {
             FileJobService.copy(
                 makePathListForJob(pasteState.files), targetDirectory, requireContext()
@@ -1610,6 +1612,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             )
         }
         viewModel.clearPasteState()
+        offerGoBackToSource(sourceDirectory, targetDirectory)
+    }
+
+    private fun offerGoBackToSource(sourceDirectory: Path?, targetDirectory: Path) {
+        if (sourceDirectory == null || sourceDirectory == targetDirectory) {
+            return
+        }
+        Snackbar.make(binding.root, R.string.file_list_paste_started, Snackbar.LENGTH_LONG)
+            .setAction(
+                getString(R.string.file_list_paste_go_back_format, sourceDirectory.toUserFriendlyString())
+            ) { navigateTo(sourceDirectory) }
+            .show()
     }
 
     private fun makePathListForJob(files: FileItemSet): List<Path> =
