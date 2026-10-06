@@ -40,11 +40,14 @@ internal class SmbFileAttributes(
             val creationTime =
                 FileTime.from(Instant.ofEpochMilli(fileInformation.creationTime.toEpochMillis()))
             val attributes = fileInformation.fileAttributes
+            // A junction is a directory that also has the reparse attribute. Treating every
+            // reparse point as a symbolic link drops it from the listing when the link target
+            // cannot be read.
             val type = when {
-                attributes.hasBits(FileAttributes.FILE_ATTRIBUTE_REPARSE_POINT.value) ->
-                    BasicFileType.SYMBOLIC_LINK
                 attributes.hasBits(FileAttributes.FILE_ATTRIBUTE_DIRECTORY.value) ->
                     BasicFileType.DIRECTORY
+                attributes.hasBits(FileAttributes.FILE_ATTRIBUTE_REPARSE_POINT.value) ->
+                    BasicFileType.SYMBOLIC_LINK
                 else -> BasicFileType.REGULAR_FILE
             }
             val size = fileInformation.endOfFile
