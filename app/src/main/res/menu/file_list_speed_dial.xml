@@ -13,6 +13,11 @@
         android:title="@string/file_list_action_create_directory" />
 
     <item
+        android:id="@+id/action_toggle_ftp_server"
+        android:icon="@drawable/shared_directory_icon_white_24dp"
+        android:title="@string/file_list_action_toggle_ftp_server" />
+
+    <item
         android:id="@+id/action_create_file"
         android:icon="@drawable/file_icon_white_24dp"
         android:title="@string/file_list_action_create_file" />
