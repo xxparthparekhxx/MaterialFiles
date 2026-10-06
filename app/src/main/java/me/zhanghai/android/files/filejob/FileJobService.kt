@@ -131,6 +131,10 @@ class FileJobService : Service() {
             startJob(TestArchiveFileJob(archiveRoot), context)
         }
 
+        fun createSymbolicLink(link: Path, target: Path, context: Context) {
+            startJob(CreateSymbolicLinkJob(link, target), context)
+        }
+
         fun create(path: Path, createDirectory: Boolean, context: Context) {
             startJob(CreateFileJob(path, createDirectory), context)
         }
