@@ -46,6 +46,8 @@ import me.zhanghai.android.files.util.hasBits
 import java.io.Closeable
 import java.io.IOException
 import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.UnknownHostException
 import java.util.Collections
 import java.util.WeakHashMap
@@ -668,8 +670,47 @@ object Client {
         } catch (e: UnknownHostException) {
             throw ClientException(e)
         }
-        val address = addresses.firstOrNull { it is Inet4Address } ?: addresses.first()
+        val ipv4 = addresses.filterIsInstance<Inet4Address>()
+        val candidates = if (ipv4.isNotEmpty()) ipv4 else addresses
+        // Name lookup can return a virtual-adapter address before the LAN address.
+        // Prefer one that sits on a network this device is actually connected to.
+        val address = candidates.firstOrNull { it.sharesNetworkWithDevice() } ?: candidates.first()
         return address.hostAddress!!
+    }
+
+    private fun InetAddress.sharesNetworkWithDevice(): Boolean {
+        val candidate = this as? Inet4Address ?: return false
+        val candidateBits = candidate.toIpv4Bits()
+        val interfaces = try {
+            NetworkInterface.getNetworkInterfaces() ?: return false
+        } catch (e: IOException) {
+            return false
+        }
+        for (networkInterface in interfaces) {
+            if (!networkInterface.isUp || networkInterface.isLoopback) {
+                continue
+            }
+            for (interfaceAddress in networkInterface.interfaceAddresses) {
+                val local = interfaceAddress.address as? Inet4Address ?: continue
+                val prefix = interfaceAddress.networkPrefixLength.toInt()
+                if (prefix !in 1..32) {
+                    continue
+                }
+                val mask = -1 shl (32 - prefix)
+                if ((candidateBits and mask) == (local.toIpv4Bits() and mask)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private fun Inet4Address.toIpv4Bits(): Int {
+        val bytes = address
+        return (bytes[0].toInt() and 0xFF shl 24) or
+            (bytes[1].toInt() and 0xFF shl 16) or
+            (bytes[2].toInt() and 0xFF shl 8) or
+            (bytes[3].toInt() and 0xFF)
     }
 
     @Throws(ClientException::class)
