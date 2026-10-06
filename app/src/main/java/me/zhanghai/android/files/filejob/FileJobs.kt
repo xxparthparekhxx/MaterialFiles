@@ -76,6 +76,7 @@ import me.zhanghai.android.files.provider.common.isDirectory
 import me.zhanghai.android.files.provider.common.moveTo
 import me.zhanghai.android.files.provider.common.newByteChannel
 import me.zhanghai.android.files.provider.common.newDirectoryStream
+import me.zhanghai.android.files.provider.common.newInputStream
 import me.zhanghai.android.files.provider.common.newOutputStream
 import me.zhanghai.android.files.provider.common.readAttributes
 import me.zhanghai.android.files.provider.common.resolveForeign
@@ -2475,6 +2476,45 @@ private fun FileJob.postSetSeLinuxContextNotification(
         R.string.file_job_set_selinux_context_notification_title_one_format,
         R.plurals.file_job_set_selinux_context_notification_title_multiple_format
     )
+}
+
+class TestArchiveFileJob(private val archiveRoot: Path) : FileJob() {
+    @Throws(IOException::class)
+    override fun run() {
+        var fileCount = 0
+        try {
+            val buffer = ByteArray(8192)
+            Files.walkFileTree(archiveRoot, object : SimpleFileVisitor<Path>() {
+                @Throws(IOException::class)
+                override fun visitFile(
+                    file: Path,
+                    attributes: BasicFileAttributes
+                ): FileVisitResult {
+                    if (attributes.isRegularFile) {
+                        file.newInputStream().use { inputStream ->
+                            while (inputStream.read(buffer) != -1) {
+                                throwIfInterrupted()
+                            }
+                        }
+                        ++fileCount
+                    }
+                    throwIfInterrupted()
+                    return FileVisitResult.CONTINUE
+                }
+            })
+        } catch (e: InterruptedIOException) {
+            throw e
+        } catch (e: IOException) {
+            e.printStackTrace()
+            service.showToast(service.getString(R.string.file_job_test_archive_failed_format, e))
+            return
+        }
+        service.showToast(
+            service.resources.getQuantityString(
+                R.plurals.file_job_test_archive_succeeded_format, fileCount, fileCount
+            )
+        )
+    }
 }
 
 class WriteFileJob(
