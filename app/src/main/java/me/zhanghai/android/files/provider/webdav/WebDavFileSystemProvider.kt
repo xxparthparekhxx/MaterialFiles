@@ -185,7 +185,7 @@ object WebDavFileSystemProvider : FileSystemProvider(), PathObservableProvider, 
             throw NoSuchFileException(file.toString())
         }
         try {
-            return Client.put(file)
+            return Client.put(file, openOptions.mtimeEpochSecond)
         } catch (e: DavException) {
             throw e.toFileSystemException(file.toString())
         }
