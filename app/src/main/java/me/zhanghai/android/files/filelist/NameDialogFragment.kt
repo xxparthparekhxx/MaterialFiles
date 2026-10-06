@@ -50,7 +50,11 @@ abstract class NameDialogFragment : AppCompatDialogFragment() {
             .setNegativeButton(android.R.string.cancel, null)
             .create()
             .apply {
-                window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                // Resize the dialog so that it stays above the keyboard and its content scrolls.
+                window!!.setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE or
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                )
                 // Override the listener here so that we have control over when to close the dialog.
                 setOnShowListener {
                     getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { onOk() }
