@@ -356,6 +356,9 @@
     <string name="file_list_paste_copy_title_format">Copying %1$,d</string>
     <string name="file_list_paste_extract_title_format">Extracting %1$,d</string>
     <string name="file_list_paste_action_extract_here">Extract here</string>
+    <string name="file_list_paste_action_delete_archive">Delete archive</string>
+    <string name="settings_delete_archive_after_extract_title">Delete archive after extracting</string>
+    <string name="settings_delete_archive_after_extract_summary">Remove the archive once every file in it has been extracted</string>
     <string name="file_list_empty">No files</string>
     <string name="file_list_action_create_file">File</string>
     <string name="file_list_action_create_directory">Folder</string>

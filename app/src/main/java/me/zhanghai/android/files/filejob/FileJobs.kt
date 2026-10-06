@@ -102,6 +102,7 @@ import me.zhanghai.android.files.util.getQuantityString
 import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.toEnumSet
+import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.withChooser
 
 fun FileJob.getString(@StringRes stringRes: Int): String {
@@ -963,8 +964,18 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
             } else {
                 rawTarget
             }
-            copyRecursively(source, target, isExtract, transferInfo, actionAllInfo)
+            val fullyExtracted = copyRecursively(
+                source, target, isExtract, transferInfo, actionAllInfo
+            )
             throwIfInterrupted()
+            if (isExtract && fullyExtracted &&
+                Settings.DELETE_ARCHIVE_AFTER_EXTRACT.valueCompat
+            ) {
+                val archive = source.archiveFile
+                if (!target.startsWith(archive) && !archive.startsWith(target)) {
+                    delete(archive, null, actionAllInfo)
+                }
+            }
         }
     }
 
@@ -975,7 +986,8 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
         isExtract: Boolean,
         transferInfo: TransferInfo,
         actionAllInfo: ActionAllInfo
-    ) {
+    ): Boolean {
+        var fullyCopied = true
         Files.walkFileTree(source, object : SimpleFileVisitor<Path>() {
             @Throws(IOException::class)
             override fun preVisitDirectory(
@@ -992,6 +1004,9 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
                     directory, directoryInTarget, isExtract, transferInfo, actionAllInfo
                 )
                 throwIfInterrupted()
+                if (!copied) {
+                    fullyCopied = false
+                }
                 return if (copied) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
             }
 
@@ -1003,13 +1018,17 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
                 } else {
                     target.resolveForeign(relative)
                 }
-                copy(file, fileInTarget, isExtract, transferInfo, actionAllInfo)
+                val copied = copy(file, fileInTarget, isExtract, transferInfo, actionAllInfo)
+                if (!copied) {
+                    fullyCopied = false
+                }
                 throwIfInterrupted()
                 return FileVisitResult.CONTINUE
             }
 
             @Throws(IOException::class)
             override fun visitFileFailed(file: Path, exception: IOException): FileVisitResult {
+                fullyCopied = false
                 // TODO: Prompt retry, skip, skip-all or abort.
                 return super.visitFileFailed(file, exception)
             }
@@ -1032,6 +1051,7 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
                 return super.postVisitDirectory(directory, exception)
             }
         })
+        return fullyCopied
     }
 
     private fun getTargetPathForDuplicate(source: Path): Path {

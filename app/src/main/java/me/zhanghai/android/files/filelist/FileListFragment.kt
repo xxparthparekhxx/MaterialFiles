@@ -1705,11 +1705,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             binding.bottomCreateFileNameEdit.isVisible = false
             bottomActionMode.setMenuResource(R.menu.file_list_paste)
             val isCurrentPathReadOnly = viewModel.currentPath.fileSystem.isReadOnly
-            bottomActionMode.menu.findItem(R.id.action_paste)
-                .setTitle(
-                    if (areAllFilesArchivePaths) R.string.file_list_paste_action_extract_here else R.string.paste
-                )
-                .isEnabled = !isCurrentPathReadOnly
+            val pasteItem = bottomActionMode.menu.findItem(R.id.action_paste)
+            pasteItem.setTitle(
+                if (areAllFilesArchivePaths) {
+                    R.string.file_list_paste_action_extract_here
+                } else {
+                    R.string.paste
+                }
+            )
+            pasteItem.isEnabled = !isCurrentPathReadOnly
+            val deleteArchiveItem =
+                bottomActionMode.menu.findItem(R.id.action_delete_archive_after_extract)
+            deleteArchiveItem.isVisible = areAllFilesArchivePaths
+            deleteArchiveItem.isChecked = Settings.DELETE_ARCHIVE_AFTER_EXTRACT.valueCompat
         }
         if (!bottomActionMode.isActive) {
             bottomActionMode.start(object : ToolbarActionMode.Callback {
@@ -1759,6 +1767,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                         pickPaths(linkedSetOf(path))
                     }
                 }
+                true
+            }
+            R.id.action_delete_archive_after_extract -> {
+                val deleteArchive = !item.isChecked
+                item.isChecked = deleteArchive
+                Settings.DELETE_ARCHIVE_AFTER_EXTRACT.putValue(deleteArchive)
                 true
             }
             R.id.action_paste -> {
