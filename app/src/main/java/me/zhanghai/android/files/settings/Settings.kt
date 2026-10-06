@@ -221,6 +221,11 @@ object Settings {
             R.string.pref_key_iso_date_format, R.bool.pref_default_value_iso_date_format
         )
 
+    val FILE_LIST_HIDDEN_FIRST: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_hidden_first, R.bool.pref_default_value_file_list_hidden_first
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

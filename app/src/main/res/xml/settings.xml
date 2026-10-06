@@ -74,6 +74,10 @@
             android:title="@string/settings_iso_date_format_title"
             android:summary="@string/settings_iso_date_format_summary"
             android:defaultValue="@bool/pref_default_value_iso_date_format" />
+            android:key="@string/pref_key_file_list_hidden_first"
+            android:title="@string/settings_file_list_hidden_first_title"
+            android:summary="@string/settings_file_list_hidden_first_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_hidden_first" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"

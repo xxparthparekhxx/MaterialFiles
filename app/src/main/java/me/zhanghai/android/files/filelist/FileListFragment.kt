@@ -510,6 +510,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 onPersistentDrawerOpenChanged(it)
             }
         }
+        Settings.FILE_LIST_HIDDEN_FIRST.observe(viewLifecycleOwner) { adapter.isHiddenFirst = it }
         viewModel.sortOptionsLiveData.observe(viewLifecycleOwner) { onSortOptionsChanged(it) }
         viewModel.viewSortPathSpecificLiveData.observe(viewLifecycleOwner) {
             onViewSortPathSpecificChanged(it)
