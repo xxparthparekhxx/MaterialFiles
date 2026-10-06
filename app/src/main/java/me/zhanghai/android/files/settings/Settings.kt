@@ -235,6 +235,10 @@ object Settings {
             OpenApkDefaultAction::class.java
         )
 
+    val SHOW_THUMBNAILS: SettingLiveData<Boolean> = BooleanSettingLiveData(
+        R.string.pref_key_show_thumbnails, R.bool.pref_default_value_show_thumbnails
+    )
+
     val SHOW_PDF_THUMBNAIL: SettingLiveData<Boolean> = BooleanSettingLiveData(
         R.string.pref_key_show_pdf_thumbnail,
         R.bool.pref_default_value_show_pdf_thumbnail

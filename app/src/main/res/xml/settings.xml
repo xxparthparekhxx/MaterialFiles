@@ -169,6 +169,12 @@
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_show_thumbnails"
+            android:title="@string/settings_show_thumbnails_title"
+            android:summary="@string/settings_show_thumbnails_summary"
+            android:defaultValue="@bool/pref_default_value_show_thumbnails" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_show_pdf_thumbnail"
             android:title="@string/settings_show_pdf_thumbnail_title"
             android:defaultValue="@bool/pref_default_value_show_pdf_thumbnail" />
