@@ -381,6 +381,11 @@
     <string name="file_item_action_copy_path" translatable="false">@string/file_list_action_copy_path</string>
     <string name="file_item_action_add_bookmark" translatable="false">@string/file_list_action_add_bookmark</string>
     <string name="file_item_action_create_shortcut" translatable="false">@string/file_list_action_create_shortcut</string>
+    <string name="file_item_action_hide">Hide</string>
+    <string name="file_hide_success">Hidden</string>
+    <string name="settings_file_list_hidden_paths_title">Hidden files</string>
+    <string name="settings_file_list_hidden_paths_summary">Files and folders hidden from the list</string>
+    <string name="file_list_hidden_paths_empty">Nothing is hidden</string>
     <string name="file_item_action_properties">Properties</string>
     <string name="file_properties_apk_error_unreadable">Couldn’t read this APK. It may be damaged, or Android may not allow reading it from this location.</string>
     <string name="image_viewer_properties_error">Couldn’t load file properties</string>
