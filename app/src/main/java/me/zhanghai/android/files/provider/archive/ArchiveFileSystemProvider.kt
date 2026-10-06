@@ -96,7 +96,7 @@ object ArchiveFileSystemProvider : FileSystemProvider(), PathObservableProvider,
     @Throws(IOException::class)
     override fun newInputStream(file: Path, vararg options: OpenOption): InputStream {
         file as? ArchivePath ?: throw ProviderMismatchException(file.toString())
-        options.toOpenOptions().checkForArchive()
+        options.toOpenOptions().checkForArchive(file.toString())
         return file.fileSystem.newInputStream(file)
     }
 
@@ -106,7 +106,7 @@ object ArchiveFileSystemProvider : FileSystemProvider(), PathObservableProvider,
         vararg attributes: FileAttribute<*>
     ): FileChannel {
         file as? ArchivePath ?: throw ProviderMismatchException(file.toString())
-        options.toOpenOptions().checkForArchive()
+        options.toOpenOptions().checkForArchive(file.toString())
         if (attributes.isNotEmpty()) {
             throw UnsupportedOperationException(attributes.contentToString())
         }
@@ -119,7 +119,7 @@ object ArchiveFileSystemProvider : FileSystemProvider(), PathObservableProvider,
         vararg attributes: FileAttribute<*>
     ): SeekableByteChannel {
         file as? ArchivePath ?: throw ProviderMismatchException(file.toString())
-        options.toOpenOptions().checkForArchive()
+        options.toOpenOptions().checkForArchive(file.toString())
         if (attributes.isNotEmpty()) {
             throw UnsupportedOperationException(attributes.contentToString())
         }

@@ -6,8 +6,11 @@
 package me.zhanghai.android.files.file
 
 import android.net.Uri
+import android.os.Looper
 import android.os.Parcelable
 import android.provider.DocumentsContract
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.app.contentResolver
@@ -37,24 +40,42 @@ private val Uri.isDocumentUri: Boolean
 
 val DocumentUri.displayName: String?
     get() {
-        try {
-            contentResolver.query(
-                value, arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null
-            ).use { cursor ->
-                if (cursor != null && cursor.moveToFirst()) {
-                    val displayNameIndex = cursor.getColumnIndex(
-                        DocumentsContract.Document.COLUMN_DISPLAY_NAME
-                    )
-                    if (displayNameIndex != -1) {
-                        val displayName = cursor.getString(displayNameIndex)
-                        if (!displayName.isNullOrEmpty()) {
-                            return displayName
-                        }
+        // ContentResolver.query() performs binder IPC and disk I/O and must not run on the
+        // main thread. Callers already fall back to lastPathSegment/toString when this returns
+        // null, so skip the query instead of risking an ANR. Use loadDisplayName() from a
+        // coroutine when the accurate name is needed.
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return null
+        }
+        return queryDisplayNameBlocking()
+    }
+
+/**
+ * Suspending alternative to [displayName] that performs the ContentResolver query on
+ * Dispatchers.IO. Prefer this from UI code that needs the accurate document name.
+ */
+suspend fun DocumentUri.loadDisplayName(): String? =
+    withContext(Dispatchers.IO) { queryDisplayNameBlocking() }
+
+private fun DocumentUri.queryDisplayNameBlocking(): String? {
+    try {
+        contentResolver.query(
+            value, arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null
+        ).use { cursor ->
+            if (cursor != null && cursor.moveToFirst()) {
+                val displayNameIndex = cursor.getColumnIndex(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                )
+                if (displayNameIndex != -1) {
+                    val displayName = cursor.getString(displayNameIndex)
+                    if (!displayName.isNullOrEmpty()) {
+                        return displayName
                     }
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
-        return null
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
+    return null
+}
