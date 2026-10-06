@@ -18,6 +18,7 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.about.AboutActivity
 import me.zhanghai.android.files.file.JavaFile
 import me.zhanghai.android.files.file.asFileSize
+import me.zhanghai.android.files.filelist.RecentFilesActivity
 import me.zhanghai.android.files.ftpserver.FtpServerActivity
 import me.zhanghai.android.files.provider.root.RootAvailability
 import me.zhanghai.android.files.settings.Settings
@@ -326,8 +327,12 @@ private class BookmarkDirectoryItem(
 }
 
 private val menuItems: List<NavigationItem>
-    @Size(min = 2)
+    @Size(min = 3)
     get() = listOfNotNull(
+        IntentMenuItem(
+            R.drawable.history_icon_white_24dp, R.string.navigation_recent_files,
+            RecentFilesActivity::class.createIntent()
+        ),
         if (Settings.NAVIGATION_SHOW_FTP_SERVER.valueCompat) {
             IntentMenuItem(
                 R.drawable.shared_directory_icon_white_24dp, R.string.navigation_ftp_server,

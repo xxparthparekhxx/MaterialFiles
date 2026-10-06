@@ -770,6 +770,13 @@
     <string name="navigation_edit_bookmark_directory_title">Bookmark folder</string>
     <string name="navigation_edit_bookmark_directory_name">Name</string>
     <string name="navigation_edit_bookmark_directory_path">Path</string>
+    <string name="navigation_recent_files">Recent files</string>
+    <string name="recent_files_title">Recent files</string>
+    <string name="recent_files_empty">No recent files</string>
+    <string name="recent_files_clear">Clear</string>
+    <string name="recent_files_show_in_folder">Show in folder</string>
+    <string name="recent_files_remove">Remove</string>
+    <string name="recent_files_open_error">Can’t open this file</string>
     <string name="navigation_ftp_server" translatable="false">@string/ftp_server_title</string>
     <string name="navigation_settings" translatable="false">@string/settings_title</string>
     <string name="navigation_about" translatable="false">@string/about_title</string>

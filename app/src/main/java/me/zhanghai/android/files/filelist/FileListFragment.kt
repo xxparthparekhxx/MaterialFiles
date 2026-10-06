@@ -1906,6 +1906,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         if (file.mimeType.isApk) {
+            RecentFiles.add(file)
             openApk(file)
             return
         }
@@ -1961,6 +1962,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun openFileWithIntent(file: FileItem, withChooser: Boolean) {
+        RecentFiles.add(file)
         val path = file.path
         val mimeType = file.mimeType
         if (path.isArchivePath) {
