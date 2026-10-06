@@ -92,6 +92,11 @@ object Client {
                 if (!login(authority.username, password)) {
                     throwNegativeReplyCodeException()
                 }
+                // Without this, servers that can speak UTF-8 still treat the path as a
+                // single-byte charset, and a multibyte name is rejected.
+                if (authority.encoding.equals(Authority.DEFAULT_ENCODING, ignoreCase = true)) {
+                    sendCommand("OPTS", "UTF8 ON")
+                }
             } catch (t: Throwable) {
                 disconnect()
                 throw t
