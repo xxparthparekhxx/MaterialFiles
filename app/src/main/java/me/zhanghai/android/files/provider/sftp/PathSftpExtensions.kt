@@ -10,3 +10,18 @@ import me.zhanghai.android.files.provider.sftp.client.Authority
 
 fun Authority.createSftpRootPath(): Path =
     SftpFileSystemProvider.getOrNewFileSystem(this).rootDirectory
+
+fun Authority.createSftpPath(path: String): Path {
+    val fileSystem = SftpFileSystemProvider.getOrNewFileSystem(this)
+    val remotePath = when (val trimmed = path.trim()) {
+        "", "~", "." -> "."
+        else -> {
+            if (trimmed.startsWith("~/")) {
+                trimmed.removePrefix("~/").ifEmpty { "." }
+            } else {
+                trimmed
+            }
+        }
+    }
+    return fileSystem.getPath(remotePath)
+}
