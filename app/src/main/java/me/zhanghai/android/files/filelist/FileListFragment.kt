@@ -572,6 +572,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         Settings.FILE_LIST_HIDE_ADD_BUTTON.observe(viewLifecycleOwner) { updateAddButton() }
         Settings.FILE_LIST_DIVIDERS.observe(viewLifecycleOwner) { updateDividers() }
+        Settings.FILE_LIST_DENSITY.observe(viewLifecycleOwner) { adapter.listDensity = it }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         DocumentListingMessage.liveData.observe(viewLifecycleOwner) { message ->

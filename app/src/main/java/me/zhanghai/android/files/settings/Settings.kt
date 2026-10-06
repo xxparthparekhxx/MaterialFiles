@@ -12,6 +12,7 @@ import java8.nio.file.Paths
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.compat.EnvironmentCompat2
+import me.zhanghai.android.files.filelist.FileListDensity
 import me.zhanghai.android.files.filelist.FileSortOptions
 import me.zhanghai.android.files.filelist.FileViewType
 import me.zhanghai.android.files.filelist.OpenApkDefaultAction
@@ -68,6 +69,12 @@ object Settings {
         EnumSettingLiveData(
             R.string.pref_key_file_list_view_type, R.string.pref_default_value_file_list_view_type,
             FileViewType::class.java
+        )
+
+    val FILE_LIST_DENSITY: SettingLiveData<FileListDensity> =
+        EnumSettingLiveData(
+            R.string.pref_key_file_list_density, R.string.pref_default_value_file_list_density,
+            FileListDensity::class.java
         )
 
     val FILE_LIST_LOCK_HEADER: SettingLiveData<Boolean> =
