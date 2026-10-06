@@ -35,6 +35,7 @@ import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.provider.common.isEncrypted
+import me.zhanghai.android.files.provider.linux.isLinuxPath
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.AnimatedListAdapter
 import me.zhanghai.android.files.ui.CheckableForegroundLinearLayout
@@ -435,6 +436,7 @@ class FileListAdapter(
         menu.findItem(R.id.action_test_archive).isVisible = file.isArchiveFile
         menu.findItem(R.id.action_open_as_archive).isVisible =
             !file.attributes.isDirectory && !file.isArchiveFile && !isArchivePath
+        menu.findItem(R.id.action_create_link).isVisible = path.isLinuxPath && !isReadOnly
         menu.findItem(R.id.action_archive).isVisible = !isArchivePath
         menu.findItem(R.id.action_add_bookmark).isVisible = isDirectory
         menu.findItem(R.id.action_show_in_folder).isVisible = isSearching
@@ -470,6 +472,10 @@ class FileListAdapter(
                 }
                 R.id.action_open_as_archive -> {
                     listener.openAsArchive(file)
+                    true
+                }
+                R.id.action_create_link -> {
+                    listener.showCreateLinkDialog(file)
                     true
                 }
                 R.id.action_archive -> {
@@ -614,6 +620,7 @@ class FileListAdapter(
         fun extractFile(file: FileItem)
         fun testArchive(file: FileItem)
         fun openAsArchive(file: FileItem)
+        fun showCreateLinkDialog(file: FileItem)
         fun showCreateArchiveDialog(file: FileItem)
         fun shareFile(file: FileItem)
         fun copyPath(file: FileItem)

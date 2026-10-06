@@ -66,6 +66,7 @@ import me.zhanghai.android.files.provider.common.copyTo
 import me.zhanghai.android.files.provider.common.createDirectories
 import me.zhanghai.android.files.provider.common.createDirectory
 import me.zhanghai.android.files.provider.common.createFile
+import me.zhanghai.android.files.provider.common.createSymbolicLink
 import me.zhanghai.android.files.provider.common.delete
 import me.zhanghai.android.files.provider.common.deleteIfExists
 import me.zhanghai.android.files.provider.common.exists
@@ -2514,6 +2515,13 @@ class TestArchiveFileJob(private val archiveRoot: Path) : FileJob() {
                 R.plurals.file_job_test_archive_succeeded_format, fileCount, fileCount
             )
         )
+    }
+}
+
+class CreateSymbolicLinkJob(private val link: Path, private val target: Path) : FileJob() {
+    @Throws(IOException::class)
+    override fun run() {
+        link.createSymbolicLink(target)
     }
 }
 
