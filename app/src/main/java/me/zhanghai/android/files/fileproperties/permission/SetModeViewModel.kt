@@ -19,6 +19,12 @@ class SetModeViewModel(mode: Set<PosixFileModeBit>) : ViewModel() {
     val mode: Set<PosixFileModeBit>
         get() = _modeLiveData.valueCompat
 
+    fun setMode(mode: Set<PosixFileModeBit>) {
+        if (mode != _modeLiveData.valueCompat) {
+            _modeLiveData.value = mode
+        }
+    }
+
     fun toggleModeBit(modeBit: PosixFileModeBit) {
         val mode = _modeLiveData.valueCompat.toEnumSet()
         if (modeBit in mode) {

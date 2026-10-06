@@ -9,6 +9,7 @@ import android.app.Dialog
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.parcelize.Parcelize
@@ -18,7 +19,9 @@ import me.zhanghai.android.files.databinding.SetModeDialogBinding
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.filejob.FileJobService
 import me.zhanghai.android.files.provider.common.PosixFileAttributes
+import me.zhanghai.android.files.provider.common.PosixFileMode
 import me.zhanghai.android.files.provider.common.PosixFileModeBit
+import me.zhanghai.android.files.provider.common.toInt
 import me.zhanghai.android.files.util.ParcelableArgs
 import me.zhanghai.android.files.util.args
 import me.zhanghai.android.files.util.getStringArray
@@ -46,6 +49,13 @@ class SetModeDialogFragment : AppCompatDialogFragment() {
             .setTitle(R.string.file_properties_permission_set_mode_title)
             .apply {
                 binding = SetModeDialogBinding.inflate(context.layoutInflater)
+                binding.octalText.doAfterTextChanged { text ->
+                    val octal = text?.toString()?.takeIf { it.length in 3..4 }
+                        ?.toIntOrNull(8)
+                    if (octal != null && text.all { it in '0'..'7' }) {
+                        viewModel.setMode(PosixFileMode.fromInt(octal))
+                    }
+                }
                 binding.ownerText.setOnClickListener { binding.ownerDropDown.show() }
                 val isDirectory = args.file.attributes.isDirectory
                 normalModeBitNames = getStringArray(
@@ -99,6 +109,10 @@ class SetModeDialogFragment : AppCompatDialogFragment() {
             .create()
 
     private fun onModeChanged(mode: Set<PosixFileModeBit>) {
+        val currentOctal = binding.octalText.text?.toString()?.toIntOrNull(8)
+        if (currentOctal == null || PosixFileMode.fromInt(currentOctal) != mode) {
+            binding.octalText.setText(Integer.toOctalString(mode.toInt()).padStart(3, '0'))
+        }
         binding.ownerText.setText(getModeString(OWNER_MODE_BITS, normalModeBitNames))
         ownerAdapter.mode = mode
         binding.groupText.setText(getModeString(GROUP_MODE_BITS, normalModeBitNames))
