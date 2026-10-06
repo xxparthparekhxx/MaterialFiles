@@ -747,6 +747,9 @@
     <string name="ftp_server_add_tile_result_already_added">“FTP server” is already added to Quick Settings</string>
     <string name="ftp_server_add_tile_result_error">Error while adding “FTP server” to Quick Settings</string>
     <string name="ftp_server_configuration_title">Configuration</string>
+    <string name="ftp_server_allow_external_control_title">Allow other apps to control the server</string>
+    <string name="ftp_server_allow_external_control_summary">Let automation apps and adb start and stop the server with the broadcasts me.zhanghai.android.files.intent.action.START_FTP_SERVER and STOP_FTP_SERVER. Any app on this device will then be able to do so</string>
+    <string name="ftp_server_external_control_disabled">Controlling the FTP server from other apps is turned off in its settings</string>
     <string name="ftp_server_anonymous_login_title">Anonymous login</string>
     <string name="ftp_server_username_title">Username</string>
     <string name="ftp_server_password_title">Password</string>

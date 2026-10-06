@@ -423,5 +423,15 @@
         <receiver android:name="me.zhanghai.android.files.filejob.FileJobReceiver" />
 
         <receiver android:name="me.zhanghai.android.files.ftpserver.FtpServerReceiver" />
+
+        <!-- Does nothing unless the user allows external control in the FTP server settings. -->
+        <receiver
+            android:name="me.zhanghai.android.files.ftpserver.FtpServerIntentReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="me.zhanghai.android.files.intent.action.START_FTP_SERVER" />
+                <action android:name="me.zhanghai.android.files.intent.action.STOP_FTP_SERVER" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
