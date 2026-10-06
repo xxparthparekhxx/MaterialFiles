@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,6 +19,8 @@
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#include <sys/syscall.h>
+#include <sys/sysmacros.h>
 #include <sys/types.h>
 #include <sys/xattr.h>
 #include <unistd.h>
@@ -1215,10 +1218,12 @@ static jobject newStructTimespec(JNIEnv *env, const struct timespec *timespec) {
     return (*env)->NewObject(env, getStructTimespecClass(env), constructor, tv_sec, tv_nsec);
 }
 
-static jobject newStructStat(JNIEnv *env, const struct stat64 *stat) {
+static jobject newStructStat(JNIEnv *env, const struct stat64 *stat,
+        const struct timespec *btime) {
     static jmethodID constructor = NULL;
     if (!constructor) {
         constructor = findMethod(env, getStructStatClass(env), "<init>", "(JJIJIIJJJJ"
+                "Lme/zhanghai/android/files/provider/linux/syscall/StructTimespec;"
                 "Lme/zhanghai/android/files/provider/linux/syscall/StructTimespec;"
                 "Lme/zhanghai/android/files/provider/linux/syscall/StructTimespec;"
                 "Lme/zhanghai/android/files/provider/linux/syscall/StructTimespec;)V");
@@ -1245,21 +1250,113 @@ static jobject newStructStat(JNIEnv *env, const struct stat64 *stat) {
     if (!st_ctim) {
         return NULL;
     }
+    jobject st_btim = newStructTimespec(env, btime);
+    if (!st_btim) {
+        return NULL;
+    }
     return (*env)->NewObject(env, getStructStatClass(env), constructor, st_dev, st_ino, st_mode,
                              st_nlink, st_uid, st_gid, st_rdev, st_size, st_blksize, st_blocks,
-                             st_atim, st_mtim, st_ctim);
+                             st_atim, st_mtim, st_ctim, st_btim);
+}
+
+#ifndef STATX_BASIC_STATS
+#define STATX_BASIC_STATS 0x000007ffU
+#endif
+#ifndef STATX_BTIME
+#define STATX_BTIME 0x00000800U
+#endif
+
+struct files_statx_timestamp {
+    int64_t tv_sec;
+    uint32_t tv_nsec;
+    int32_t reserved;
+};
+
+struct files_statx {
+    uint32_t stx_mask;
+    uint32_t stx_blksize;
+    uint64_t stx_attributes;
+    uint32_t stx_nlink;
+    uint32_t stx_uid;
+    uint32_t stx_gid;
+    uint16_t stx_mode;
+    uint16_t spare0;
+    uint64_t stx_ino;
+    uint64_t stx_size;
+    uint64_t stx_blocks;
+    uint64_t stx_attributes_mask;
+    struct files_statx_timestamp stx_atime;
+    struct files_statx_timestamp stx_btime;
+    struct files_statx_timestamp stx_ctime;
+    struct files_statx_timestamp stx_mtime;
+    uint32_t stx_rdev_major;
+    uint32_t stx_rdev_minor;
+    uint32_t stx_dev_major;
+    uint32_t stx_dev_minor;
+    uint64_t spare2[14];
+};
+
+static void assignTimespec(struct timespec *out, const struct files_statx_timestamp *in) {
+    out->tv_sec = (time_t) in->tv_sec;
+    out->tv_nsec = (long) in->tv_nsec;
+}
+
+// Returns 1 on success, 0 when statx is unavailable, and -1 on a real error.
+static int fillStatFromStatx(const char *path, bool isLstat, struct stat64 *out,
+        struct timespec *btime) {
+    struct files_statx stx = {};
+    int flags = isLstat ? AT_SYMLINK_NOFOLLOW : 0;
+    int rc = TEMP_FAILURE_RETRY(syscall(__NR_statx, AT_FDCWD, path, flags,
+            (unsigned int) (STATX_BASIC_STATS | STATX_BTIME), &stx));
+    if (rc == -1) {
+        if (errno == ENOSYS || errno == EPERM || errno == EINVAL || errno == EOPNOTSUPP) {
+            return 0;
+        }
+        return -1;
+    }
+    memset(out, 0, sizeof(*out));
+    out->st_dev = makedev(stx.stx_dev_major, stx.stx_dev_minor);
+    out->st_ino = stx.stx_ino;
+    out->st_mode = stx.stx_mode;
+    out->st_nlink = stx.stx_nlink;
+    out->st_uid = stx.stx_uid;
+    out->st_gid = stx.stx_gid;
+    out->st_rdev = makedev(stx.stx_rdev_major, stx.stx_rdev_minor);
+    out->st_size = stx.stx_size;
+    out->st_blksize = stx.stx_blksize;
+    out->st_blocks = stx.stx_blocks;
+    assignTimespec(&out->st_atim, &stx.stx_atime);
+    assignTimespec(&out->st_mtim, &stx.stx_mtime);
+    assignTimespec(&out->st_ctim, &stx.stx_ctime);
+    if (stx.stx_mask & STATX_BTIME) {
+        assignTimespec(btime, &stx.stx_btime);
+    } else {
+        *btime = out->st_mtim;
+    }
+    return 1;
 }
 
 static jobject doStat(JNIEnv *env, jobject javaPath, bool isLstat) {
     char *path = mallocStringFromByteString(env, javaPath);
     struct stat64 stat = {};
-    TEMP_FAILURE_RETRY((isLstat ? lstat64 : stat64)(path, &stat));
-    free(path);
-    if (errno) {
-        throwSyscallException(env, isLstat ? "lstat64" : "stat64");
+    struct timespec btime = {};
+    int statxResult = fillStatFromStatx(path, isLstat, &stat, &btime);
+    if (statxResult == -1) {
+        free(path);
+        throwSyscallException(env, "statx");
         return NULL;
     }
-    return newStructStat(env, &stat);
+    if (statxResult == 0) {
+        TEMP_FAILURE_RETRY((isLstat ? lstat64 : stat64)(path, &stat));
+        if (errno) {
+            free(path);
+            throwSyscallException(env, isLstat ? "lstat64" : "stat64");
+            return NULL;
+        }
+        btime = stat.st_mtim;
+    }
+    free(path);
+    return newStructStat(env, &stat, &btime);
 }
 
 JNIEXPORT jobject JNICALL
