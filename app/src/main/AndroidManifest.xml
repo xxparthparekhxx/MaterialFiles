@@ -77,6 +77,7 @@
                 <data android:mimeType="inode/directory" />
                 <data android:mimeType="resource/folder" />
                 <data android:mimeType="vnd.android.document/directory" />
+                <data android:mimeType="vnd.android.document/root" />
             </intent-filter>
             <!-- @see me.zhanghai.android.files.file.isSupportedArchive -->
             <intent-filter

@@ -156,6 +156,7 @@ import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.createManageAppAllFilesAccessPermissionIntent
 import me.zhanghai.android.files.util.createSendStreamIntent
 import me.zhanghai.android.files.util.createViewIntent
+import me.zhanghai.android.files.util.externalStorageRootPath
 import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.extraPathList
 import me.zhanghai.android.files.util.fadeToVisibilityUnsafe
@@ -507,7 +508,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                             Environment.DIRECTORY_DOWNLOADS
                         ).path
                     )
-                else ->
+                else -> {
+                    intent.externalStorageRootPath()?.let { path = it }
                     if (path != null) {
                         val mimeType = intent.type?.asMimeTypeOrNull()
                         path = when {
@@ -517,6 +519,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                             else -> path.parent ?: path
                         }
                     }
+                }
             }
             if (path == null) {
                 path = getStartPath(pickOptions)
