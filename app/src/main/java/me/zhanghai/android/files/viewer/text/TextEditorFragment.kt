@@ -123,6 +123,11 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         }
 
+        Settings.TEXT_EDITOR_WORD_WRAP.observe(viewLifecycleOwner) {
+            binding.textEdit.setHorizontallyScrolling(!it)
+            requireActivity().invalidateOptionsMenu()
+        }
+
         // TODO: Move reload-prevent here so that we can also handle save-as, etc. Or maybe just get
         //  rid of the mPathLiveData in TextEditorViewModel.
         ThemedFastScroller.create(binding.scrollView)
@@ -185,6 +190,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
 
         updateSaveMenuItem()
         updateMonospaceMenuItem()
+        menu.findItem(R.id.action_word_wrap).isChecked = Settings.TEXT_EDITOR_WORD_WRAP.valueCompat
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -215,6 +221,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             }
             R.id.action_monospace -> {
                 Settings.TEXT_EDITOR_MONOSPACE.putValue(!Settings.TEXT_EDITOR_MONOSPACE.valueCompat)
+                true
+            }
+            R.id.action_word_wrap -> {
+                Settings.TEXT_EDITOR_WORD_WRAP.putValue(!item.isChecked)
                 true
             }
             else -> super.onOptionsItemSelected(item)
