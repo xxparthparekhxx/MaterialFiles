@@ -57,6 +57,12 @@ object Settings {
             FileViewType::class.java
         )
 
+    val FILE_LIST_GRID_SPAN_COUNT: SettingLiveData<String> =
+        StringSettingLiveData(
+            R.string.pref_key_file_list_grid_span_count,
+            R.string.pref_default_value_file_list_grid_span_count
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,
