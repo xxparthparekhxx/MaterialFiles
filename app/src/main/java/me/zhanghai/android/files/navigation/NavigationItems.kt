@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Environment
-import android.os.storage.StorageVolume
 import androidx.annotation.DrawableRes
 import androidx.annotation.Size
 import androidx.annotation.StringRes
@@ -17,9 +16,6 @@ import java8.nio.file.Path
 import java8.nio.file.Paths
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.about.AboutActivity
-import me.zhanghai.android.files.compat.getDescriptionCompat
-import me.zhanghai.android.files.compat.isPrimaryCompat
-import me.zhanghai.android.files.compat.pathCompat
 import me.zhanghai.android.files.file.JavaFile
 import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.ftpserver.FtpServerActivity
@@ -28,26 +24,20 @@ import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.settings.SettingsActivity
 import me.zhanghai.android.files.settings.StandardDirectoryListActivity
 import me.zhanghai.android.files.storage.AddStorageDialogActivity
+import me.zhanghai.android.files.storage.ExternalStorageVolume
 import me.zhanghai.android.files.storage.FileSystemRoot
 import me.zhanghai.android.files.storage.Storage
-import me.zhanghai.android.files.storage.StorageVolumeListLiveData
+import me.zhanghai.android.files.storage.Storages
 import me.zhanghai.android.files.util.createIntent
-import me.zhanghai.android.files.util.isMounted
 import me.zhanghai.android.files.util.putArgs
-import me.zhanghai.android.files.util.supportsExternalStorageManager
 import me.zhanghai.android.files.util.valueCompat
 
 val navigationItems: List<NavigationItem?>
     get() =
         mutableListOf<NavigationItem?>().apply {
+            // SD cards live in the storage list so they can be reordered with the other storages.
+            Storages.ensureExternalVolumes()
             addAll(storageItems)
-            if (Environment::class.supportsExternalStorageManager()) {
-                // Starting with R, we can get read/write access to non-primary storage volumes with
-                // MANAGE_EXTERNAL_STORAGE. However before R, we only have read-only access to them
-                // and need to use the Storage Access Framework instead, so hide them in this case
-                // to avoid confusion.
-                addAll(storageVolumeItems)
-            }
             add(AddStorageItem())
             val standardDirectoryItems = standardDirectoryItems
             if (standardDirectoryItems.isNotEmpty()) {
@@ -66,7 +56,7 @@ val navigationItems: List<NavigationItem?>
 private val storageItems: List<NavigationItem>
     @Size(min = 0)
     get() =
-        Settings.STORAGES.valueCompat.filter { it.isVisible }
+        Settings.STORAGES.valueCompat.filter { it.isVisible && it.isShownInNavigation }
             .filterNot { it is FileSystemRoot && !RootAvailability.isAvailable }
             .map {
                 if (it.path != null) PathStorageItem(it) else IntentStorageItem(it)
@@ -139,29 +129,8 @@ private class IntentStorageItem(
     }
 }
 
-private val storageVolumeItems: List<NavigationItem>
-    @Size(min = 0)
-    get() =
-        StorageVolumeListLiveData.valueCompat.filter { !it.isPrimaryCompat && it.isMounted }
-            .map { StorageVolumeItem(it) }
-
-private class StorageVolumeItem(
-    private val storageVolume: StorageVolume
-) : PathItem(Paths.get(storageVolume.pathCompat)), NavigationRoot {
-    override val id: Long
-        get() = storageVolume.hashCode().toLong()
-
-    override val iconRes: Int
-        @DrawableRes
-        get() = R.drawable.sd_card_icon_white_24dp
-
-    override fun getTitle(context: Context): String = storageVolume.getDescriptionCompat(context)
-
-    override fun getSubtitle(context: Context): String? =
-        getStorageSubtitle(storageVolume.pathCompat, context)
-
-    override fun getName(context: Context): String = getTitle(context)
-}
+private val Storage.isShownInNavigation: Boolean
+    get() = this !is ExternalStorageVolume || isCurrentlyMounted
 
 private fun getStorageSubtitle(linuxPath: String, context: Context): String? {
     var totalSpace = JavaFile.getTotalSpace(linuxPath)
