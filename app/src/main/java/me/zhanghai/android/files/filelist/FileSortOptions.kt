@@ -16,7 +16,7 @@ data class FileSortOptions(
     val order: Order,
     val isDirectoriesFirst: Boolean
 ) : Parcelable {
-    fun createComparator(): Comparator<FileItem> {
+    fun createComparator(isHiddenFirst: Boolean = false): Comparator<FileItem> {
         var comparator = compareBy<FileItem> {
             NAME_UNIMPORTANT_PREFIXES.any { prefix -> it.name.startsWith(prefix) }
         }.thenBy { it.nameCollationKey }
@@ -35,6 +35,9 @@ data class FileSortOptions(
         when (order) {
             Order.ASCENDING -> {}
             Order.DESCENDING -> comparator = comparator.reversedCompat()
+        }
+        if (isHiddenFirst) {
+            comparator = compareBy<FileItem> { !it.isHidden }.then(comparator)
         }
         if (isDirectoriesFirst) {
             val isDirectoryComparator = compareBy<FileItem> { it.attributes.isDirectory }

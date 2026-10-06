@@ -843,6 +843,8 @@
     <string name="settings_open_files_in_new_task_summary">Start the app that opens a file in its own task, so it shows up separately in recent apps instead of inside Material Files</string>
     <string name="settings_iso_date_format_title">ISO 8601 dates</string>
     <string name="settings_iso_date_format_summary">Show dates as 2024-02-19 14:05 instead of using the system format</string>
+    <string name="settings_file_list_hidden_first_title">Sort hidden files first</string>
+    <string name="settings_file_list_hidden_first_summary">Show hidden files and folders before other items instead of after them</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
