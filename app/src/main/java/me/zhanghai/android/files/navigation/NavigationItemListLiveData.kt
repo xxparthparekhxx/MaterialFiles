@@ -17,6 +17,7 @@ object NavigationItemListLiveData : MediatorLiveData<List<NavigationItem?>>() {
         addSource(StorageVolumeListLiveData) { loadValue() }
         addSource(StandardDirectoriesLiveData) { loadValue() }
         addSource(Settings.BOOKMARK_DIRECTORIES) { loadValue() }
+        addSource(Settings.NAVIGATION_SHOW_FTP_SERVER) { loadValue() }
         addSource(NavigationStorageRefreshLiveData) { loadValue() }
     }
 

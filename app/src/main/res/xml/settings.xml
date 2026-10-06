@@ -94,6 +94,22 @@
 
     <PreferenceCategory android:title="@string/settings_behavior_title">
 
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_double_back_to_exit"
+            android:title="@string/settings_file_list_double_back_to_exit_title"
+            android:defaultValue="@bool/pref_default_value_file_list_double_back_to_exit" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_navigation_show_ftp_server"
+            android:title="@string/settings_navigation_show_ftp_server_title"
+            android:defaultValue="@bool/pref_default_value_navigation_show_ftp_server" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_ftp_server_tile_confirm_start"
+            android:title="@string/settings_ftp_server_tile_confirm_start_title"
+            android:summary="@string/settings_ftp_server_tile_confirm_start_summary"
+            android:defaultValue="@bool/pref_default_value_ftp_server_tile_confirm_start" />
+
         <me.zhanghai.android.files.settings.DefaultDirectoryPreference
             android:key="@string/pref_key_file_list_default_directory"
             android:title="@string/settings_default_directory_title"
