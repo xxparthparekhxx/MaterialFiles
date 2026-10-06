@@ -785,6 +785,8 @@
         <item>6</item>
     </string-array>
     <string name="settings_file_list_loading_indicator_title">File list loading indicator</string>
+    <string name="settings_open_files_in_new_task_title">Open files in a new task</string>
+    <string name="settings_open_files_in_new_task_summary">Start the app that opens a file in its own task, so it shows up separately in recent apps instead of inside Material Files</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_name_ellipsize_title">Display long file name</string>

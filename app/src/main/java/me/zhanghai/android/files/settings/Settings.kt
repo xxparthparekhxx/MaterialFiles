@@ -144,6 +144,11 @@ object Settings {
             R.bool.pref_default_value_file_list_loading_indicator
         )
 
+    val OPEN_FILES_IN_NEW_TASK: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_open_files_in_new_task, R.bool.pref_default_value_open_files_in_new_task
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

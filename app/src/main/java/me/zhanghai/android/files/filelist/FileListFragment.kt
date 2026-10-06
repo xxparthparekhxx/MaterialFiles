@@ -1535,6 +1535,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 .apply {
                     extraPath = path
                     maybeAddImageViewerActivityExtras(this, path, mimeType)
+                    if (Settings.OPEN_FILES_IN_NEW_TASK.valueCompat) {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
                 }
                 .let {
                     if (withChooser) {
