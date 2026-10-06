@@ -157,6 +157,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             if (viewModel.textState.value !is DataState.Success) {
                 return@doAfterTextChanged
             }
+            viewModel.updateDraft(it?.toString() ?: "")
             viewModel.isTextChanged.value = true
         }
 
@@ -176,6 +177,14 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         }
         menuBinding.menu.findItem(R.id.action_monospace).isChecked =
             Settings.TEXT_EDITOR_MONOSPACE.valueCompat
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        if (::binding.isInitialized && viewModel.isTextChanged.value) {
+            viewModel.persistDraft()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -312,6 +321,9 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     }
 
     override fun finish() {
+        if (::argsFile.isInitialized) {
+            viewModel.discardDraft()
+        }
         requireActivity().finish()
     }
 
@@ -331,7 +343,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 binding.progress.fadeOutUnsafe()
                 binding.errorText.fadeOutUnsafe()
                 binding.textEdit.fadeInUnsafe()
-                if (!viewModel.isTextChanged.value) {
+                val draft = viewModel.draftText
+                if (draft != null && viewModel.isTextChanged.value) {
+                    setText(draft, changed = true)
+                } else if (!viewModel.isTextChanged.value) {
                     setText(state.data)
                 }
             }
@@ -354,7 +369,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         }
     }
 
-    private fun setText(text: String?) {
+    private fun setText(text: String?, changed: Boolean = false) {
         // This is also called after saving because we'll be updating our state of the unchanged
         // text, but we don't want to call TextView.setText() again which resets things like cursor
         // position.
@@ -363,7 +378,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             binding.textEdit.setText(text)
             isSettingText = false
         }
-        viewModel.isTextChanged.value = false
+        viewModel.isTextChanged.value = changed
     }
 
     private fun onIsTextChangedChanged(changed: Boolean) {
@@ -391,6 +406,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     }
 
     override fun reload() {
+        viewModel.discardDraft()
         viewModel.isTextChanged.value = false
         viewModel.reload()
     }
