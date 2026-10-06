@@ -14,6 +14,7 @@ import java8.nio.file.Path
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.loadFileItem
 import me.zhanghai.android.files.provider.common.newDirectoryStream
+import me.zhanghai.android.files.provider.common.newInputStream
 import me.zhanghai.android.files.util.CloseableLiveData
 import me.zhanghai.android.files.util.Failure
 import me.zhanghai.android.files.util.Loading
@@ -87,7 +88,7 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
                     if (task.isCancelled) {
                         return@submit
                     }
-                    Success(fileList as List<FileItem>)
+                    Success(applyHiddenFile(fileList))
                 }
             } catch (e: Exception) {
                 if (task.isCancelled || Thread.currentThread().isInterrupted ||
@@ -100,6 +101,29 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
             if (!task.isCancelled) {
                 postValue(value)
             }
+        }
+    }
+
+    /**
+     * Like GIO file managers, treat the names listed in a `.hidden` file (one per line) in the
+     * directory as hidden.
+     */
+    private fun applyHiddenFile(fileList: List<FileItem>): List<FileItem> {
+        val hiddenFile = fileList.find { it.name == HIDDEN_FILE_NAME && it.attributes.isRegularFile }
+            ?: return fileList
+        if (hiddenFile.attributes.size() > MAX_HIDDEN_FILE_SIZE) {
+            return fileList
+        }
+        val hiddenNames = try {
+            hiddenFile.path.newInputStream().bufferedReader().use { reader ->
+                reader.readLines().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            return fileList
+        }
+        return fileList.map {
+            if (!it.isHidden && it.name in hiddenNames) it.copy(isHidden = true) else it
         }
     }
 
@@ -144,5 +168,7 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
 
     companion object {
         private const val RELOAD_DEBOUNCE_MILLIS = 2000L
+        private const val HIDDEN_FILE_NAME = ".hidden"
+        private const val MAX_HIDDEN_FILE_SIZE = 1024 * 1024L
     }
 }
