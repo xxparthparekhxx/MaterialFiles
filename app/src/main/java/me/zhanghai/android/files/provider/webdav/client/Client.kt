@@ -297,7 +297,11 @@ object Client {
     }
 
     @Throws(DavException::class)
-    fun put(path: Path, mtimeEpochSeconds: Long? = null): OutputStream =
+    fun put(
+        path: Path,
+        mtimeEpochSeconds: Long? = null,
+        contentLength: Long? = null
+    ): OutputStream =
         try {
             collectionMemberCache -= path
             val headers = if (mtimeEpochSeconds != null) {
@@ -306,7 +310,9 @@ object Client {
                 emptyMap()
             }
             NotifyEntryModifiedOutputStream(
-                DavResource(getClient(path.authority), path.url).putCompat(headers = headers),
+                DavResource(getClient(path.authority), path.url).putCompat(
+                    headers = headers, contentLength = contentLength
+                ),
                 path as Java8Path
             )
         } catch (e: IOException) {
