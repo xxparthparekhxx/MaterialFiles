@@ -805,14 +805,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val throwable = (stateful as? Failure)?.throwable
         if (throwable != null && !isSearching && throwable.isMissingDirectory()) {
             if (viewModel.dropMissingCurrentPath()) {
+                showToast(getString(R.string.file_list_error_directory_not_found))
                 return
             }
-            val defaultDirectory = Settings.FILE_LIST_DEFAULT_DIRECTORY.valueCompat
-            if (currentPath != defaultDirectory) {
-                showToast(throwable.toUserFriendlyMessage())
-                viewModel.resetTo(defaultDirectory)
-                return
-            }
+            // Couldn't navigate away (e.g. already at trail root): fall through and show a
+            // friendly message instead of the raw exception below.
         }
         if (throwable != null) {
             throwable.printStackTrace()
