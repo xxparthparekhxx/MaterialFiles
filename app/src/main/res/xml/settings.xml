@@ -236,6 +236,12 @@
             android:entryValues="@array/pref_entry_values_root_strategy"
             app:useSimpleSummaryProvider="true" />
 
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_delete_archive_after_extract"
+            android:title="@string/settings_delete_archive_after_extract_title"
+            android:summary="@string/settings_delete_archive_after_extract_summary"
+            android:defaultValue="@bool/pref_default_value_delete_archive_after_extract" />
+
         <me.zhanghai.android.files.settings.CharsetPreference
             android:key="@string/pref_key_archive_file_name_encoding"
             android:title="@string/settings_archive_file_name_encoding_title"
