@@ -13,7 +13,7 @@ import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.provider.sftp.client.Authentication
 import me.zhanghai.android.files.provider.sftp.client.Authority
-import me.zhanghai.android.files.provider.sftp.createSftpRootPath
+import me.zhanghai.android.files.provider.sftp.createSftpPath
 import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.putArgs
 import kotlin.random.Random
@@ -45,7 +45,7 @@ class SftpServer(
         get() = authority.toString()
 
     override val path: Path
-        get() = authority.createSftpRootPath().resolve(relativePath)
+        get() = authority.createSftpPath(relativePath)
 
     override fun createEditIntent(): Intent =
         EditSftpServerActivity::class.createIntent().putArgs(EditSftpServerFragment.Args(this))
