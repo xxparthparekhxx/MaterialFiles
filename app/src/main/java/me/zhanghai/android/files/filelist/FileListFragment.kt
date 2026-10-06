@@ -643,6 +643,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun onCurrentPathChanged(path: Path) {
+        binding.speedDialView.isVisible = !path.fileSystem.isReadOnly
         updateOverlayToolbar()
         updateBottomToolbar()
     }
@@ -1604,6 +1605,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun createFile(name: String) {
+        if (currentPath.fileSystem.isReadOnly) {
+            showToast(getString(R.string.file_list_create_error_read_only))
+            return
+        }
         val path = currentPath.resolve(name)
         FileJobService.create(path, false, requireContext())
     }
@@ -1613,6 +1618,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun createDirectory(name: String) {
+        if (currentPath.fileSystem.isReadOnly) {
+            showToast(getString(R.string.file_list_create_error_read_only))
+            return
+        }
         val path = currentPath.resolve(name)
         FileJobService.create(path, true, requireContext())
     }
