@@ -81,10 +81,19 @@ internal class LinuxPath : ByteStringListPath<LinuxPath>, RootablePath {
         }
         // This directory is a FUSE mount that refuses to be listed, including for uid 0.
         // The per-user directories are still available under /data/media.
-        if (byteString.toString() != "/storage/emulated") {
+        val path = byteString.toString()
+        if (path == "/storage/emulated") {
+            return "/data/media".toByteString()
+        }
+        // Root can read /storage/emulated/0, but not another user's emulated directory. That
+        // user's files are still available under /data/media/<user id>.
+        val match = EMULATED_STORAGE.matchEntire(path) ?: return byteString
+        val userId = match.groupValues[1]
+        if (userId == "0") {
             return byteString
         }
-        return "/data/media".toByteString()
+        val rest = match.groupValues[2]
+        return "/data/media/$userId$rest".toByteString()
     }
 
     @Throws(IOException::class)
@@ -173,6 +182,7 @@ internal class LinuxPath : ByteStringListPath<LinuxPath>, RootablePath {
 
         private val FILE_ANDROID_DATA = File("Android/data")
         private val FILE_ANDROID_OBB = File("Android/obb")
+        private val EMULATED_STORAGE = Regex("^/storage/emulated/(\\d+)(/.*)?$")
 
         // IPC for checking the app op is expensive, and we'll be killed by StorageManagerService
         // when losing the app op, so let's just cache the result if it was ever allowed.
