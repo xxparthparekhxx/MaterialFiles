@@ -228,6 +228,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             .also { binding = it }
             .root
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        adapter.dismissActivePopupMenu()
+    }
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
@@ -1409,14 +1415,23 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun selectFile(file: FileItem, selected: Boolean) {
+        if (!isAdded) {
+            return
+        }
         viewModel.selectFile(file, selected)
     }
 
     override fun selectFiles(files: FileItemSet, selected: Boolean) {
+        if (!isAdded) {
+            return
+        }
         viewModel.selectFiles(files, selected)
     }
 
     override fun openFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         val pickOptions = viewModel.pickOptions
         if (pickOptions != null) {
             if (file.attributes.isDirectory) {
@@ -1454,6 +1469,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun installApk(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         val path = file.path
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             if (!path.isArchivePath) path.fileProviderUri else null
@@ -1469,10 +1487,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun viewApk(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         navigateTo(file.listablePath)
     }
 
     override fun openFileWith(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         openFileWithIntent(file, true)
     }
 
@@ -1532,18 +1556,30 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun cutFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         cutFiles(fileItemSetOf(file))
     }
 
     override fun copyFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         copyFiles(fileItemSetOf(file))
     }
 
     override fun confirmDeleteFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         confirmDeleteFiles(fileItemSetOf(file))
     }
 
     override fun showRenameFileDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         RenameFileDialogFragment.show(file, this)
     }
 
@@ -1558,19 +1594,31 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun renameFile(file: FileItem, newName: String) {
+        if (!isAdded) {
+            return
+        }
         FileJobService.rename(file.path, newName, requireContext())
         viewModel.selectFile(file, false)
     }
 
     override fun extractFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         copyFile(file.createDummyArchiveRoot())
     }
 
     override fun showCreateArchiveDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         showCreateArchiveDialog(fileItemSetOf(file))
     }
 
     override fun shareFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         shareFile(file.path, file.mimeType)
     }
 
@@ -1586,10 +1634,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun copyPath(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         copyPath(file.path)
     }
 
     override fun addBookmark(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         addBookmark(file.path)
     }
 
@@ -1603,6 +1657,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun createShortcut(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         createShortcut(file.path, file.mimeType)
     }
 
@@ -1640,6 +1697,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun showPropertiesDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         FilePropertiesDialogFragment.show(file, this)
     }
 
