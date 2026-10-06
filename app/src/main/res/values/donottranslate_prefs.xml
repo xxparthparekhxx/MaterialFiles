@@ -89,4 +89,7 @@
 
     <string name="pref_key_notification_permission_dismissed">key_notification_permission_dismissed</string>
     <bool name="pref_default_value_notification_permission_dismissed">false</bool>
+
+    <string name="pref_key_binary_file_size_unit">key_binary_file_size_unit</string>
+    <bool name="pref_default_value_binary_file_size_unit">false</bool>
 </resources>

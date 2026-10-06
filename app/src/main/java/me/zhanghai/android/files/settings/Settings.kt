@@ -132,6 +132,12 @@ object Settings {
             R.bool.pref_default_value_file_list_loading_indicator
         )
 
+    val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_binary_file_size_unit,
+            R.bool.pref_default_value_binary_file_size_unit
+        )
+
     val FILE_NAME_ELLIPSIZE: SettingLiveData<TextUtils.TruncateAt> =
         EnumSettingLiveData(
             R.string.pref_key_file_name_ellipsize, R.string.pref_default_value_file_name_ellipsize,
