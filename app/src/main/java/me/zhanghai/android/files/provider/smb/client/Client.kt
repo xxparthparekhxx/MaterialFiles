@@ -9,6 +9,7 @@ import com.hierynomus.msdtyp.AccessMask
 import com.hierynomus.mserref.NtStatus
 import com.hierynomus.msfscc.FileAttributes
 import com.hierynomus.msfscc.fileinformation.FileBasicInformation
+import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation
 import com.hierynomus.msfscc.fileinformation.FileIdFullDirectoryInformation
 import com.hierynomus.msfscc.fileinformation.FileSettableInformation
 import com.hierynomus.msfscc.fileinformation.FileStandardInformation
@@ -98,6 +99,17 @@ object Client {
         return FileByteChannel(file, isAppend)
     }
 
+    // An empty search pattern makes some Windows servers return a single entry, often
+    // desktop.ini. FileIdBothDirectoryInformation is the class those servers actually enumerate.
+    private fun listDirectory(directory: Directory): Sequence<Pair<String, FileInformation>> =
+        try {
+            directory.iterator(FileIdBothDirectoryInformation::class.java, "*").asSequence()
+                .map { it.fileName to it.toFileInformation() }
+        } catch (e: SMBRuntimeException) {
+            directory.iterator(FileIdFullDirectoryInformation::class.java, "*").asSequence()
+                .map { it.fileName to it.toFileInformation() }
+        }
+
     @Throws(ClientException::class)
     fun openDirectoryIterator(path: Path): CloseableIterator<Path> {
         val session = getSession(path.authority)
@@ -142,14 +154,11 @@ object Client {
             } catch (e: SMBRuntimeException) {
                 throw ClientException(e)
             }
-            val directoryIterator = directory.iterator(FileIdFullDirectoryInformation::class.java)
-                .asSequence()
-                .filter { fileInformation ->
-                    !fileInformation.fileName.let { it == "." || it == ".." }
-                }
-                .map { fileInformation ->
-                    path.resolve(fileInformation.fileName).also {
-                        directoryFileInformationCache[it] = fileInformation.toFileInformation()
+            val directoryIterator = listDirectory(directory)
+                .filter { (name, _) -> name != "." && name != ".." }
+                .map { (name, information) ->
+                    path.resolve(name).also {
+                        directoryFileInformationCache[it] = information
                     }
                 }
                 .iterator()
