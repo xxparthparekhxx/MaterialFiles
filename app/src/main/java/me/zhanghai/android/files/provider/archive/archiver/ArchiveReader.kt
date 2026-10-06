@@ -134,6 +134,14 @@ object ArchiveReader {
         }
     }
 
+    private fun singleFileEntryName(file: Path): String? {
+        val name = file.fileName?.toString() ?: return null
+        val extension = COMPRESSED_FILE_EXTENSIONS.find { suffix ->
+            name.length > suffix.length && name.endsWith(suffix, ignoreCase = true)
+        } ?: return name
+        return name.dropLast(extension.length)
+    }
+
     @Throws(IOException::class)
     private fun openArchive(
         file: Path,
@@ -148,7 +156,7 @@ object ArchiveReader {
         if (channel != null) {
             var successful = false
             try {
-                val archive = ReadArchive(channel, passwords)
+                val archive = ReadArchive(channel, passwords, singleFileEntryName(file))
                 successful = true
                 return archive to ArchiveCloseable(archive, channel)
             } finally {
@@ -160,7 +168,7 @@ object ArchiveReader {
         val inputStream = file.newInputStream()
         var successful = false
         try {
-            val archive = ReadArchive(inputStream, passwords)
+            val archive = ReadArchive(inputStream, passwords, singleFileEntryName(file))
             successful = true
             return archive to ArchiveCloseable(archive, inputStream)
         } finally {
@@ -212,6 +220,10 @@ object ArchiveReader {
             } else {
                 Charset.forName(Settings.ARCHIVE_FILE_NAME_ENCODING.valueCompat)
             }
+
+    private val COMPRESSED_FILE_EXTENSIONS = listOf(
+        ".xz", ".gz", ".bz2", ".lzma", ".zst", ".lz4", ".lz", ".z"
+    )
 
     private class ArchiveCloseable(
         private val archive: ReadArchive,

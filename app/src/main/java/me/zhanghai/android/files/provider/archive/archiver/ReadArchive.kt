@@ -29,13 +29,18 @@ import me.zhanghai.android.libarchive.ArchiveException
 class ReadArchive : Closeable {
     private val archive = Archive.readNew()
 
+    private var rawEntryName: String? = null
+
     @Throws(ArchiveException::class)
-    constructor(inputStream: InputStream, passwords: List<String>) {
+    constructor(inputStream: InputStream, passwords: List<String>, rawEntryName: String? = null) {
+        this.rawEntryName = rawEntryName
         var successful = false
         try {
             Archive.setCharset(archive, StandardCharsets.UTF_8.name().toByteArray())
             Archive.readSupportFilterAll(archive)
             Archive.readSupportFormatAll(archive)
+            // A lone compressed stream, such as a kernel patch.xz, is not a tar archive.
+            Archive.readSupportFormatRaw(archive)
             Archive.readSetCallbackData(archive, null)
             val buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
             Archive.readSetReadCallback<Any?>(archive) { _, _ ->
@@ -72,12 +77,19 @@ class ReadArchive : Closeable {
     }
 
     @Throws(ArchiveException::class)
-    constructor(channel: SeekableByteChannel, passwords: List<String>) {
+    constructor(
+        channel: SeekableByteChannel,
+        passwords: List<String>,
+        rawEntryName: String? = null
+    ) {
+        this.rawEntryName = rawEntryName
         var successful = false
         try {
             Archive.setCharset(archive, StandardCharsets.UTF_8.name().toByteArray())
             Archive.readSupportFilterAll(archive)
             Archive.readSupportFormatAll(archive)
+            // A lone compressed stream, such as a kernel patch.xz, is not a tar archive.
+            Archive.readSupportFormatRaw(archive)
             Archive.readSetCallbackData(archive, null)
             val buffer = ByteBuffer.allocateDirect(DEFAULT_BUFFER_SIZE)
             Archive.readSetReadCallback<Any?>(archive) { _, _ ->
@@ -144,11 +156,20 @@ class ReadArchive : Closeable {
         if (entry == 0L) {
             return null
         }
-        val name =
+        val pathname =
             getEntryString(ArchiveEntry.pathnameUtf8(entry), ArchiveEntry.pathname(entry), charset)
                 ?: throw ArchiveException(
                     Archive.ERRNO_FATAL, "pathname == null && pathnameUtf8 == null"
                 )
+        val singleFileName = rawEntryName
+        val name = if (
+            singleFileName != null && Archive.format(archive) == Archive.FORMAT_RAW &&
+                pathname == "data"
+        ) {
+            singleFileName
+        } else {
+            pathname
+        }
         val isEncrypted = ArchiveEntry.isEncrypted(entry)
         val stat = ArchiveEntry.stat(entry)
         val lastModifiedTime = if (ArchiveEntry.mtimeIsSet(entry)) {
