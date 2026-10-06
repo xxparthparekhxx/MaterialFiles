@@ -30,7 +30,17 @@ class FileSortOptionsLiveData(pathLiveData: LiveData<Path>) : MediatorLiveData<F
     }
 
     fun putBy(by: By) {
-        putValue(valueCompat.copy(by = by))
+        val value = valueCompat
+        if (value.by == by) {
+            return
+        }
+        // Switching to another sort criterion also resets the order to the one that is most
+        // useful for it: A-Z for names and types, largest and newest first for sizes and dates.
+        val order = when (by) {
+            By.NAME, By.TYPE -> Order.ASCENDING
+            By.SIZE, By.LAST_MODIFIED -> Order.DESCENDING
+        }
+        putValue(value.copy(by = by, order = order))
     }
 
     fun putOrder(order: Order) {
