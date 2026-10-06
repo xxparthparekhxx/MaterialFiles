@@ -47,6 +47,11 @@
             android:defaultValue="@bool/pref_default_value_file_list_animation" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_drawer_swipe"
+            android:title="@string/settings_file_list_drawer_swipe_title"
+            android:defaultValue="@bool/pref_default_value_file_list_drawer_swipe" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_lock_header"
             android:title="@string/settings_file_list_lock_header_title"
             android:defaultValue="@bool/pref_default_value_file_list_lock_header" />

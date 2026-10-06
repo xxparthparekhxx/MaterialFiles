@@ -75,6 +75,12 @@ object Settings {
             R.bool.pref_default_value_file_list_double_back_to_exit
         )
 
+    val FILE_LIST_DRAWER_SWIPE: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_drawer_swipe,
+            R.bool.pref_default_value_file_list_drawer_swipe
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,

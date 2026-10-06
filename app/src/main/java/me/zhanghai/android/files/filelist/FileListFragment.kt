@@ -388,11 +388,31 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         addOnBackPressedCallback(SpeedDialViewOnBackPressedCallback(binding.speedDialView))
         binding.drawerLayout?.let {
             addOnBackPressedCallback(DrawerLayoutOnBackPressedCallback(it))
+            // When swiping is disabled the drawer is locked closed, so that it can only be opened
+            // with the navigation button. Unlock it while it is open so that it can still be
+            // dismissed by swiping.
+            fun updateDrawerLockMode(isOpen: Boolean) {
+                it.setDrawerLockMode(
+                    if (Settings.FILE_LIST_DRAWER_SWIPE.valueCompat || isOpen) {
+                        DrawerLayout.LOCK_MODE_UNLOCKED
+                    } else {
+                        DrawerLayout.LOCK_MODE_LOCKED_CLOSED
+                    }
+                )
+            }
             it.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
                 override fun onDrawerOpened(drawerView: View) {
                     NavigationStorageRefreshLiveData.notifyChanged()
+                    updateDrawerLockMode(true)
+                }
+
+                override fun onDrawerClosed(drawerView: View) {
+                    updateDrawerLockMode(false)
                 }
             })
+            Settings.FILE_LIST_DRAWER_SWIPE.observe(viewLifecycleOwner) { _ ->
+                updateDrawerLockMode(it.isDrawerOpen(GravityCompat.START))
+            }
         }
 
         if (!viewModel.hasTrail) {
