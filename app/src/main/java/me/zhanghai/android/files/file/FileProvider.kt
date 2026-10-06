@@ -155,6 +155,21 @@ class FileProvider : ContentProvider() {
                             columns += column
                             values += lastModified
                         }
+                        DocumentsContract.Document.COLUMN_FLAGS -> {
+                            columns += column
+                            val readOnly = try {
+                                path.fileSystem.isReadOnly
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                true
+                            }
+                            values += if (readOnly) {
+                                0
+                            } else {
+                                DocumentsContract.Document.FLAG_SUPPORTS_WRITE or
+                                    DocumentsContract.Document.FLAG_SUPPORTS_DELETE
+                            }
+                        }
                         MediaStore.Images.ImageColumns.ORIENTATION -> {
                             val orientation = try {
                                 path.newInputStream().use { ExifInterface(it).rotationDegrees }
@@ -419,11 +434,13 @@ class FileProvider : ContentProvider() {
             OpenableColumns.SIZE,
             MediaStore.MediaColumns.DATA,
             DocumentsContract.Document.COLUMN_MIME_TYPE,
-            DocumentsContract.Document.COLUMN_LAST_MODIFIED
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            DocumentsContract.Document.COLUMN_FLAGS
         )
 
         private val CHOOSER_ACTIVITY_DEFAULT_PROJECTION = arrayOf(
-            OpenableColumns.DISPLAY_NAME
+            OpenableColumns.DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_FLAGS
         )
     }
 }
