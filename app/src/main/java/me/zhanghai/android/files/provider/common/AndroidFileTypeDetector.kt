@@ -89,6 +89,9 @@ object AndroidFileTypeDetector : FileTypeDetector() {
             matchAscii(0, "BM") -> "image/bmp".asMimeType()
             matchAscii(0, "%PDF-") -> MimeType.PDF
             match(0, 0x50, 0x4B, 0x03, 0x04) -> "application/zip".asMimeType()
+            match(0, 0x37, 0x7A, 0xBC.toByte(), 0xAF.toByte(), 0x27, 0x1C) ->
+                "application/x-7z-compressed".asMimeType()
+            matchAscii(0, "Rar!") -> "application/vnd.rar".asMimeType()
             matchAscii(0, "ID3") ||
                 (match(0, 0xFF.toByte()) && header.size > 1 &&
                     header[1].toInt() and 0xE0 == 0xE0) -> "audio/mpeg".asMimeType()
