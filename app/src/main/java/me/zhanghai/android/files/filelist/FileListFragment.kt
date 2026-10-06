@@ -77,6 +77,7 @@ import java8.nio.file.Paths
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.nio.charset.Charset
 import kotlin.math.roundToInt
 import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
@@ -667,6 +668,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateShowHiddenFilesMenuItem()
         menu.findItem(R.id.action_rescan_media)?.isVisible = currentPath.isLinuxPath
         updateAddButton()
+        updateArchiveFileNameEncodingMenuItem()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -706,6 +708,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             R.id.action_refresh -> {
                 refresh()
+                true
+            }
+            R.id.action_archive_file_name_encoding -> {
+                showArchiveFileNameEncodingDialog()
                 true
             }
             R.id.action_select_all -> {
@@ -1167,6 +1173,28 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             requireContext()
         )
         startActivity(userAction.intent)
+    }
+
+    private fun updateArchiveFileNameEncodingMenuItem() {
+        if (!this::menuBinding.isInitialized) {
+            return
+        }
+        menuBinding.archiveFileNameEncodingItem.isVisible = currentPath.isArchivePath
+    }
+
+    private fun showArchiveFileNameEncodingDialog() {
+        val names = Charset.availableCharsets().keys.toTypedArray()
+        val current = Settings.ARCHIVE_FILE_NAME_ENCODING.valueCompat
+        val checked = names.indexOfFirst { it.equals(current, ignoreCase = true) }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.settings_archive_file_name_encoding_title)
+            .setSingleChoiceItems(names, checked) { dialog, which ->
+                Settings.ARCHIVE_FILE_NAME_ENCODING.putValue(names[which])
+                viewModel.reload()
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun setShowHiddenFiles(showHiddenFiles: Boolean) {
@@ -2534,7 +2562,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val searchItem: MenuItem,
         val viewSortItem: MenuItem,
         val selectAllItem: MenuItem,
-        val showHiddenFilesItem: MenuItem
+        val showHiddenFilesItem: MenuItem,
+        val archiveFileNameEncodingItem: MenuItem
     ) {
         companion object {
             fun inflate(menu: Menu, inflater: MenuInflater): MenuBinding {
@@ -2542,7 +2571,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 return MenuBinding(
                     menu, menu.findItem(R.id.action_search), menu.findItem(R.id.action_view_sort),
                     menu.findItem(R.id.action_select_all),
-                    menu.findItem(R.id.action_show_hidden_files)
+                    menu.findItem(R.id.action_show_hidden_files),
+                    menu.findItem(R.id.action_archive_file_name_encoding)
                 )
             }
         }
