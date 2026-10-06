@@ -888,6 +888,8 @@
     <string name="settings_block_screenshots_summary">Prevent screenshots and screen recording, and hide the app content in recent apps</string>
     <string name="settings_copy_preserve_modification_time_title">Keep modification time when copying</string>
     <string name="settings_copy_preserve_modification_time_summary">Give copied files and folders the same last modified time as the originals. Moves already keep it</string>
+    <string name="settings_file_list_show_permissions_title">Show permissions in the list</string>
+    <string name="settings_file_list_show_permissions_summary">Show the permissions of each file and folder, such as rwxr-xr-x, in the list when available</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
