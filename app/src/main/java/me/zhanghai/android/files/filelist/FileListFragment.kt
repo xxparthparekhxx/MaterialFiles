@@ -59,6 +59,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.LifecycleOwner
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -546,6 +547,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             adapter.fitThumbnails = it
         }
         Settings.FILE_LIST_HIDE_ADD_BUTTON.observe(viewLifecycleOwner) { updateAddButton() }
+        Settings.FILE_LIST_DIVIDERS.observe(viewLifecycleOwner) { updateDividers() }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }
@@ -1040,6 +1042,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateSpanCount()
         adapter.viewType = viewType
         updateViewSortMenuItems()
+        updateDividers()
+    }
+
+    private var dividerDecoration: DividerItemDecoration? = null
+
+    private fun updateDividers() {
+        val recyclerView = binding.recyclerView
+        dividerDecoration?.let { recyclerView.removeItemDecoration(it) }
+        dividerDecoration = null
+        if (Settings.FILE_LIST_DIVIDERS.valueCompat && viewModel.viewType != FileViewType.GRID) {
+            dividerDecoration = DividerItemDecoration(
+                recyclerView.context, DividerItemDecoration.VERTICAL
+            ).also { recyclerView.addItemDecoration(it) }
+        }
     }
 
     private fun updateToolbarScrollFlags() {
