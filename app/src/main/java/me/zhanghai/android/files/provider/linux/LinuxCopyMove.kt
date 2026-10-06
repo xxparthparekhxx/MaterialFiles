@@ -20,7 +20,9 @@ import java.io.IOException
 import java.io.InterruptedIOException
 
 internal object LinuxCopyMove {
-    private const val SEND_FILE_COUNT = 8 * 1024
+    // 8 KiB made a large copy notify the folder once per write, which reloaded every row
+    // and could crash while a video was only partly written.
+    private const val SEND_FILE_COUNT = 1024 * 1024
 
     private val XATTR_NAME_PREFIX_USER = "user.".toByteString()
 

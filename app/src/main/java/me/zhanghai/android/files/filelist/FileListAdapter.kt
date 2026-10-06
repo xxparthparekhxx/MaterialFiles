@@ -51,6 +51,21 @@ import me.zhanghai.android.files.util.layoutInflater
 import me.zhanghai.android.files.util.valueCompat
 import java.util.Locale
 
+private fun FileItem.sameDisplayedContent(other: FileItem): Boolean {
+    if (mimeType != other.mimeType || isHidden != other.isHidden ||
+        symbolicLinkTarget != other.symbolicLinkTarget ||
+        attributesNoFollowLinks.isSymbolicLink != other.attributesNoFollowLinks.isSymbolicLink
+    ) {
+        return false
+    }
+    val left = attributes
+    val right = other.attributes
+    return left.size() == right.size() &&
+        left.lastModifiedTime() == right.lastModifiedTime() &&
+        left.isDirectory == right.isDirectory &&
+        left.isEncrypted() == right.isEncrypted()
+}
+
 class FileListAdapter(
     private val listener: Listener
 ) : AnimatedListAdapter<FileItem, FileListAdapter.ViewHolder>(CALLBACK), PopupTextProvider {
@@ -610,7 +625,7 @@ class FileListAdapter(
                 oldItem.path == newItem.path
 
             override fun areContentsTheSame(oldItem: FileItem, newItem: FileItem): Boolean =
-                oldItem == newItem
+                oldItem.sameDisplayedContent(newItem)
         }
     }
 
