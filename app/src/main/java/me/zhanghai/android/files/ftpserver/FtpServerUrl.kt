@@ -14,19 +14,49 @@ import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.RuntimeBroadcastReceiver
 import me.zhanghai.android.files.util.getLocalAddress
 import me.zhanghai.android.files.util.valueCompat
+import java.net.Inet4Address
 import java.net.InetAddress
+import java.net.NetworkInterface
+import java.net.SocketException
 
 object FtpServerUrl {
+    class Entry(val interfaceName: String, val url: String)
+
     fun getUrl(): String? {
         val localAddress = InetAddress::class.getLocalAddress() ?: return null
+        return createUrl(localAddress)
+    }
+
+    private fun createUrl(address: InetAddress): String {
         val username = if (!Settings.FTP_SERVER_ANONYMOUS_LOGIN.valueCompat) {
             Settings.FTP_SERVER_USERNAME.valueCompat
         } else {
             null
         }
-        val host = localAddress.hostAddress
+        val host = address.hostAddress
         val port = Settings.FTP_SERVER_PORT.valueCompat
         return "ftp://${if (username != null) "$username@" else ""}$host:$port/"
+    }
+
+    // The URL for every network interface that has an IPv4 address, such as Wi-Fi and Wi-Fi
+    // Direct, with the default URL first.
+    fun getEntries(): List<Entry> {
+        val entries = try {
+            NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
+                .filter { it.isUp && !it.isLoopback }
+                .flatMap { networkInterface ->
+                    networkInterface.inetAddresses.toList()
+                        .filter {
+                            it is Inet4Address && !it.isLoopbackAddress && !it.isLinkLocalAddress
+                        }
+                        .map { Entry(networkInterface.name, createUrl(it)) }
+                }
+        } catch (e: SocketException) {
+            e.printStackTrace()
+            emptyList()
+        }
+        val defaultUrl = getUrl()
+        return entries.sortedByDescending { it.url == defaultUrl }
     }
 
     fun createChangeReceiver(context: Context, onChange: () -> Unit): RuntimeBroadcastReceiver =
