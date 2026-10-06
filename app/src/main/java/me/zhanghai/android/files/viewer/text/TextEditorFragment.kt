@@ -11,14 +11,12 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import android.view.SubMenu
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -39,6 +37,7 @@ import me.zhanghai.android.files.util.fadeInUnsafe
 import me.zhanghai.android.files.util.fadeOutUnsafe
 import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isReady
+import me.zhanghai.android.files.util.showCharsetPickerDialog
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.viewModels
 import java.nio.charset.Charset
@@ -167,7 +166,6 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         super.onPrepareOptionsMenu(menu)
 
         updateSaveMenuItem()
-        updateEncodingMenuItems()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -190,8 +188,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 onReload()
                 true
             }
-            Menu.FIRST -> {
-                viewModel.encoding.value = Charset.forName(item.titleCondensed!!.toString())
+            R.id.action_encoding -> {
+                requireContext().showCharsetPickerDialog(viewModel.encoding.value.name()) {
+                    viewModel.encoding.value = it
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -234,17 +234,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     }
 
     private fun onEncodingChanged(encoding: Charset) {
-        updateEncodingMenuItems()
-    }
-
-    private fun updateEncodingMenuItems() {
-        if (!this::menuBinding.isInitialized) {
-            return
-        }
-        val charsetName = viewModel.encoding.value.name()
-        val charsetItem = menuBinding.encodingSubMenu.children
-            .find { it.titleCondensed == charsetName }!!
-        charsetItem.isChecked = true
+        // The encoding dialog reads the current value when opened.
     }
 
     private fun onTextStateChanged(state: DataState<String>) {
@@ -353,20 +343,12 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
 
     private class MenuBinding private constructor(
         val menu: Menu,
-        val saveItem: MenuItem,
-        val encodingSubMenu: SubMenu
+        val saveItem: MenuItem
     ) {
         companion object {
             fun inflate(menu: Menu, inflater: MenuInflater): MenuBinding {
                 inflater.inflate(R.menu.text_editor, menu)
-                val encodingSubMenu = menu.findItem(R.id.action_encoding).subMenu!!
-                for ((charsetName, charset) in Charset.availableCharsets()) {
-                    // HACK: Use titleCondensed to store charset name.
-                    encodingSubMenu.add(Menu.NONE, Menu.FIRST, Menu.NONE, charset.displayName())
-                        .titleCondensed = charsetName
-                }
-                encodingSubMenu.setGroupCheckable(Menu.NONE, true, true)
-                return MenuBinding(menu, menu.findItem(R.id.action_save), encodingSubMenu)
+                return MenuBinding(menu, menu.findItem(R.id.action_save))
             }
         }
     }
