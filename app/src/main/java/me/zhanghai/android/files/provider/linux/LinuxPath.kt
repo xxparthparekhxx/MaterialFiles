@@ -28,7 +28,9 @@ import me.zhanghai.android.files.compat.opPackageNameCompat
 import me.zhanghai.android.files.compat.pathFileCompat
 import me.zhanghai.android.files.provider.common.ByteString
 import me.zhanghai.android.files.provider.common.ByteStringListPath
+import me.zhanghai.android.files.provider.common.toByteString
 import me.zhanghai.android.files.provider.root.RootablePath
+import me.zhanghai.android.files.provider.root.isRunningAsRoot
 import me.zhanghai.android.files.storage.StorageVolumeListLiveData
 import me.zhanghai.android.files.util.readParcelable
 import me.zhanghai.android.files.util.valueCompat
@@ -71,6 +73,19 @@ internal class LinuxPath : ByteStringListPath<LinuxPath>, RootablePath {
     }
 
     override fun toFile(): File = File(toString())
+
+    override fun toByteString(): ByteString {
+        val byteString = super.toByteString()
+        if (!isRunningAsRoot) {
+            return byteString
+        }
+        // This directory is a FUSE mount that refuses to be listed, including for uid 0.
+        // The per-user directories are still available under /data/media.
+        if (byteString.toString() != "/storage/emulated") {
+            return byteString
+        }
+        return "/data/media".toByteString()
+    }
 
     @Throws(IOException::class)
     override fun register(
