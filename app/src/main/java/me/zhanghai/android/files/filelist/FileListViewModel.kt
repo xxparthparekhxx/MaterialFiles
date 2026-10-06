@@ -284,7 +284,10 @@ class FileListViewModel : ViewModel() {
 
         fun reload() {
             when (val liveData = liveData) {
-                is FileListLiveData -> liveData.loadValue()
+                is FileListLiveData -> {
+                    liveData.reobserve()
+                    liveData.loadValue()
+                }
                 is SearchFileListLiveData -> liveData.loadValue()
             }
         }

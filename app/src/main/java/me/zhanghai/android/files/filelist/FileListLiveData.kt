@@ -88,6 +88,10 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
         }
     }
 
+    fun reobserve() {
+        observer.reobserve()
+    }
+
     private fun onChangeObserved() {
         if (hasActiveObservers()) {
             loadValue()
