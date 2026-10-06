@@ -289,8 +289,10 @@
     <string name="file_list_subtitle_separator">,\u0020</string>
     <string name="file_list_path_error_empty">Path cannot be empty</string>
     <string name="file_list_path_error_invalid">Invalid path</string>
+    <string name="file_list_error_directory_not_found">Folder not found</string>
     <string name="file_list_action_view_sort">View and sort</string>
     <string name="file_list_action_view_list">List</string>
+    <string name="file_list_action_view_compact_list">Compact list</string>
     <string name="file_list_action_view_grid">Grid</string>
     <string name="file_list_action_sort_by_name">Name</string>
     <string name="file_list_action_sort_by_type">Type</string>
@@ -316,6 +318,7 @@
     <string name="file_list_create_file_name_hint">File name</string>
     <string name="file_list_create_file_name_error_empty" translatable="false">@string/file_name_error_empty</string>
     <string name="file_list_create_file_name_error_invalid" translatable="false">@string/file_name_error_invalid</string>
+    <string name="file_list_create_error_read_only">Cannot create files here</string>
     <string name="file_list_open_current_directory_format">Select “%1$s”</string>
     <string name="file_list_paste_move_title_format">Moving %1$,d</string>
     <string name="file_list_paste_copy_title_format">Copying %1$,d</string>
@@ -759,6 +762,18 @@
     <string name="settings_black_night_mode">Black night mode</string>
     <string name="settings_file_list_animation_title">File list animation</string>
     <string name="settings_file_list_lock_header_title">Lock header</string>
+    <string name="settings_file_list_grid_span_count_title">Grid columns</string>
+    <string-array name="settings_file_list_grid_span_count_entries">
+        <item>Automatic</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+    </string-array>
+    <string name="settings_file_list_loading_indicator_title">File list loading indicator</string>
+    <string name="settings_binary_file_size_unit_title">Binary file size units</string>
+    <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_name_ellipsize_title">Display long file name</string>
     <string-array name="settings_file_name_ellipsize_entries">
         <item>Ellipsize the beginning</item>
@@ -795,7 +810,8 @@
         <item>View contents</item>
         <item>Ask what to do</item>
     </string-array>
-    <string name="settings_show_pdf_thumbnail_pre_28_title">Show thumbnail for PDF documents</string>
+    <string name="settings_show_pdf_thumbnail_title">Show thumbnail for PDF documents</string>
+    <string name="settings_show_pdf_thumbnail_pre_28_title">Show thumbnail for PDF documents on older Android versions</string>
     <string name="settings_show_pdf_thumbnail_pre_28_summary">Might make the app unstable on older versions of Android</string>
     <string name="settings_read_remote_files_for_thumbnail_title">Read remote files for thumbnail</string>
 

@@ -30,7 +30,9 @@ class OpenApkDialogFragment : AppCompatDialogFragment() {
             .setPositiveButton(R.string.install) { _, _ -> listener.installApk(args.file) }
             // While semantically incorrect, this places the two most expected actions side by side.
             .setNegativeButton(R.string.view) { _, _ -> listener.viewApk(args.file) }
-            .setNeutralButton(android.R.string.cancel, null)
+            .setNeutralButton(R.string.file_item_action_open_with) { _, _ ->
+                listener.openFileWith(args.file)
+            }
             .create()
     }
 
@@ -46,5 +48,6 @@ class OpenApkDialogFragment : AppCompatDialogFragment() {
     interface Listener {
         fun installApk(file: FileItem)
         fun viewApk(file: FileItem)
+        fun openFileWith(file: FileItem)
     }
 }
