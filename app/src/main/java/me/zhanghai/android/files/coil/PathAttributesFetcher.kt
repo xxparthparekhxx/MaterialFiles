@@ -53,6 +53,7 @@ import okio.buffer
 import okio.source
 import java.io.Closeable
 import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
 import me.zhanghai.android.files.util.setDataSource as appSetDataSource
 
 // Keep thumbnail reads small. Coil buffers an image, and MediaMetadataRetriever can
@@ -83,6 +84,7 @@ class PathAttributesFetcher(
         val isThumbnail = width is Dimension.Pixels && width.px <= 512
             && height is Dimension.Pixels && height.px <= 384
         if (isThumbnail) {
+            ThumbnailGeneration.checkEnabled()
             width as Dimension.Pixels
             height as Dimension.Pixels
             if (path.isDocumentPath && attributes.documentSupportsThumbnail) {
@@ -125,7 +127,11 @@ class PathAttributesFetcher(
                 }
             }
             mimeType.isImage || mimeType == MimeType.GENERIC -> {
-                val inputStream = path.newInputStream()
+                val inputStream = if (isThumbnail) {
+                    ThumbnailGeneration.trackStream(path.newInputStream())
+                } else {
+                    path.newInputStream()
+                }
                 return SourceResult(
                     ImageSource(inputStream.source().buffer(), options.context),
                     if (mimeType != MimeType.GENERIC) mimeType.value else null, path.dataSource
@@ -142,10 +148,25 @@ class PathAttributesFetcher(
                     }
                 }
                 val embeddedPicture = try {
-                    MediaMetadataRetriever().use { retriever ->
-                        retriever.setDataSource(path)
-                        retriever.embeddedPicture
+                    if (isThumbnail) {
+                        val retriever = MediaMetadataRetriever()
+                        val handle = ReleasingCloseable { retriever.release() }
+                        ThumbnailGeneration.track(handle)
+                        try {
+                            retriever.setDataSource(path)
+                            retriever.embeddedPicture
+                        } finally {
+                            ThumbnailGeneration.untrack(handle)
+                            handle.close()
+                        }
+                    } else {
+                        MediaMetadataRetriever().use { retriever ->
+                            retriever.setDataSource(path)
+                            retriever.embeddedPicture
+                        }
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     e.printStackTrace()
                     null
@@ -160,6 +181,8 @@ class PathAttributesFetcher(
                 if (mimeType.isVideo) {
                     try {
                         return videoFrameFetcherFactory.create(path, options, imageLoader).fetch()
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

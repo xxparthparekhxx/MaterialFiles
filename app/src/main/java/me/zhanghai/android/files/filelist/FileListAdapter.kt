@@ -203,6 +203,13 @@ class FileListAdapter(
         activePopupMenu = null
     }
 
+    fun reloadThumbnails() {
+        if (itemCount == 0) {
+            return
+        }
+        notifyItemRangeChanged(0, itemCount, PAYLOAD_THUMBNAIL)
+    }
+
     private lateinit var _nameEllipsize: FileNameEllipsize
     var nameEllipsize: FileNameEllipsize
         get() = _nameEllipsize
@@ -420,6 +427,9 @@ class FileListAdapter(
         applyListDensity(holder)
         bindDescription(holder, file, isDirectory)
         if (payloads.isNotEmpty()) {
+            if (payloads.any { it === PAYLOAD_THUMBNAIL }) {
+                bindThumbnails(holder, file)
+            }
             return
         }
         bindViewHolderAnimation(holder)
@@ -446,44 +456,13 @@ class FileListAdapter(
             }
         }
         holder.iconLayout.setOnClickListener { selectFile(file) }
+        val attributes = file.attributes
         val iconRes = file.mimeType.iconRes
         holder.iconImage.apply {
             isVisible = true
             setImageResource(iconRes)
         }
-        holder.directoryThumbnailImage?.isVisible = isDirectory
-        holder.thumbnailOutlineView?.isVisible = !isDirectory
-        val supportsThumbnail = file.supportsThumbnail
-        val shouldLoadThumbnailIcon = supportsThumbnail && holder.thumbnailIconImage != null &&
-            file.mimeType.isApk
-        val attributes = file.attributes
-        holder.thumbnailIconImage?.apply {
-            dispose()
-            isVisible = !isDirectory
-            setImageResource(iconRes)
-            if (shouldLoadThumbnailIcon) {
-                load(path to attributes)
-            }
-        }
-        holder.thumbnailImage.apply {
-            dispose()
-            setImageDrawable(null)
-            scaleType = if (fitThumbnails) {
-                ImageView.ScaleType.FIT_CENTER
-            } else {
-                ImageView.ScaleType.CENTER_CROP
-            }
-            val shouldLoadThumbnail = supportsThumbnail && !shouldLoadThumbnailIcon
-            isVisible = shouldLoadThumbnail
-            if (shouldLoadThumbnail) {
-                load(path to attributes) {
-                    listener { _, _ ->
-                        val iconImage = holder.thumbnailIconImage ?: holder.iconImage
-                        iconImage.isVisible = false
-                    }
-                }
-            }
-        }
+        bindThumbnails(holder, file)
         holder.appIconBadgeImage.apply {
             dispose()
             setImageDrawable(null)
@@ -624,6 +603,45 @@ class FileListAdapter(
         }
     }
 
+    private fun bindThumbnails(holder: ViewHolder, file: FileItem) {
+        val isDirectory = file.attributes.isDirectory
+        val path = file.path
+        val iconRes = file.mimeType.iconRes
+        val attributes = file.attributes
+        holder.directoryThumbnailImage?.isVisible = isDirectory
+        holder.thumbnailOutlineView?.isVisible = !isDirectory
+        val supportsThumbnail = file.supportsThumbnail
+        val shouldLoadThumbnailIcon = supportsThumbnail && holder.thumbnailIconImage != null &&
+            file.mimeType.isApk
+        holder.thumbnailIconImage?.apply {
+            dispose()
+            isVisible = !isDirectory
+            setImageResource(iconRes)
+            if (shouldLoadThumbnailIcon) {
+                load(path to attributes)
+            }
+        }
+        holder.thumbnailImage.apply {
+            dispose()
+            setImageDrawable(null)
+            scaleType = if (fitThumbnails) {
+                ImageView.ScaleType.FIT_CENTER
+            } else {
+                ImageView.ScaleType.CENTER_CROP
+            }
+            val shouldLoadThumbnail = supportsThumbnail && !shouldLoadThumbnailIcon
+            isVisible = shouldLoadThumbnail
+            if (shouldLoadThumbnail) {
+                load(path to attributes) {
+                    listener { _, _ ->
+                        val iconImage = holder.thumbnailIconImage ?: holder.iconImage
+                        iconImage.isVisible = false
+                    }
+                }
+            }
+        }
+    }
+
     override fun getPopupText(view: View, position: Int): CharSequence {
         val file = getItem(position)
         return when (sortOptions.by) {
@@ -701,6 +719,7 @@ class FileListAdapter(
     companion object {
         private val PAYLOAD_STATE_CHANGED = Any()
         private val PAYLOAD_DIRECTORY_ITEM_COUNT = Any()
+        private val PAYLOAD_THUMBNAIL = Any()
 
         private val CALLBACK = object : DiffUtil.ItemCallback<FileItem>() {
             override fun areItemsTheSame(oldItem: FileItem, newItem: FileItem): Boolean =

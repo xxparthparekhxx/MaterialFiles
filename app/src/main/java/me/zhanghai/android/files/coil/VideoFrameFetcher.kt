@@ -22,7 +22,6 @@ import coil.request.videoFrameOption
 import coil.request.videoFramePercent
 import me.zhanghai.android.files.compat.getFrameAtTimeCompat
 import me.zhanghai.android.files.compat.getScaledFrameAtTimeCompat
-import me.zhanghai.android.files.compat.use
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -31,8 +30,12 @@ class VideoFrameFetcher(
     private val options: Options,
     private val setDataSource: MediaMetadataRetriever.() -> Unit
 ) : Fetcher {
-    override suspend fun fetch(): FetchResult =
-        MediaMetadataRetriever().use { retriever ->
+    override suspend fun fetch(): FetchResult {
+        val retriever = MediaMetadataRetriever()
+        val handle = ReleasingCloseable { retriever.release() }
+        ThumbnailGeneration.track(handle)
+        try {
+            ThumbnailGeneration.checkEnabled()
             retriever.setDataSource()
             val rotation =
                 retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
@@ -134,12 +137,16 @@ class VideoFrameFetcher(
                     outBitmap.recycle()
                 }
             }
-            DrawableResult(
+            return DrawableResult(
                 drawable = bitmap.toDrawable(options.context.resources),
                 isSampled = scale < 1.0,
                 dataSource = DataSource.DISK
             )
+        } finally {
+            ThumbnailGeneration.untrack(handle)
+            handle.close()
         }
+    }
 
     abstract class Factory<T : Any> : Fetcher.Factory<T> {
         override fun create(data: T, options: Options, imageLoader: ImageLoader): Fetcher =
