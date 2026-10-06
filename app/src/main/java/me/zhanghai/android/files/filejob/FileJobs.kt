@@ -7,6 +7,7 @@ package me.zhanghai.android.files.filejob
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -1263,6 +1264,32 @@ class DeleteFileJob(private val paths: List<Path>) : FileJob() {
     }
 }
 
+private fun FileJob.recordDeletedLinuxPath(path: Path) {
+    if (!path.isLinuxPath) {
+        return
+    }
+    val filePath = try {
+        path.toFile().path
+    } catch (e: UnsupportedOperationException) {
+        return
+    }
+    synchronized(deletedLinuxPaths) {
+        deletedLinuxPaths += filePath
+    }
+}
+
+internal fun FileJob.flushDeletedLinuxPaths() {
+    val paths = synchronized(deletedLinuxPaths) {
+        if (deletedLinuxPaths.isEmpty()) {
+            return
+        }
+        deletedLinuxPaths.toTypedArray().also { deletedLinuxPaths.clear() }
+    }
+    // The media database keeps counting a file until it is scanned again, so a
+    // delete can leave the free-space display unchanged until reboot.
+    MediaScannerConnection.scanFile(service, paths, null, null)
+}
+
 @Throws(IOException::class)
 private fun FileJob.delete(path: Path, transferInfo: TransferInfo?, actionAllInfo: ActionAllInfo) {
     var retry: Boolean
@@ -1271,6 +1298,7 @@ private fun FileJob.delete(path: Path, transferInfo: TransferInfo?, actionAllInf
         try {
             path.delete()
             RemovedPaths.notifyRemoved(path)
+            recordDeletedLinuxPath(path)
             if (transferInfo != null) {
                 transferInfo.incrementTransferredFileCount()
                 postDeleteNotification(transferInfo, path)

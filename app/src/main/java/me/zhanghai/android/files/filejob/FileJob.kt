@@ -18,6 +18,8 @@ abstract class FileJob {
     internal lateinit var service: FileJobService
         private set
 
+    internal val deletedLinuxPaths = mutableListOf<String>()
+
     fun runOn(service: FileJobService) {
         this.service = service
         try {
@@ -33,6 +35,7 @@ abstract class FileJob {
                 service.showToast(e.toString())
             }
         } finally {
+            flushDeletedLinuxPaths()
             service.notificationManager.cancel(id)
             FileJobProgresses.remove(id)
             NavigationStorageRefreshLiveData.notifyChanged()
