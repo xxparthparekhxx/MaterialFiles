@@ -64,6 +64,14 @@
             android:entries="@array/settings_file_name_ellipsize_entries"
             android:entryValues="@array/pref_entry_values_file_name_ellipsize"
             app:useSimpleSummaryProvider="true" />
+
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_file_list_grid_span_count"
+            android:title="@string/settings_file_list_grid_span_count_title"
+            android:defaultValue="@string/pref_default_value_file_list_grid_span_count"
+            android:entries="@array/settings_file_list_grid_span_count_entries"
+            android:entryValues="@array/pref_entry_values_file_list_grid_span_count"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_behavior_title">
