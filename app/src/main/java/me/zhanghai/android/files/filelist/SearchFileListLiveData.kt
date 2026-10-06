@@ -95,6 +95,14 @@ class SearchFileListLiveData(
         future?.cancel(false)
     }
 
+    override fun onInactive() {
+        observer.pause()
+    }
+
+    override fun onActive() {
+        observer.observe()
+    }
+
     private fun onChangeObserved() {
         // Renames and deletions inside the searched tree previously left stale results until
         // the query changed; re-run the search like a fresh load.

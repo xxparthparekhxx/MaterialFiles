@@ -252,6 +252,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private lateinit var adapter: FileListAdapter
 
+    private var appBarOffsetListener: AppBarLayout.OnOffsetChangedListener? = null
+
+    private var drawerListener: DrawerLayout.DrawerListener? = null
+
     private val debouncedSearchRunnable = DebouncedRunnable(Handler(Looper.getMainLooper()), 1000) {
         if (!isResumed || !viewModel.isSearchViewExpanded) {
             return@DebouncedRunnable
@@ -280,6 +284,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             .root
 
     override fun onDestroyView() {
+        appBarOffsetListener?.let { binding.appBarLayout.removeOnOffsetChangedListener(it) }
+        appBarOffsetListener = null
+        drawerListener?.let { binding.drawerLayout?.removeDrawerListener(it) }
+        drawerListener = null
         super.onDestroyView()
 
         adapter.dismissActivePopupMenu()
@@ -306,12 +314,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             binding.persistentBarLayout, binding.bottomBarLayout, binding.bottomToolbar
         )
         val contentLayoutInitialPaddingBottom = binding.contentLayout.paddingBottom
-        binding.appBarLayout.addOnOffsetChangedListener { _, verticalOffset ->
+        appBarOffsetListener = AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
             binding.contentLayout.updatePaddingRelative(
                 bottom = contentLayoutInitialPaddingBottom +
                     binding.appBarLayout.totalScrollRange + verticalOffset
             )
         }
+        binding.appBarLayout.addOnOffsetChangedListener(appBarOffsetListener!!)
         binding.appBarLayout.syncBackgroundColorTo(binding.overlayToolbar)
         binding.breadcrumbLayout.setListener(this)
         if (!(activity.hasSw600Dp && activity.isOrientationLandscape)) {
@@ -448,7 +457,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     }
                 )
             }
-            it.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            drawerListener = object : DrawerLayout.SimpleDrawerListener() {
                 override fun onDrawerOpened(drawerView: View) {
                     NavigationStorageRefreshLiveData.notifyChanged()
                     updateDrawerLockMode(true)
@@ -457,7 +466,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 override fun onDrawerClosed(drawerView: View) {
                     updateDrawerLockMode(false)
                 }
-            })
+            }
+            it.addDrawerListener(drawerListener!!)
             Settings.FILE_LIST_DRAWER_SWIPE.observe(viewLifecycleOwner) { _ ->
                 updateDrawerLockMode(it.isDrawerOpen(GravityCompat.START))
             }
