@@ -249,6 +249,15 @@ internal object LinuxCopyMove {
         }
         if (targetStat != null) {
             if (sourceStat.st_dev == targetStat.st_dev && sourceStat.st_ino == targetStat.st_ino) {
+                // On a case-insensitive file system, a path that only differs in case resolves to
+                // the same file, but we still need to rename it for the new case to take effect.
+                if (source != target) {
+                    try {
+                        Syscall.rename(source, target)
+                    } catch (e: SyscallException) {
+                        throw e.toFileSystemException(source.toString(), target.toString())
+                    }
+                }
                 copyOptions.progressListener?.invoke(sourceStat.st_size)
                 return
             }
