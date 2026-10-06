@@ -28,21 +28,25 @@ class SearchFileListLiveData(
     private var future: Future<Unit>? = null
     private var currentTask: LoadTask? = null
 
+    private val observer: PathObserver
+
     private class LoadTask {
         @Volatile
         var isCancelled = false
     }
 
     init {
+        observer = PathObserver(path) { onChangeObserved() }
         loadValue()
     }
 
     fun loadValue() {
+        observer.observe()
         currentTask?.isCancelled = true
         future?.cancel(false)
         val task = LoadTask()
         currentTask = task
-        value = Loading(emptyList())
+        value = Loading(value?.value ?: emptyList())
         future = (AsyncTask.THREAD_POOL_EXECUTOR as ExecutorService).submit<Unit> {
             if (task.isCancelled) {
                 return@submit
@@ -86,8 +90,15 @@ class SearchFileListLiveData(
     }
 
     override fun close() {
+        observer.close()
         currentTask?.isCancelled = true
         future?.cancel(false)
+    }
+
+    private fun onChangeObserved() {
+        // Renames and deletions inside the searched tree previously left stale results until
+        // the query changed; re-run the search like a fresh load.
+        loadValue()
     }
 
     companion object {
