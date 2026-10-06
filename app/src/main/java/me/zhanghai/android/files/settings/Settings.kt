@@ -182,6 +182,11 @@ object Settings {
             R.string.pref_key_file_list_animation, R.bool.pref_default_value_file_list_animation
         )
 
+    val TEXT_EDITOR_WORD_WRAP: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_text_editor_word_wrap, R.bool.pref_default_value_text_editor_word_wrap
+        )
+
     val FILE_LIST_LOADING_INDICATOR: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_file_list_loading_indicator,
