@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.TextEditorFragmentBinding
+import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.ui.ThemedFastScroller
 import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.DataState
@@ -226,10 +227,15 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 state.throwable.printStackTrace()
                 binding.progress.fadeOutUnsafe()
                 binding.errorText.fadeInUnsafe()
-                binding.errorText.text = if (state.throwable is BinaryFileException) {
-                    getString(R.string.text_editor_error_binary_file)
-                } else {
-                    state.throwable.localizedMessage ?: state.throwable.toString()
+                val throwable = state.throwable
+                binding.errorText.text = when (throwable) {
+                    is BinaryFileException -> getString(R.string.text_editor_error_binary_file)
+                    is FileTooLargeException -> getString(
+                        R.string.text_editor_error_file_too_large_format,
+                        throwable.size.asFileSize().formatHumanReadable(requireContext()),
+                        throwable.maxSize.asFileSize().formatHumanReadable(requireContext())
+                    )
+                    else -> throwable.localizedMessage ?: throwable.toString()
                 }
                 binding.textEdit.fadeOutUnsafe()
             }
