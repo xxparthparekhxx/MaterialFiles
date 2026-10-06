@@ -282,6 +282,12 @@ object Settings {
             R.bool.pref_default_value_copy_preserve_modification_time
         )
 
+    val FILE_LIST_SHOW_PERMISSIONS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_show_permissions,
+            R.bool.pref_default_value_file_list_show_permissions
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

@@ -110,6 +110,10 @@
             android:title="@string/settings_copy_preserve_modification_time_title"
             android:summary="@string/settings_copy_preserve_modification_time_summary"
             android:defaultValue="@bool/pref_default_value_copy_preserve_modification_time" />
+            android:key="@string/pref_key_file_list_show_permissions"
+            android:title="@string/settings_file_list_show_permissions_title"
+            android:summary="@string/settings_file_list_show_permissions_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_show_permissions" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"

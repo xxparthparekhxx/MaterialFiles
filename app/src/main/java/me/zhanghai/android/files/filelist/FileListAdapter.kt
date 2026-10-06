@@ -39,6 +39,8 @@ import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.provider.common.isEncrypted
 import me.zhanghai.android.files.provider.linux.isLinuxPath
+import me.zhanghai.android.files.provider.common.toModeString
+import me.zhanghai.android.files.provider.common.PosixFileAttributes
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.AnimatedListAdapter
 import me.zhanghai.android.files.ui.CheckableForegroundLinearLayout
@@ -461,15 +463,20 @@ class FileListAdapter(
             }
         }
         holder.nameText.text = file.name
-        holder.descriptionText?.text = if (isDirectory) {
-            null
-        } else {
+        holder.descriptionText?.text = run {
             val context = holder.descriptionText!!.context
-            val lastModificationTime = attributes.lastModifiedTime().toInstant()
-                .formatShort(context)
-            val size = attributes.fileSize.formatHumanReadable(context)
+            val descriptionParts = mutableListOf<String>()
+            if (!isDirectory) {
+                descriptionParts += attributes.lastModifiedTime().toInstant().formatShort(context)
+                descriptionParts += attributes.fileSize.formatHumanReadable(context)
+            }
+            if (Settings.FILE_LIST_SHOW_PERMISSIONS.valueCompat) {
+                (attributes as? PosixFileAttributes)?.mode()?.let {
+                    descriptionParts += it.toModeString()
+                }
+            }
             val descriptionSeparator = context.getString(R.string.file_item_description_separator)
-            listOf(lastModificationTime, size).joinToString(descriptionSeparator)
+            descriptionParts.joinToString(descriptionSeparator).takeIf { it.isNotEmpty() }
         }
         val isArchivePath = path.isArchivePath
         menu.findItem(R.id.action_copy)
