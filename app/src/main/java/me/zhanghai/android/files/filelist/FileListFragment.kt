@@ -1632,6 +1632,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         copyFile(file.createDummyArchiveRoot())
     }
 
+    override fun testArchive(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        FileJobService.testArchive(file.createDummyArchiveRoot().path, requireContext())
+    }
+
     override fun showCreateArchiveDialog(file: FileItem) {
         if (!isAdded) {
             return

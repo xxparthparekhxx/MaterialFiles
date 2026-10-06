@@ -127,6 +127,10 @@ class FileJobService : Service() {
             startJob(CopyFileJob(sources, targetDirectory), context)
         }
 
+        fun testArchive(archiveRoot: Path, context: Context) {
+            startJob(TestArchiveFileJob(archiveRoot), context)
+        }
+
         fun create(path: Path, createDirectory: Boolean, context: Context) {
             startJob(CreateFileJob(path, createDirectory), context)
         }

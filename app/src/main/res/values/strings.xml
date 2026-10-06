@@ -336,6 +336,12 @@
     <string name="file_item_description_separator">\u0020\u0020\u0020\u0020</string>
     <string name="file_item_action_open_with">Open with</string>
     <string name="file_item_action_extract">Extract</string>
+    <string name="file_item_action_test_archive">Test archive</string>
+    <plurals name="file_job_test_archive_succeeded_format">
+        <item quantity="one">Archive is intact (%d file checked)</item>
+        <item quantity="other">Archive is intact (%d files checked)</item>
+    </plurals>
+    <string name="file_job_test_archive_failed_format">Archive test failed: %s</string>
     <string name="file_item_action_archive">Compress</string>
     <string name="file_item_action_copy_path" translatable="false">@string/file_list_action_copy_path</string>
     <string name="file_item_action_add_bookmark" translatable="false">@string/file_list_action_add_bookmark</string>
