@@ -25,6 +25,17 @@ import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.valueCompat
 import java.io.Closeable
 
+private fun Path.isAtOrBelow(ancestor: Path): Boolean {
+    var current: Path? = this
+    while (current != null) {
+        if (current == ancestor) {
+            return true
+        }
+        current = current.parent
+    }
+    return false
+}
+
 // TODO: Use SavedStateHandle to save state.
 class FileListViewModel : ViewModel() {
     private val trailLiveData = TrailLiveData()
@@ -33,11 +44,22 @@ class FileListViewModel : ViewModel() {
     val pendingState: Parcelable?
         get() = trailLiveData.valueCompat.pendingState
 
-    fun navigateTo(lastState: Parcelable, path: Path) = trailLiveData.navigateTo(lastState, path)
+    fun navigateTo(lastState: Parcelable, path: Path) {
+        clearSearchReturnUnlessBelow(path)
+        trailLiveData.navigateTo(lastState, path)
+    }
 
-    fun resetTo(path: Path) = trailLiveData.resetTo(path)
+    fun resetTo(path: Path) {
+        searchReturn = null
+        trailLiveData.resetTo(path)
+    }
 
-    fun navigateUp(): Boolean = trailLiveData.navigateUp()
+    fun navigateUp(): Boolean {
+        if (restoreSearchOnNavigateUp()) {
+            return true
+        }
+        return trailLiveData.navigateUp()
+    }
 
     fun dropMissingCurrentPath(): Boolean = trailLiveData.dropFromCurrent()
 
@@ -73,6 +95,47 @@ class FileListViewModel : ViewModel() {
         }
         _searchStateLiveData.value = SearchState(false, "")
     }
+
+    /**
+     * Opening a search hit should be reversible: back returns to the result list instead of the
+     * parent directory.
+     */
+    fun rememberSearchForReturn(enteredPath: Path) {
+        val state = searchState
+        if (!state.isSearching || state.query.isEmpty()) {
+            return
+        }
+        searchReturn = SearchReturn(state.query, enteredPath)
+    }
+
+    private fun restoreSearchOnNavigateUp(): Boolean {
+        val pending = searchReturn ?: return false
+        if (currentPath != pending.enteredPath) {
+            if (!currentPath.isAtOrBelow(pending.enteredPath)) {
+                searchReturn = null
+            }
+            return false
+        }
+        searchReturn = null
+        if (!trailLiveData.navigateUp()) {
+            return false
+        }
+        searchViewQuery = pending.query
+        isSearchViewExpanded = true
+        search(pending.query)
+        return true
+    }
+
+    private fun clearSearchReturnUnlessBelow(path: Path) {
+        val pending = searchReturn ?: return
+        if (path != pending.enteredPath && !path.isAtOrBelow(pending.enteredPath)) {
+            searchReturn = null
+        }
+    }
+
+    private data class SearchReturn(val query: String, val enteredPath: Path)
+
+    private var searchReturn: SearchReturn? = null
 
     private val _fileListLiveData =
         FileListSwitchMapLiveData(currentPathLiveData, _searchStateLiveData)

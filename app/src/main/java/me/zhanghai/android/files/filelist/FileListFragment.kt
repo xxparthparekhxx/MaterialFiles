@@ -864,6 +864,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun onSearchViewExpandedChanged(expanded: Boolean) {
         updateViewSortMenuItems()
+        if (!expanded || !this::menuBinding.isInitialized) {
+            return
+        }
+        val searchItem = menuBinding.searchItem
+        if (!searchItem.isActionViewExpanded) {
+            searchItem.expandActionView()
+        }
     }
 
     private fun onFileJobProgressChanged(progresses: List<FileJobProgress>) {
@@ -1272,8 +1279,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun navigateTo(path: Path) {
-        collapseSearchView()
         val state = layoutManager.onSaveInstanceState()
+        viewModel.rememberSearchForReturn(path)
+        collapseSearchView()
         viewModel.navigateTo(state!!, path)
     }
 
