@@ -107,13 +107,30 @@ object Client {
 
     @Throws(DavException::class)
     fun delete(path: Path, directory: Boolean = false) {
+        val isDir = directory || collectionMemberCache[path]?.isDirectory == true
         try {
             var url = path.url
             // RFC 4918 says collection URLs should end with a slash. Nginx rejects DELETE without it.
-            if (directory && !url.encodedPath.endsWith("/")) {
+            if (isDir && !url.encodedPath.endsWith("/")) {
                 url = url.newBuilder().addPathSegment("").build()
             }
-            DavResource(getClient(path.authority), url).delete {}
+            try {
+                DavResource(getClient(path.authority), url).delete {}
+            } catch (e: ConflictException) {
+                if (!url.encodedPath.endsWith("/")) {
+                    val retryUrl = url.newBuilder().addPathSegment("").build()
+                    DavResource(getClient(path.authority), retryUrl).delete {}
+                } else {
+                    throw e
+                }
+            } catch (e: HttpException) {
+                if (e.code == 409 && !url.encodedPath.endsWith("/")) {
+                    val retryUrl = url.newBuilder().addPathSegment("").build()
+                    DavResource(getClient(path.authority), retryUrl).delete {}
+                } else {
+                    throw e
+                }
+            }
         } catch (e: IOException) {
             throw e.toDavException()
         }
@@ -247,11 +264,17 @@ object Client {
     }
 
     @Throws(DavException::class)
-    fun put(path: Path): OutputStream =
+    fun put(path: Path, mtimeEpochSeconds: Long? = null): OutputStream =
         try {
             collectionMemberCache -= path
+            val headers = if (mtimeEpochSeconds != null) {
+                mapOf("X-OC-Mtime" to mtimeEpochSeconds.toString())
+            } else {
+                emptyMap()
+            }
             NotifyEntryModifiedOutputStream(
-                DavResource(getClient(path.authority), path.url).putCompat(), path as Java8Path
+                DavResource(getClient(path.authority), path.url).putCompat(headers = headers),
+                path as Java8Path
             )
         } catch (e: IOException) {
             throw e.toDavException()

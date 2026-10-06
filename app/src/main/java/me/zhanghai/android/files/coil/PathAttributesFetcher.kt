@@ -40,6 +40,7 @@ import me.zhanghai.android.files.provider.document.isDocumentPath
 import me.zhanghai.android.files.provider.document.resolver.DocumentResolver
 import me.zhanghai.android.files.provider.ftp.isFtpPath
 import me.zhanghai.android.files.provider.linux.isLinuxPath
+import me.zhanghai.android.files.provider.sftp.isSftpPath
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.getDimensionPixelSize
 import me.zhanghai.android.files.util.getPackageArchiveInfoCompat
@@ -102,7 +103,8 @@ class PathAttributesFetcher(
             }
             if (path.isRemotePath) {
                 // FTP doesn't support random access and requires one connection per parallel read.
-                val shouldReadRemotePath = !path.isFtpPath
+                // SFTP is similarly too slow for large folders; skip both instead of stalling.
+                val shouldReadRemotePath = !path.isFtpPath && !path.isSftpPath
                     && Settings.READ_REMOTE_FILES_FOR_THUMBNAIL.valueCompat
                 if (!shouldReadRemotePath) {
                     error("Cannot read $path for thumbnail")
@@ -154,6 +156,9 @@ class PathAttributesFetcher(
                 }
             }
             mimeType.isPdf && (path.isLinuxPath || path.isDocumentPath) -> {
+                if (!Settings.SHOW_PDF_THUMBNAIL.valueCompat) {
+                    return null
+                }
                 try {
                     return pdfPageFetcherFactory.create(path, options, imageLoader).fetch()
                 } catch (e: Exception) {

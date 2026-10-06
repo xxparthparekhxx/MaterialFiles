@@ -10,6 +10,7 @@ import android.graphics.PointF
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -93,9 +94,19 @@ class ImageViewerAdapter(
         val mimeType = AndroidFileTypeDetector.getMimeType(this, attributes).asMimeType()
         val bitmapOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         newInputStream().use { BitmapFactory.decodeStream(it, null, bitmapOptions) }
+        val orientation = if (mimeType.match(MimeType.IMAGE_ANY) && mimeType != MimeType.IMAGE_GIF) {
+            try {
+                newInputStream().use { ExifInterface(it).rotationDegrees }
+            } catch (e: Exception) {
+                0
+            }
+        } else {
+            0
+        }
         return ImageInfo(
             attributes, bitmapOptions.outWidth, bitmapOptions.outHeight,
-            bitmapOptions.outMimeType?.asMimeTypeOrNull() ?: mimeType
+            bitmapOptions.outMimeType?.asMimeTypeOrNull() ?: mimeType,
+            orientation
         )
     }
 
@@ -119,7 +130,7 @@ class ImageViewerAdapter(
         } else {
             binding.largeImage.apply {
                 setDoubleTapZoomDuration(300)
-                orientation = SubsamplingScaleImageView.ORIENTATION_USE_EXIF
+                orientation = imageInfo.orientation
                 // Keep ViewPager2 from stealing drags while zoomed in; PhotoView above handles
                 // this itself, but SubsamplingScaleImageView doesn't.
                 setOnStateChangedListener(object : OnStateChangedListener {
@@ -202,6 +213,7 @@ class ImageViewerAdapter(
         val attributes: BasicFileAttributes,
         val width: Int,
         val height: Int,
-        val mimeType: MimeType
+        val mimeType: MimeType,
+        val orientation: Int = 0
     )
 }
