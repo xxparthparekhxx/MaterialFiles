@@ -23,6 +23,7 @@ import net.schmizz.sshj.userauth.UserAuthException
 import java.io.IOException
 import java.util.Collections
 import java.util.WeakHashMap
+import java.util.concurrent.ConcurrentHashMap
 import java8.nio.file.Path as Java8Path
 
 object Client {
@@ -31,47 +32,78 @@ object Client {
 
     private val clients = mutableMapOf<Authority, SFTPClient>()
 
+    // SFTPClient and the SSH transport under it are not thread-safe. Listing a folder while a
+    // file is being read (a player, a thumbnail) interleaves packets and the next read copies
+    // into a negative offset.
+    private val sessionLocks = ConcurrentHashMap<Authority, Any>()
+
     private val directoryFileAttributesCache =
         Collections.synchronizedMap(WeakHashMap<Path, FileAttributes>())
 
+    private fun sessionLock(authority: Authority): Any =
+        sessionLocks.getOrPut(authority) { Any() }
+
+    internal inline fun <T> withSession(authority: Authority, block: () -> T): T =
+        synchronized(sessionLock(authority)) { block() }
+
+    internal fun invalidate(authority: Authority) {
+        synchronized(clients) {
+            clients.remove(authority)?.closeSafe()
+        }
+    }
+
     @Throws(ClientException::class)
     fun access(path: Path, flags: Set<OpenMode>) {
-        val file = open(path, flags, FileAttributes.EMPTY)
-        try {
-            file.close()
-        } catch (e: IOException) {
-            throw ClientException(e)
+        withSession(path.authority) {
+            val file = openUnlocked(path, flags, FileAttributes.EMPTY)
+            try {
+                file.close()
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
     }
 
     @Throws(ClientException::class)
     fun lstat(path: Path): FileAttributes {
-        val client = getClient(path.authority)
         synchronized(directoryFileAttributesCache) {
             directoryFileAttributesCache[path]?.let {
                 return it.also { directoryFileAttributesCache -= path }
             }
         }
-        return try {
-            client.lstat(path.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        return withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.lstat(path.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
     }
 
     @Throws(ClientException::class)
     fun mkdir(path: Path, attributes: FileAttributes) {
-        val client = getClient(path.authority)
-        try {
-            client.sftpEngine.makeDir(path.remotePath, attributes)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.sftpEngine.makeDir(path.remotePath, attributes)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         LocalWatchService.onEntryCreated(path as Java8Path)
     }
 
     @Throws(ClientException::class)
-    private fun open(path: Path, flags: Set<OpenMode>, attributes: FileAttributes): RemoteFile {
+    private fun open(path: Path, flags: Set<OpenMode>, attributes: FileAttributes): RemoteFile =
+        withSession(path.authority) { openUnlocked(path, flags, attributes) }
+
+    @Throws(ClientException::class)
+    private fun openUnlocked(
+        path: Path,
+        flags: Set<OpenMode>,
+        attributes: FileAttributes
+    ): RemoteFile {
         val client = getClient(path.authority)
         return try {
             client.open(path.remotePath, flags, attributes)
@@ -88,27 +120,30 @@ object Client {
     ): SeekableByteChannel {
         val file = open(path, flags, attributes)
         return NotifyEntryModifiedSeekableByteChannel(
-            FileByteChannel(file, flags.contains(OpenMode.APPEND)), path as Java8Path
+            FileByteChannel(file, path.authority, flags.contains(OpenMode.APPEND)), path as Java8Path
         )
     }
 
     @Throws(ClientException::class)
-    fun readlink(path: Path): String {
-        val client = getClient(path.authority)
-        return try {
-            client.readlink(path.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+    fun readlink(path: Path): String =
+        withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.readlink(path.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
-    }
 
     @Throws(ClientException::class)
     fun realpath(path: Path): Path {
-        val client = getClient(path.authority)
-        val realPath = try {
-            client.canonicalize(path.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        val realPath = withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.canonicalize(path.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         return path.resolve(realPath)
     }
@@ -132,11 +167,13 @@ object Client {
                 SFTPException(Response.StatusCode.FAILURE, "Paths aren't on the same authority")
             )
         }
-        val client = getClient(path.authority)
-        try {
-            client.rename(path.remotePath, newPath.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.rename(path.remotePath, newPath.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         directoryFileAttributesCache -= path
         directoryFileAttributesCache -= newPath
@@ -146,11 +183,13 @@ object Client {
 
     @Throws(ClientException::class)
     fun rmdir(path: Path) {
-        val client = getClient(path.authority)
-        try {
-            client.rmdir(path.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.rmdir(path.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         directoryFileAttributesCache -= path
         LocalWatchService.onEntryDeleted(path as Java8Path)
@@ -158,11 +197,13 @@ object Client {
 
     @Throws(ClientException::class)
     fun scandir(path: Path): List<Path> {
-        val client = getClient(path.authority)
-        val files = try {
-            client.ls(path.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        val files = withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.ls(path.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         return files.map { file ->
             // The attributes here are from lstat().
@@ -173,11 +214,13 @@ object Client {
 
     @Throws(ClientException::class)
     fun setstat(path: Path, attributes: FileAttributes) {
-        val client = getClient(path.authority)
-        try {
-            client.setattr(path.remotePath, attributes)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.setattr(path.remotePath, attributes)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         directoryFileAttributesCache -= path
         LocalWatchService.onEntryModified(path as Java8Path)
@@ -185,7 +228,6 @@ object Client {
 
     @Throws(ClientException::class)
     fun stat(path: Path): FileAttributes {
-        val client = getClient(path.authority)
         synchronized(directoryFileAttributesCache) {
             directoryFileAttributesCache[path]?.let {
                 if (it.type != FileMode.Type.SYMLINK) {
@@ -193,31 +235,38 @@ object Client {
                 }
             }
         }
-        return try {
-            client.stat(path.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        return withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.stat(path.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
     }
 
     @Throws(ClientException::class)
     fun symlink(link: Path, target: String) {
-        val client = getClient(link.authority)
-        try {
-            client.symlink(link.remotePath, target)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        withSession(link.authority) {
+            val client = getClient(link.authority)
+            try {
+                client.symlink(link.remotePath, target)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         LocalWatchService.onEntryCreated(link as Java8Path)
     }
 
     @Throws(ClientException::class)
     fun unlink(path: Path) {
-        val client = getClient(path.authority)
-        try {
-            client.rm(path.remotePath)
-        } catch (e: IOException) {
-            throw ClientException(e)
+        withSession(path.authority) {
+            val client = getClient(path.authority)
+            try {
+                client.rm(path.remotePath)
+            } catch (e: IOException) {
+                throw ClientException(e)
+            }
         }
         directoryFileAttributesCache -= path
         LocalWatchService.onEntryDeleted(path as Java8Path)
