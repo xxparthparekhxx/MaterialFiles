@@ -16,6 +16,7 @@ import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.filelist.FileSortOptions.By
 import me.zhanghai.android.files.filelist.FileSortOptions.Order
 import me.zhanghai.android.files.filejob.RemovedPaths
+import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
 import me.zhanghai.android.files.provider.archive.archiveRefresh
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.util.CloseableLiveData
@@ -85,6 +86,7 @@ class FileListViewModel : ViewModel() {
             path.archiveRefresh()
         }
         _fileListLiveData.reload()
+        NavigationStorageRefreshLiveData.notifyChanged()
     }
 
     val searchViewExpandedLiveData = MutableLiveData(false)
@@ -282,7 +284,10 @@ class FileListViewModel : ViewModel() {
 
         fun reload() {
             when (val liveData = liveData) {
-                is FileListLiveData -> liveData.loadValue()
+                is FileListLiveData -> {
+                    liveData.reobserve()
+                    liveData.loadValue()
+                }
                 is SearchFileListLiveData -> liveData.loadValue()
             }
         }
