@@ -80,6 +80,13 @@ class FileListAdapter(
 
     private val filePositionMap = mutableMapOf<Path, Int>()
 
+    private var activePopupMenu: PopupMenu? = null
+
+    fun dismissActivePopupMenu() {
+        activePopupMenu?.dismiss()
+        activePopupMenu = null
+    }
+
     private lateinit var _nameEllipsize: TextUtils.TruncateAt
     var nameEllipsize: TextUtils.TruncateAt
         get() = _nameEllipsize
@@ -204,8 +211,28 @@ class FileListAdapter(
                 }
             }
             popupMenu = PopupMenu(menuButton.context, menuButton)
-                .apply { inflate(R.menu.file_item) }
-            menuButton.setOnClickListener { popupMenu.show() }
+                .apply {
+                    inflate(R.menu.file_item)
+                    setOnDismissListener {
+                        if (activePopupMenu === this) {
+                            activePopupMenu = null
+                        }
+                    }
+                }
+            menuButton.setOnClickListener {
+                activePopupMenu?.dismiss()
+                activePopupMenu = popupMenu
+                popupMenu.show()
+            }
+        }
+    }
+
+    override fun onViewRecycled(holder: ViewHolder) {
+        super.onViewRecycled(holder)
+
+        if (activePopupMenu === holder.popupMenu) {
+            holder.popupMenu.dismiss()
+            activePopupMenu = null
         }
     }
 
