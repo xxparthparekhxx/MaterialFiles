@@ -26,6 +26,12 @@
         android:dependency="@string/pref_key_ftp_server_state">
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_ftp_server_allow_external_control"
+            android:title="@string/ftp_server_allow_external_control_title"
+            android:summary="@string/ftp_server_allow_external_control_summary"
+            android:defaultValue="@bool/pref_default_value_ftp_server_allow_external_control" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_ftp_server_anonymous_login"
             android:title="@string/ftp_server_anonymous_login_title"
             android:defaultValue="@bool/pref_default_value_ftp_server_anonymous_login"
