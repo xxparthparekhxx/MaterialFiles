@@ -42,6 +42,7 @@ import me.zhanghai.android.files.provider.common.InvalidFileNameException
 import me.zhanghai.android.files.provider.common.IsDirectoryException
 import me.zhanghai.android.files.provider.common.force
 import me.zhanghai.android.files.provider.common.getLastModifiedTime
+import me.zhanghai.android.files.provider.common.isDirectory
 import me.zhanghai.android.files.provider.common.isForceable
 import me.zhanghai.android.files.provider.common.newByteChannel
 import me.zhanghai.android.files.provider.common.size
@@ -131,7 +132,16 @@ class FileProvider : ContentProvider() {
                         //  ACTION_OPEN_DOCUMENT.
                         DocumentsContract.Document.COLUMN_MIME_TYPE -> {
                             columns += column
-                            values += MimeType.guessFromPath(path.toString()).value
+                            values += try {
+                                if (path.isDirectory()) {
+                                    DocumentsContract.Document.MIME_TYPE_DIR
+                                } else {
+                                    MimeType.guessFromPath(path.toString()).value
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                MimeType.guessFromPath(path.toString()).value
+                            }
                         }
                         DocumentsContract.Document.COLUMN_LAST_MODIFIED -> {
                             val lastModified = try {
@@ -167,7 +177,19 @@ class FileProvider : ContentProvider() {
 
     override fun getType(uri: Uri): String? {
         val path = uri.fileProviderPath
-        return MimeType.guessFromPath(path.toString()).value
+        // Receiving apps query this to decide how to open shared content. Folders must report
+        // the directory MIME type instead of falling through to octet-stream, which foreign
+        // apps cannot use.
+        return try {
+            if (path.isDirectory()) {
+                DocumentsContract.Document.MIME_TYPE_DIR
+            } else {
+                MimeType.guessFromPath(path.toString()).value
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            MimeType.guessFromPath(path.toString()).value
+        }
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
