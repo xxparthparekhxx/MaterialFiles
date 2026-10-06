@@ -7,6 +7,7 @@ package me.zhanghai.android.files.viewer.image
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
 import androidx.fragment.app.commit
 import java8.nio.file.Path
@@ -27,6 +28,15 @@ class ImageViewerActivity : AppActivity() {
                 .putArgs(ImageViewerFragment.Args(intent, position))
             supportFragmentManager.commit { add(android.R.id.content, fragment) }
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        val fragment = supportFragmentManager.findFragmentById(android.R.id.content)
+            as? ImageViewerFragment
+        if (fragment != null && fragment.onNavigationKey(keyCode)) {
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     companion object {
