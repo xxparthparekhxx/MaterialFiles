@@ -131,7 +131,12 @@ import me.zhanghai.android.files.ui.SpeedDialViewOnBackPressedCallback
 import me.zhanghai.android.files.ui.ThemedFastScroller
 import me.zhanghai.android.files.ui.ToolbarActionMode
 import me.zhanghai.android.files.util.DebouncedRunnable
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import me.zhanghai.android.files.provider.common.UserActionRequiredException
 import me.zhanghai.android.files.util.Failure
+import me.zhanghai.android.files.util.findCauseByClass
 import me.zhanghai.android.files.util.Loading
 import me.zhanghai.android.files.util.ParcelableArgs
 import me.zhanghai.android.files.util.Stateful
@@ -971,8 +976,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         if (throwable != null) {
             throwable.printStackTrace()
+            val userAction = throwable.findCauseByClass<UserActionRequiredException>()
+            if (userAction != null && userAction !== viewModel.promptedUserAction) {
+                viewModel.promptedUserAction = userAction
+                promptUserAction(userAction)
+            }
             val error = throwable.toUserFriendlyMessage()
-            if (hasFiles) {
+            if (hasFiles && userAction == null) {
                 if (Settings.ERRORS_IN_DIALOG.valueCompat) {
                     errorDialog?.dismiss()
                     errorDialog = MaterialAlertDialogBuilder(requireContext())
@@ -1136,6 +1146,27 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun refresh() {
         viewModel.reload()
+    }
+
+    private fun promptUserAction(exception: UserActionRequiredException) {
+        val userAction = exception.getUserAction(
+            object : Continuation<Boolean> {
+                override val context: CoroutineContext
+                    get() = EmptyCoroutineContext
+
+                override fun resumeWith(result: Result<Boolean>) {
+                    val postedView = view ?: return
+                    postedView.post {
+                        if (result.getOrDefault(false)) {
+                            viewModel.promptedUserAction = null
+                            refresh()
+                        }
+                    }
+                }
+            },
+            requireContext()
+        )
+        startActivity(userAction.intent)
     }
 
     private fun setShowHiddenFiles(showHiddenFiles: Boolean) {
