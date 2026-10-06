@@ -41,9 +41,18 @@ class ScrollingChildEditText : AppCompatEditText {
 
     private val cursorRevealRect = Rect()
 
+    private var basePaddingLeft = -1
+
+    private val lineNumberGap by lazy { 8f * resources.displayMetrics.density }
+
+    private val lineNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.RIGHT
+    }
+
     private fun init() {
         breakStrategy = Layout.BREAK_STRATEGY_SIMPLE
         hyphenationFrequency = Layout.HYPHENATION_FREQUENCY_NONE
+        updateLineNumberGutter()
 
         addTextChangedListener(object : TextWatcher {
             private var changeStart = 0
@@ -57,6 +66,7 @@ class ScrollingChildEditText : AppCompatEditText {
             override fun onTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun afterTextChanged(s: Editable?) {
+                updateLineNumberGutter()
                 if (s == null || isUpdatingTabSpans) return
                 isUpdatingTabSpans = true
                 try {
@@ -131,6 +141,63 @@ class ScrollingChildEditText : AppCompatEditText {
         requestRectangleOnScreen(cursorRevealRect, true)
     }
 
+    override fun onDraw(canvas: Canvas) {
+        val textLayout = layout
+        val content = text
+        if (textLayout != null && content != null && content.length <= MAX_LINE_NUMBER_TEXT_LENGTH) {
+            lineNumberPaint.color = currentHintTextColor
+            lineNumberPaint.textSize = textSize
+            lineNumberPaint.typeface = typeface
+            val x = paddingLeft - lineNumberGap
+            // Only the lines in view are drawn, but numbering has to count from the first line.
+            val clip = canvas.clipBounds
+            val firstVisibleLine = textLayout.getLineForVertical(
+                (clip.top - extendedPaddingTop).coerceAtLeast(0)
+            )
+            val lastVisibleLine = textLayout.getLineForVertical(
+                (clip.bottom - extendedPaddingTop).coerceAtLeast(0)
+            )
+            var logicalLine = 1
+            for (i in 0..lastVisibleLine.coerceAtMost(textLayout.lineCount - 1)) {
+                val start = textLayout.getLineStart(i)
+                val isLogicalStart = start == 0 || content[start - 1] == '\n' ||
+                    content[start - 1] == '\r'
+                if (!isLogicalStart) {
+                    continue
+                }
+                if (i >= firstVisibleLine) {
+                    val baseline = textLayout.getLineBaseline(i) + extendedPaddingTop
+                    canvas.drawText(logicalLine.toString(), x, baseline.toFloat(), lineNumberPaint)
+                }
+                logicalLine++
+            }
+        }
+        super.onDraw(canvas)
+    }
+
+    private fun updateLineNumberGutter() {
+        if (basePaddingLeft < 0) {
+            basePaddingLeft = paddingLeft
+        }
+        val content = text
+        var lines = 1
+        if (content != null && content.length <= MAX_LINE_NUMBER_TEXT_LENGTH) {
+            for (index in content.indices) {
+                if (content[index] == '\n') {
+                    lines++
+                }
+            }
+        }
+        val digits = lines.toString().length.coerceAtLeast(2)
+        lineNumberPaint.textSize = textSize
+        lineNumberPaint.typeface = typeface
+        val width = lineNumberPaint.measureText("0") * digits + lineNumberGap
+        val newLeft = basePaddingLeft + width.toInt()
+        if (paddingLeft != newLeft) {
+            setPadding(newLeft, paddingTop, paddingRight, paddingBottom)
+        }
+    }
+
     private class TabReplacementSpan(private val tabWidthSpaces: Int = 4) : ReplacementSpan() {
         override fun getSize(
             paint: Paint,
@@ -157,3 +224,6 @@ class ScrollingChildEditText : AppCompatEditText {
         }
     }
 }
+
+// Line numbers walk the whole text, so they are skipped for very large documents.
+private const val MAX_LINE_NUMBER_TEXT_LENGTH = 500_000
