@@ -43,7 +43,7 @@ import me.zhanghai.android.files.util.viewModels
 import java.nio.charset.Charset
 
 class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
-    ConfirmCloseDialogFragment.Listener {
+    ConfirmCloseDialogFragment.Listener, FindTextDialogFragment.Listener {
     private val args by args<Args>()
     private lateinit var argsFile: Path
 
@@ -56,6 +56,8 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     private lateinit var onBackPressedCallback: OnBackPressedCallback
 
     private var isSettingText = false
+
+    private var lastFindQuery = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -169,6 +171,14 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 save()
                 true
             }
+            R.id.action_find -> {
+                FindTextDialogFragment.show(lastFindQuery, this)
+                true
+            }
+            R.id.action_find_next -> {
+                findNext()
+                true
+            }
             R.id.action_reload -> {
                 onReload()
                 true
@@ -179,6 +189,30 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             }
             else -> super.onOptionsItemSelected(item)
         }
+
+    override fun findText(query: String) {
+        lastFindQuery = query
+        findNext()
+    }
+
+    private fun findNext() {
+        if (lastFindQuery.isEmpty()) {
+            FindTextDialogFragment.show(lastFindQuery, this)
+            return
+        }
+        val editText = binding.textEdit
+        val text = editText.text ?: return
+        val start = editText.selectionEnd.coerceAtLeast(0)
+        // Wrap around to the beginning when there is no further match.
+        val index = text.indexOf(lastFindQuery, start, true).takeIf { it >= 0 }
+            ?: text.indexOf(lastFindQuery, 0, true)
+        if (index < 0) {
+            showToast(R.string.text_editor_find_not_found)
+            return
+        }
+        editText.requestFocus()
+        editText.setSelection(index, index + lastFindQuery.length)
+    }
 
     fun onSupportNavigateUp(): Boolean {
         if (onBackPressedCallback.isEnabled) {

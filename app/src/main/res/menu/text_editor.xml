@@ -19,6 +19,19 @@
         tools:ignore="AlwaysShowAction" />
 
     <item
+        android:id="@+id/action_find"
+        android:alphabeticShortcut="f"
+        android:orderInCategory="100"
+        android:title="@string/text_editor_find"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_find_next"
+        android:orderInCategory="100"
+        android:title="@string/text_editor_find_next"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_reload"
         android:orderInCategory="100"
         android:title="@string/reload"
