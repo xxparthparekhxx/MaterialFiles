@@ -48,10 +48,33 @@ inline fun <R> MediaMetadataRetriever.use(block: (MediaMetadataRetriever) -> R):
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    val autoCloseable: AutoCloseable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        this
-    } else {
-        AutoCloseable { release() }
+    // One retriever at a time. A folder of videos otherwise leaves native retrievers for the
+    // finalizer, and MediaMetadataRetriever.finalize() can block long enough for the
+    // finalizer watchdog to kill the process.
+    synchronized(retrieverLock) {
+        try {
+            return block(this)
+        } finally {
+            try {
+                release()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            clearNativeContext()
+        }
     }
-    return autoCloseable.use { block(this) }
+}
+
+@PublishedApi
+internal val retrieverLock = Any()
+
+@PublishedApi
+internal fun MediaMetadataRetriever.clearNativeContext() {
+    try {
+        val field = MediaMetadataRetriever::class.java.getDeclaredField("mNativeContext")
+        field.isAccessible = true
+        field.setLong(this, 0)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }
