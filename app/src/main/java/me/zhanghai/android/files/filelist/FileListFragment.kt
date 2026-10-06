@@ -199,6 +199,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private var userRequestedRefresh = false
 
+    private var hasPromptedUsbStorageAccess = false
+
     private val fileJobProgressCards = mutableMapOf<Int, FileJobProgressCardBinding>()
 
     private var fileListBasePaddingBottom = -1
@@ -713,6 +715,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.speedDialView.isVisible = !path.fileSystem.isReadOnly
         updateOverlayToolbar()
         updateBottomToolbar()
+        ensureUsbStorageAccess(path)
+    }
+
+    private fun ensureUsbStorageAccess(path: Path) {
+        if (hasPromptedUsbStorageAccess || viewModel.isStorageAccessRequested) {
+            return
+        }
+        if (!shouldRequestAllFilesAccessForPath(path)) {
+            return
+        }
+        hasPromptedUsbStorageAccess = true
+        ShowRequestAllFilesAccessRationaleDialogFragment.show(this)
+        viewModel.isStorageAccessRequested = true
     }
 
     private fun onSearchViewExpandedChanged(expanded: Boolean) {
