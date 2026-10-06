@@ -9,6 +9,7 @@ import android.os.AsyncTask
 import java8.nio.file.Path
 import me.zhanghai.android.files.fileproperties.PathObserverLiveData
 import me.zhanghai.android.files.provider.common.newInputStream
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.Failure
 import me.zhanghai.android.files.util.Loading
 import me.zhanghai.android.files.util.Stateful
@@ -21,18 +22,35 @@ import java.util.concurrent.Future
 class ChecksumInfoLiveData(path: Path) : PathObserverLiveData<Stateful<ChecksumInfo>>(path) {
     private var future: Future<Unit>? = null
 
+    private var algorithms: Set<ChecksumInfo.Algorithm> =
+        if (Settings.AUTO_CALCULATE_CHECKSUMS.valueCompat) {
+            ChecksumInfo.Algorithm.entries.toSet()
+        } else {
+            emptySet()
+        }
+
     init {
         loadValue()
         observe()
     }
 
+    fun calculate(algorithm: ChecksumInfo.Algorithm) {
+        algorithms = algorithms + algorithm
+        loadValue()
+    }
+
     override fun loadValue() {
         future?.cancel(true)
+        val algorithms = algorithms
+        if (algorithms.isEmpty()) {
+            value = Success(ChecksumInfo(emptyMap()))
+            return
+        }
         value = Loading(value?.value)
         future = (AsyncTask.THREAD_POOL_EXECUTOR as ExecutorService).submit<Unit> {
             val value = try {
                 val messageDigests =
-                    ChecksumInfo.Algorithm.entries.associateWith { it.createMessageDigest() }
+                    algorithms.associateWith { it.createMessageDigest() }
                 path.newInputStream().use { inputStream ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                     while (true) {

@@ -226,6 +226,12 @@ object Settings {
             R.string.pref_key_file_list_hidden_first, R.bool.pref_default_value_file_list_hidden_first
         )
 
+    val AUTO_CALCULATE_CHECKSUMS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_auto_calculate_checksums,
+            R.bool.pref_default_value_auto_calculate_checksums
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

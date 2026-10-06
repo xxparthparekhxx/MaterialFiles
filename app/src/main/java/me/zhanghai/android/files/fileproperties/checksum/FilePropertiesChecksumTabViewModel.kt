@@ -15,6 +15,10 @@ class FilePropertiesChecksumTabViewModel(path: Path) : ViewModel() {
     val checksumInfoLiveData: LiveData<Stateful<ChecksumInfo>>
         get() = _checksumInfoLiveData
 
+    fun calculate(algorithm: ChecksumInfo.Algorithm) {
+        _checksumInfoLiveData.calculate(algorithm)
+    }
+
     fun reload() {
         _checksumInfoLiveData.loadValue()
     }

@@ -845,6 +845,9 @@
     <string name="settings_iso_date_format_summary">Show dates as 2024-02-19 14:05 instead of using the system format</string>
     <string name="settings_file_list_hidden_first_title">Sort hidden files first</string>
     <string name="settings_file_list_hidden_first_summary">Show hidden files and folders before other items instead of after them</string>
+    <string name="settings_auto_calculate_checksums_title">Calculate checksums automatically</string>
+    <string name="settings_auto_calculate_checksums_summary">When off, the checksum tab only calculates the checksums you tap, which is faster for large files</string>
+    <string name="file_properties_checksum_tap_to_calculate">Tap to calculate</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
