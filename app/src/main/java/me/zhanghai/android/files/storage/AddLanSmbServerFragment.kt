@@ -82,7 +82,10 @@ class AddLanSmbServerFragment : Fragment() {
     }
 
     private fun addSmbServer(server: LanSmbServer?) {
-        addSmbServerLauncher.launchSafe(EditSmbServerFragment.Args(host = server?.host), this)
+        // The discovered name is a NetBIOS name and often does not resolve, for example across
+        // ZeroTier. Connect with the address that answered the scan.
+        val host = server?.address?.hostAddress ?: server?.host
+        addSmbServerLauncher.launchSafe(EditSmbServerFragment.Args(host = host), this)
     }
 
     private fun onAddSmbServerResult(result: Boolean) {
