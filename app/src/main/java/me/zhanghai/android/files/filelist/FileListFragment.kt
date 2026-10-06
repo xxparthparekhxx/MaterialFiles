@@ -425,6 +425,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         viewModel.selectedFilesLiveData.observe(viewLifecycleOwner) { onSelectedFilesChanged(it) }
         viewModel.pasteStateLiveData.observe(viewLifecycleOwner) { onPasteStateChanged(it) }
         Settings.FILE_NAME_ELLIPSIZE.observe(viewLifecycleOwner) { onFileNameEllipsizeChanged(it) }
+        Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }
         binding.fileJobProgressLayout.addOnLayoutChangeListener { sheet, _, _, _, _, _, _, _, _ ->
@@ -832,13 +833,17 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         layoutManager.spanCount = when (viewModel.viewType) {
             FileViewType.LIST -> 1
             FileViewType.GRID -> {
-                var widthDp = resources.configuration.screenWidthDp
-                val persistentDrawerLayout = binding.persistentDrawerLayout
-                if (persistentDrawerLayout != null &&
-                    persistentDrawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    widthDp -= getDimensionDp(R.dimen.navigation_max_width).roundToInt()
-                }
-                (widthDp / 180).coerceAtLeast(2)
+                Settings.FILE_LIST_GRID_SPAN_COUNT.valueCompat.toIntOrNull()
+                    ?.takeIf { it >= 2 }
+                    ?: run {
+                        var widthDp = resources.configuration.screenWidthDp
+                        val persistentDrawerLayout = binding.persistentDrawerLayout
+                        if (persistentDrawerLayout != null &&
+                            persistentDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+                            widthDp -= getDimensionDp(R.dimen.navigation_max_width).roundToInt()
+                        }
+                        (widthDp / 180).coerceAtLeast(2)
+                    }
             }
         }
     }
