@@ -303,6 +303,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             binding.speedDialView.close()
             true
         }
+        // Long pressing the main button opens the current directory in a new window.
+        binding.speedDialView.mainFab.setOnLongClickListener {
+            binding.speedDialView.close()
+            openInNewTask(currentPath)
+            true
+        }
 
         val viewLifecycleOwner = viewLifecycleOwner
         addOnBackPressedCallback(
