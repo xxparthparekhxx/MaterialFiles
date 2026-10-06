@@ -12,6 +12,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.media.MediaScannerConnection
+import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
@@ -539,6 +541,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateViewSortMenuItems()
         updateSelectAllMenuItem()
         updateShowHiddenFilesMenuItem()
+        menu.findItem(R.id.action_rescan_media)?.isVisible = currentPath.isLinuxPath
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -632,6 +635,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             R.id.action_open_in_terminal -> {
                 openInTerminal()
+                true
+            }
+            R.id.action_rescan_media -> {
+                rescanMedia()
                 true
             }
             R.id.action_add_bookmark -> {
@@ -984,6 +991,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun share() {
         shareFile(currentPath, MimeType.DIRECTORY)
+    }
+
+    private fun rescanMedia() {
+        val context = requireContext().applicationContext
+        val directory = currentPath.toFile()
+        showToast(R.string.file_list_rescan_media_started)
+        AsyncTask.THREAD_POOL_EXECUTOR.execute {
+            val paths = directory.walkTopDown().filter { it.isFile }.map { it.path }.toList()
+            if (paths.isNotEmpty()) {
+                MediaScannerConnection.scanFile(context, paths.toTypedArray(), null, null)
+            }
+        }
     }
 
     private fun copyPath() {
