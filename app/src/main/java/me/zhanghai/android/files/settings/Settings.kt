@@ -254,6 +254,12 @@ object Settings {
             R.string.pref_key_copy_path_shell_escape, R.bool.pref_default_value_copy_path_shell_escape
         )
 
+    val OPEN_WITH_BUILT_IN_VIEWERS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_open_with_built_in_viewers,
+            R.bool.pref_default_value_open_with_built_in_viewers
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

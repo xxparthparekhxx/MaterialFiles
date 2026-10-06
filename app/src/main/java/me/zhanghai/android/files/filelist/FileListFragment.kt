@@ -1737,6 +1737,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     if (Settings.OPEN_FILES_IN_NEW_TASK.valueCompat) {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
+                    if (!withChooser && Settings.OPEN_WITH_BUILT_IN_VIEWERS.valueCompat &&
+                        (mimeType.isImage || mimeType.value.startsWith("text/"))
+                    ) {
+                        // Restrict resolution to our own image viewer and text editor.
+                        setPackage(requireContext().packageName)
+                    }
                 }
                 .let {
                     if (withChooser) {

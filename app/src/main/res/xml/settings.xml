@@ -94,6 +94,10 @@
             android:title="@string/settings_copy_path_shell_escape_title"
             android:summary="@string/settings_copy_path_shell_escape_summary"
             android:defaultValue="@bool/pref_default_value_copy_path_shell_escape" />
+            android:key="@string/pref_key_open_with_built_in_viewers"
+            android:title="@string/settings_open_with_built_in_viewers_title"
+            android:summary="@string/settings_open_with_built_in_viewers_summary"
+            android:defaultValue="@bool/pref_default_value_open_with_built_in_viewers" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
