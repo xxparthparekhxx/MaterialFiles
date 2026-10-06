@@ -291,7 +291,7 @@ private fun FileJob.walkFileTreeForSettingAttributes(
 
 @Throws(InterruptedIOException::class)
 private fun FileJob.throwIfInterrupted() {
-    if (Thread.interrupted()) {
+    if (isCanceled || Thread.interrupted()) {
         throw InterruptedIOException()
     }
 }
@@ -675,8 +675,9 @@ private class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
 
 // TODO: Make invalid file name, remount etc user actions as well.
 @Throws(InterruptedIOException::class)
-private fun FileJob.showUserAction(exception: UserActionRequiredException): Boolean =
-    try {
+private fun FileJob.showUserAction(exception: UserActionRequiredException): Boolean {
+    throwIfInterrupted()
+    return try {
         runBlocking {
             suspendCoroutine { continuation ->
                 val userAction = exception.getUserAction(continuation, service)
@@ -688,6 +689,7 @@ private fun FileJob.showUserAction(exception: UserActionRequiredException): Bool
     } catch (e: InterruptedException) {
         throw InterruptedIOException().apply { initCause(e) }
     }
+}
 
 @Throws(InterruptedIOException::class)
 private fun FileJob.showErrorDialog(
@@ -698,8 +700,9 @@ private fun FileJob.showErrorDialog(
     positiveButtonText: CharSequence?,
     negativeButtonText: CharSequence?,
     neutralButtonText: CharSequence?
-): ErrorResult =
-    try {
+): ErrorResult {
+    throwIfInterrupted()
+    return try {
         runBlocking {
             suspendCoroutine { continuation ->
                 BackgroundActivityStarter.startActivity(
@@ -717,6 +720,7 @@ private fun FileJob.showErrorDialog(
     } catch (e: InterruptedException) {
         throw InterruptedIOException().apply { initCause(e) }
     }
+}
 
 private fun FileJob.getReadOnlyFileStore(path: Path, exception: IOException): PosixFileStore? {
     if (exception !is ReadOnlyFileSystemException || !path.isLinuxPath) {
@@ -741,8 +745,9 @@ private fun FileJob.showConflictDialog(
     sourceFile: FileItem,
     targetFile: FileItem,
     type: CopyMoveType
-): ConflictResult =
-    try {
+): ConflictResult {
+    throwIfInterrupted()
+    return try {
         runBlocking {
             suspendCoroutine { continuation ->
                 BackgroundActivityStarter.startActivity(
@@ -761,6 +766,7 @@ private fun FileJob.showConflictDialog(
     } catch (e: InterruptedException) {
         throw InterruptedIOException().apply { initCause(e) }
     }
+}
 
 enum class CopyMoveType {
     COPY,
