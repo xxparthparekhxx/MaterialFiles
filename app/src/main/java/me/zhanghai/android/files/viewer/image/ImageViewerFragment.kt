@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -181,6 +182,23 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
             }
             else -> super.onOptionsItemSelected(item)
         }
+
+    /** Switch images with the arrow keys, e.g. from a keyboard or a TV remote. */
+    fun onNavigationKey(keyCode: Int): Boolean {
+        if (!::binding.isInitialized || paths.size < 2) {
+            return false
+        }
+        val offset = when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_PAGE_UP -> -1
+            KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_PAGE_DOWN -> 1
+            else -> return false
+        }
+        val target = binding.viewPager.currentItem + offset
+        if (target in paths.indices) {
+            binding.viewPager.setCurrentItem(target, true)
+        }
+        return true
+    }
 
     private fun confirmDelete() {
         ConfirmDeleteDialogFragment.show(currentPath, this)
