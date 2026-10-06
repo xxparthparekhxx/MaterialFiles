@@ -85,13 +85,26 @@ class FileListAdapter(
 
     // Pinned files are listed first, except in search results where they are not pinned.
     private fun createComparator(): Comparator<FileItem> {
-        val comparator = sortOptions.createComparator()
+        val comparator = sortOptions.createComparator(isHiddenFirst)
         return if (isSearching || pinnedPaths.isEmpty()) {
             comparator
         } else {
             compareBy<FileItem> { it.path.toString() !in pinnedPaths }.then(comparator)
         }
     }
+
+    var isHiddenFirst: Boolean = false
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = value
+            if (!::_sortOptions.isInitialized) {
+                return
+            }
+            super.replace(list.sortedWith(createComparator()), false)
+            rebuildFilePositionMap()
+        }
 
     var pickOptions: PickOptions? = null
         set(value) {
