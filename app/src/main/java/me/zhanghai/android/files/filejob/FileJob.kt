@@ -15,23 +15,33 @@ import java.util.concurrent.atomic.AtomicInteger
 abstract class FileJob {
     val id = nextId.getAndIncrement()
 
+    @Volatile
+    var isCanceled = false
+        private set
+
     internal lateinit var service: FileJobService
         private set
 
     internal val deletedLinuxPaths = mutableListOf<String>()
 
+    fun cancel() {
+        isCanceled = true
+    }
+
     fun runOn(service: FileJobService) {
         this.service = service
         try {
-            run()
+            if (!isCanceled) {
+                run()
+            }
             // TODO: Toast
         } catch (e: InterruptedIOException) {
             // TODO
             e.printStackTrace()
         } catch (e: Exception) {
             e.printStackTrace()
-            // An SMB listing interrupted by a reload is not a failed transfer.
-            if (e.findCauseByClass<InterruptedException>() == null) {
+            // An SMB listing interrupted by a reload, or a canceled job, is not a failed transfer.
+            if (!isCanceled && e.findCauseByClass<InterruptedException>() == null) {
                 service.showToast(e.toString())
             }
         } finally {

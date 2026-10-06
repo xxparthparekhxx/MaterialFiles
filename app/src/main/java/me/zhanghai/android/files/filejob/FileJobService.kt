@@ -68,7 +68,11 @@ class FileJobService : Service() {
 
     private fun cancelJob(id: Int) {
         synchronized(runningJobs) {
-            runningJobs.removeFirst { it.key.id == id }?.value?.cancel(true)
+            val entry = runningJobs.removeFirst { it.key.id == id }
+            if (entry != null) {
+                entry.key.cancel()
+                entry.value.cancel(true)
+            }
             updateWakeWifiLockLocked()
         }
     }
@@ -80,7 +84,9 @@ class FileJobService : Service() {
 
         synchronized(runningJobs) {
             while (runningJobs.isNotEmpty()) {
-                runningJobs.removeFirst().value.cancel(true)
+                val entry = runningJobs.removeFirst()
+                entry.key.cancel()
+                entry.value.cancel(true)
             }
             updateWakeWifiLockLocked()
         }
@@ -205,7 +211,7 @@ class FileJobService : Service() {
 
         @MainThread
         fun cancelJob(id: Int) {
-            pendingJobs.removeFirst { it.id == id }
+            pendingJobs.removeFirst { it.id == id }?.cancel()
             instance?.cancelJob(id)
         }
     }
