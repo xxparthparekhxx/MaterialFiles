@@ -789,6 +789,7 @@
     <string name="settings_file_list_animation_title">File list animation</string>
     <string name="settings_default_apps_title">Default apps</string>
     <string name="settings_default_apps_summary">Set Material Files as the default file manager</string>
+    <string name="settings_file_list_drawer_swipe_title">Swipe to open navigation drawer</string>
     <string name="settings_file_list_lock_header_title">Lock header</string>
     <string name="settings_file_list_grid_span_count_title">Grid columns</string>
     <string-array name="settings_file_list_grid_span_count_entries">

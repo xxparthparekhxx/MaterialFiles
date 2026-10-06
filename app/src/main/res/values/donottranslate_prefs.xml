@@ -26,6 +26,8 @@
     <bool name="pref_default_value_navigation_show_ftp_server">true</bool>
     <string name="pref_key_ftp_server_tile_confirm_start">key_ftp_server_tile_confirm_start</string>
     <bool name="pref_default_value_ftp_server_tile_confirm_start">false</bool>
+    <string name="pref_key_file_list_drawer_swipe">key_file_list_drawer_swipe</string>
+    <bool name="pref_default_value_file_list_drawer_swipe">true</bool>
     <string name="pref_key_file_list_grid_span_count">key_file_list_grid_span_count</string>
     <string name="pref_default_value_file_list_grid_span_count">0</string>
     <string-array name="pref_entry_values_file_list_grid_span_count">
