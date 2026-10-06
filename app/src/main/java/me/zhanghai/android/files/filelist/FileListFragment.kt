@@ -206,6 +206,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         val query = viewModel.searchViewQuery
         if (query.isEmpty()) {
+            // Clearing the query previously left stale search results on screen. Exit search
+            // so the regular folder listing is shown again.
+            if (viewModel.searchState.isSearching) {
+                viewModel.stopSearching()
+            }
             return@DebouncedRunnable
         }
         viewModel.search(query)
@@ -476,7 +481,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String): Boolean {
                 debouncedSearchRunnable.cancel()
-                viewModel.search(query)
+                if (query.isEmpty()) {
+                    if (viewModel.searchState.isSearching) {
+                        viewModel.stopSearching()
+                    }
+                } else {
+                    viewModel.search(query)
+                }
                 return true
             }
 
