@@ -161,6 +161,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     ConfirmDeleteFilesDialogFragment.Listener, CreateArchiveDialogFragment.Listener,
     RenameFileDialogFragment.Listener, RenameFilesDialogFragment.Listener,
     CreateFileDialogFragment.Listener,
+    CreateLinkDialogFragment.Listener,
     CreateDirectoryDialogFragment.Listener, NavigateToPathDialogFragment.Listener,
     NavigationFragment.Listener, ShowRequestAllFilesAccessRationaleDialogFragment.Listener,
     ShowRequestNotificationPermissionRationaleDialogFragment.Listener,
@@ -1808,6 +1809,21 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         navigateTo(file.path.createArchiveRootPath())
+    }
+
+    override fun showCreateLinkDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        CreateLinkDialogFragment.show(file, this)
+    }
+
+    override fun createLink(target: FileItem, name: String) {
+        if (currentPath.fileSystem.isReadOnly) {
+            showToast(getString(R.string.file_list_create_error_read_only))
+            return
+        }
+        FileJobService.createSymbolicLink(currentPath.resolve(name), target.path, requireContext())
     }
 
     override fun extractFile(file: FileItem) {
