@@ -46,6 +46,17 @@
             android:title="@string/settings_file_list_animation_title"
             android:defaultValue="@bool/pref_default_value_file_list_animation" />
 
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_loading_indicator"
+            android:title="@string/settings_file_list_loading_indicator_title"
+            android:defaultValue="@bool/pref_default_value_file_list_loading_indicator" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_binary_file_size_unit"
+            android:title="@string/settings_binary_file_size_unit_title"
+            android:summary="@string/settings_binary_file_size_unit_summary"
+            android:defaultValue="@bool/pref_default_value_binary_file_size_unit" />
+
         <rikka.preference.SimpleMenuPreference
             android:key="@string/pref_key_file_name_ellipsize"
             android:title="@string/settings_file_name_ellipsize_title"
@@ -105,10 +116,16 @@
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_show_pdf_thumbnail"
+            android:title="@string/settings_show_pdf_thumbnail_title"
+            android:defaultValue="@bool/pref_default_value_show_pdf_thumbnail" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_show_pdf_thumbnail_pre_28"
             android:title="@string/settings_show_pdf_thumbnail_pre_28_title"
             android:defaultValue="@bool/pref_default_value_show_pdf_thumbnail_pre_28"
             android:summary="@string/settings_show_pdf_thumbnail_pre_28_summary"
+            app:dependency="@string/pref_key_show_pdf_thumbnail"
             app:isPreferenceVisible="@bool/pref_visible_show_pdf_thumbnail_pre_28" />
 
         <SwitchPreferenceCompat

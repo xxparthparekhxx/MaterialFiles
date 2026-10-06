@@ -8,6 +8,7 @@ package me.zhanghai.android.files.ui
 import android.content.Context
 import android.os.Parcelable
 import android.util.AttributeSet
+import android.view.MotionEvent
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.ImageViewState
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
@@ -24,6 +25,13 @@ class SaveStateSubsamplingScaleImageView : SubsamplingScaleImageView {
     fun setImageRestoringSavedState(imageSource: ImageSource) {
         setImage(imageSource, pendingState)
         pendingState = null
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.pointerCount > 1 || (isReady && scale > minScale)) {
+            parent?.requestDisallowInterceptTouchEvent(true)
+        }
+        return super.onTouchEvent(event)
     }
 
     override fun onSaveInstanceState(): Parcelable = State(super.onSaveInstanceState(), state)

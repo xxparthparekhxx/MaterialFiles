@@ -24,6 +24,7 @@ import me.zhanghai.android.files.coil.AppIconPackageName
 import me.zhanghai.android.files.compat.foregroundCompat
 import me.zhanghai.android.files.compat.getDrawableCompat
 import me.zhanghai.android.files.compat.isSingleLineCompat
+import me.zhanghai.android.files.databinding.FileItemCompactListBinding
 import me.zhanghai.android.files.databinding.FileItemGridBinding
 import me.zhanghai.android.files.databinding.FileItemListBinding
 import me.zhanghai.android.files.file.FileItem
@@ -62,11 +63,9 @@ class FileListAdapter(
         get() = _sortOptions
         set(value) {
             _sortOptions = value
-            if (!isSearching) {
-                val sortedList = list.sortedWith(value.createComparator())
-                super.replace(sortedList, true)
-                rebuildFilePositionMap()
-            }
+            val sortedList = list.sortedWith(value.createComparator())
+            super.replace(sortedList, true)
+            rebuildFilePositionMap()
         }
 
     var pickOptions: PickOptions? = null
@@ -78,6 +77,13 @@ class FileListAdapter(
     private val selectedFiles = fileItemSetOf()
 
     private val filePositionMap = mutableMapOf<Path, Int>()
+
+    private var activePopupMenu: PopupMenu? = null
+
+    fun dismissActivePopupMenu() {
+        activePopupMenu?.dismiss()
+        activePopupMenu = null
+    }
 
     private lateinit var _nameEllipsize: TextUtils.TruncateAt
     var nameEllipsize: TextUtils.TruncateAt
@@ -156,7 +162,7 @@ class FileListAdapter(
     fun replaceListAndIsSearching(list: List<FileItem>, isSearching: Boolean) {
         val clear = this.isSearching != isSearching
         this.isSearching = isSearching
-        val sortedList = if (!isSearching) list.sortedWith(sortOptions.createComparator()) else list
+        val sortedList = list.sortedWith(sortOptions.createComparator())
         super.replace(sortedList, clear)
         rebuildFilePositionMap()
     }
@@ -177,6 +183,8 @@ class FileListAdapter(
         val holder = when (viewType) {
             FileViewType.LIST -> ViewHolder(FileItemListBinding.inflate(inflater, parent, false))
             FileViewType.GRID -> ViewHolder(FileItemGridBinding.inflate(inflater, parent, false))
+            FileViewType.COMPACT_LIST ->
+                ViewHolder(FileItemCompactListBinding.inflate(inflater, parent, false))
         }
         return holder.apply {
             itemLayout.apply {
@@ -201,8 +209,28 @@ class FileListAdapter(
                 }
             }
             popupMenu = PopupMenu(menuButton.context, menuButton)
-                .apply { inflate(R.menu.file_item) }
-            menuButton.setOnClickListener { popupMenu.show() }
+                .apply {
+                    inflate(R.menu.file_item)
+                    setOnDismissListener {
+                        if (activePopupMenu === this) {
+                            activePopupMenu = null
+                        }
+                    }
+                }
+            menuButton.setOnClickListener {
+                activePopupMenu?.dismiss()
+                activePopupMenu = popupMenu
+                popupMenu.show()
+            }
+        }
+    }
+
+    override fun onViewRecycled(holder: ViewHolder) {
+        super.onViewRecycled(holder)
+
+        if (activePopupMenu === holder.popupMenu) {
+            holder.popupMenu.dismiss()
+            activePopupMenu = null
         }
     }
 
@@ -432,6 +460,22 @@ class FileListAdapter(
         val menuButton: ImageButton
     ) : RecyclerView.ViewHolder(root) {
         constructor(binding: FileItemListBinding) : this(
+            binding.root,
+            binding.itemLayout,
+            binding.iconLayout,
+            binding.iconImage,
+            null,
+            null,
+            null,
+            binding.thumbnailImage,
+            binding.appIconBadgeImage,
+            binding.badgeImage,
+            binding.nameText,
+            binding.descriptionText,
+            binding.menuButton
+        )
+
+        constructor(binding: FileItemCompactListBinding) : this(
             binding.root,
             binding.itemLayout,
             binding.iconLayout,
