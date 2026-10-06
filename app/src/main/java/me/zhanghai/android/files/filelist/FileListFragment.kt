@@ -2073,11 +2073,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private fun createShortcut(path: Path, mimeType: MimeType, thumbnail: Bitmap?) {
         val context = requireContext()
         val isDirectory = mimeType == MimeType.DIRECTORY
+        val label = path.name.ifEmpty { path.toString() }
         val shortcutInfo = ShortcutInfoCompat.Builder(context, path.toString())
-            .setShortLabel(path.name)
+            .setShortLabel(label)
+            .setLongLabel(label)
             .setIntent(
                 if (isDirectory) {
+                    // The launcher resolves this again. Without a type and the default category
+                    // it does not match the folder activity, so the shortcut has no name and
+                    // does not open.
                     FileListActivity.createViewIntent(path)
+                        .addCategory(Intent.CATEGORY_DEFAULT)
+                        .setType("vnd.android.document/directory")
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 } else {
                     OpenFileActivity.createIntent(path, mimeType)
