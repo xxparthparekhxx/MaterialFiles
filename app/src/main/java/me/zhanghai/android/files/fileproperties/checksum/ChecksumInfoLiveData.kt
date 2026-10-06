@@ -44,7 +44,7 @@ class ChecksumInfoLiveData(path: Path) : PathObserverLiveData<Stateful<ChecksumI
                     }
                 }
                 val checksumInfo = ChecksumInfo(
-                    messageDigests.mapValues { it.value.digest().toHexString() }
+                    messageDigests.mapValues { it.value.digest().toHexString().lowercase() }
                 )
                 Success(checksumInfo)
             } catch (e: Exception) {
