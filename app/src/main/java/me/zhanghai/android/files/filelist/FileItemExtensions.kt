@@ -79,8 +79,10 @@ val FileItem.supportsThumbnail: Boolean
             mimeType.isImage -> true
             mimeType.isMedia && path.isMediaMetadataRetrieverCompatible -> true
             mimeType.isPdf && (path.isLinuxPath || path.isDocumentPath) ->
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-                    || Settings.SHOW_PDF_THUMBNAIL_PRE_28.valueCompat
+                Settings.SHOW_PDF_THUMBNAIL.valueCompat && (
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                        || Settings.SHOW_PDF_THUMBNAIL_PRE_28.valueCompat
+                )
             else -> false
         }
     }
