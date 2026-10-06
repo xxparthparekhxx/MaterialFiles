@@ -43,7 +43,9 @@ import me.zhanghai.android.files.provider.common.IsDirectoryException
 import me.zhanghai.android.files.provider.common.force
 import me.zhanghai.android.files.provider.common.getLastModifiedTime
 import me.zhanghai.android.files.provider.common.isForceable
+import androidx.exifinterface.media.ExifInterface
 import me.zhanghai.android.files.provider.common.newByteChannel
+import me.zhanghai.android.files.provider.common.newInputStream
 import me.zhanghai.android.files.provider.common.size
 import me.zhanghai.android.files.provider.document.documentUri
 import me.zhanghai.android.files.provider.document.isDocumentPath
@@ -142,6 +144,16 @@ class FileProvider : ContentProvider() {
                             }
                             columns += column
                             values += lastModified
+                        }
+                        MediaStore.Images.ImageColumns.ORIENTATION -> {
+                            val orientation = try {
+                                path.newInputStream().use { ExifInterface(it).rotationDegrees }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                0
+                            }
+                            columns += column
+                            values += orientation
                         }
                     }
                 }
