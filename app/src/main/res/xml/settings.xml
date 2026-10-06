@@ -126,6 +126,10 @@
             android:title="@string/settings_file_list_dividers_title"
             android:summary="@string/settings_file_list_dividers_summary"
             android:defaultValue="@bool/pref_default_value_file_list_dividers" />
+            android:key="@string/pref_key_file_list_show_directory_item_count"
+            android:title="@string/settings_file_list_show_directory_item_count_title"
+            android:summary="@string/settings_file_list_show_directory_item_count_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_show_directory_item_count" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
