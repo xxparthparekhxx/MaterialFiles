@@ -525,6 +525,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_PINNED_PATHS.observe(viewLifecycleOwner) {
             adapter.pinnedPaths = it.toSet()
         }
+        Settings.FILE_LIST_FIT_THUMBNAILS.observe(viewLifecycleOwner) {
+            adapter.fitThumbnails = it
+        }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }

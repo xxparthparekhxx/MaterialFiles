@@ -106,6 +106,15 @@ class FileListAdapter(
             rebuildFilePositionMap()
         }
 
+    var fitThumbnails: Boolean = false
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = value
+            notifyDataSetChanged()
+        }
+
     var pickOptions: PickOptions? = null
         set(value) {
             field = value
@@ -388,6 +397,11 @@ class FileListAdapter(
         holder.thumbnailImage.apply {
             dispose()
             setImageDrawable(null)
+            scaleType = if (fitThumbnails) {
+                ImageView.ScaleType.FIT_CENTER
+            } else {
+                ImageView.ScaleType.CENTER_CROP
+            }
             val shouldLoadThumbnail = supportsThumbnail && !shouldLoadThumbnailIcon
             isVisible = shouldLoadThumbnail
             if (shouldLoadThumbnail) {
