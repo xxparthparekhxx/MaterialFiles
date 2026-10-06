@@ -25,7 +25,8 @@ class WriteArchive @Throws(ArchiveException::class) constructor(
     channel: SeekableByteChannel,
     format: Int,
     filter: Int,
-    password: String?
+    password: String?,
+    compressionLevel: Int
 ) : Closeable {
     private val archive = Archive.writeNew()
 
@@ -45,6 +46,7 @@ class WriteArchive @Throws(ArchiveException::class) constructor(
                     archive, null, "encryption".toByteArray(), "aes256".toByteArray()
                 )
             }
+            applyCompressionLevel(format, filter, compressionLevel)
             Archive.writeOpen(
                 archive, null, null, { _, _, buffer -> channel.write(buffer) }, null
             )
@@ -53,6 +55,34 @@ class WriteArchive @Throws(ArchiveException::class) constructor(
             if (!successful) {
                 close()
             }
+        }
+    }
+
+    @Throws(ArchiveException::class)
+    private fun applyCompressionLevel(format: Int, filter: Int, compressionLevel: Int) {
+        val level = compressionLevel.coerceIn(0, 9)
+        val levelBytes = level.toString().toByteArray()
+        when (format) {
+            Archive.FORMAT_ZIP -> {
+                if (level == 0) {
+                    Archive.writeZipSetCompressionStore(archive)
+                } else {
+                    Archive.writeZipSetCompressionDeflate(archive)
+                    Archive.writeSetFormatOption(
+                        archive, "zip".toByteArray(), "compression-level".toByteArray(), levelBytes
+                    )
+                }
+            }
+            Archive.FORMAT_7ZIP ->
+                Archive.writeSetFormatOption(
+                    archive, "7zip".toByteArray(), "compression-level".toByteArray(), levelBytes
+                )
+            else ->
+                if (filter == Archive.FILTER_XZ) {
+                    Archive.writeSetFilterOption(
+                        archive, "xz".toByteArray(), "compression-level".toByteArray(), levelBytes
+                    )
+                }
         }
     }
 
