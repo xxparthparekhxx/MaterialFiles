@@ -6,17 +6,12 @@
 package me.zhanghai.android.files.settings
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import android.util.AttributeSet
 import androidx.annotation.AttrRes
 import androidx.annotation.StyleRes
 import androidx.core.app.LocaleManagerCompat
 import androidx.core.os.LocaleListCompat
 import androidx.preference.ListPreference
-import androidx.preference.Preference.SummaryProvider
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.compat.LocaleConfigCompat
@@ -44,28 +39,18 @@ class LocalePreference : ListPreference {
     init {
         val context = context
         val systemDefaultEntry = context.getString(R.string.system_default)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Prefer using the system setting because it has better support for locales.
-            intent = Intent(
-                Settings.ACTION_APP_LOCALE_SETTINGS,
-                Uri.fromParts("package", context.packageName, null)
-            )
-            summaryProvider = SummaryProvider<LocalePreference> {
-                applicationLocale?.sentenceCasedLocalizedDisplayName ?: systemDefaultEntry
-            }
-        } else {
-            setDefaultValue(VALUE_SYSTEM_DEFAULT)
-            val supportedLocales = LocaleConfigCompat(context).supportedLocales!!.toList()
-                .sortedBy { it.toLanguageTag() }
-            entries = supportedLocales.mapTo(mutableListOf(systemDefaultEntry)) {
-                it.sentenceCasedLocalizedDisplayName
-            }.toTypedArray<CharSequence>()
-            entryValues =
-                supportedLocales
-                    .mapTo(mutableListOf(VALUE_SYSTEM_DEFAULT)) { it.toLanguageTag() }
-                    .toTypedArray<CharSequence>()
-            summaryProvider = SimpleSummaryProvider.getInstance()
-        }
+        // The system language screen crashes on some Android 13 devices, so the list is shown here.
+        setDefaultValue(VALUE_SYSTEM_DEFAULT)
+        val supportedLocales = LocaleConfigCompat(context).supportedLocales!!.toList()
+            .sortedBy { it.toLanguageTag() }
+        entries = supportedLocales.mapTo(mutableListOf(systemDefaultEntry)) {
+            it.sentenceCasedLocalizedDisplayName
+        }.toTypedArray<CharSequence>()
+        entryValues =
+            supportedLocales
+                .mapTo(mutableListOf(VALUE_SYSTEM_DEFAULT)) { it.toLanguageTag() }
+                .toTypedArray<CharSequence>()
+        summaryProvider = SimpleSummaryProvider.getInstance()
     }
 
     private val Locale.sentenceCasedLocalizedDisplayName: String
@@ -89,7 +74,6 @@ class LocalePreference : ListPreference {
     private var applicationLocale: Locale?
         get() = LocaleManagerCompat.getApplicationLocales(application).toList().firstOrNull()
         set(value) {
-            check(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
             if (value == applicationLocale) {
                 return
             }
