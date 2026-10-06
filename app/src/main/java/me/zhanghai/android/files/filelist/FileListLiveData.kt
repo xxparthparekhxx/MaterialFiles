@@ -192,6 +192,10 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
         }
     }
 
+    override fun onInactive() {
+        observer.pause()
+    }
+
     override fun close() {
         mainHandler.removeCallbacks(debouncedReloadRunnable)
         observer.close()

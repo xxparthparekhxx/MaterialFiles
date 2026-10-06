@@ -22,6 +22,7 @@ class PathObserver(private val path: Path, @MainThread private val onChange: () 
     private var isObserving = false
     private var isUnsupported = false
     private var closed = false
+    private var generation = 0
     private val lock = Any()
 
     init {
@@ -29,25 +30,30 @@ class PathObserver(private val path: Path, @MainThread private val onChange: () 
     }
 
     fun observe() {
-        synchronized(lock) {
+        val observedGeneration = synchronized(lock) {
             if (closed || isUnsupported || pathObservable != null || isObserving) {
                 return
             }
             isObserving = true
+            generation
         }
         AsyncTask.THREAD_POOL_EXECUTOR.execute {
             val observable = try {
                 path.observe(THROTTLE_INTERVAL_MILLIS)
             } catch (e: UnsupportedOperationException) {
                 synchronized(lock) {
-                    isUnsupported = true
-                    isObserving = false
+                    if (generation == observedGeneration) {
+                        isUnsupported = true
+                        isObserving = false
+                    }
                 }
                 return@execute
             } catch (e: IOException) {
                 e.printStackTrace()
                 synchronized(lock) {
-                    isObserving = false
+                    if (generation == observedGeneration) {
+                        isObserving = false
+                    }
                 }
                 return@execute
             }
@@ -55,7 +61,7 @@ class PathObserver(private val path: Path, @MainThread private val onChange: () 
             observable.addObserver {
                 mainHandler.post {
                     synchronized(lock) {
-                        if (closed) {
+                        if (closed || generation != observedGeneration) {
                             return@post
                         }
                     }
@@ -63,51 +69,65 @@ class PathObserver(private val path: Path, @MainThread private val onChange: () 
                 }
             }
             val shouldClose = synchronized(lock) {
-                if (closed) {
+                if (closed || generation != observedGeneration) {
                     true
                 } else {
                     pathObservable = observable
+                    isObserving = false
                     false
                 }
             }
             if (shouldClose) {
                 observable.closeSafe()
+                synchronized(lock) {
+                    if (generation == observedGeneration) {
+                        isObserving = false
+                    }
+                }
             }
-            synchronized(lock) {
-                isObserving = false
+        }
+    }
+
+    fun pause() {
+        val observableToClose = synchronized(lock) {
+            if (closed) {
+                return
             }
+            generation += 1
+            isObserving = false
+            val observable = pathObservable
+            pathObservable = null
+            observable
+        }
+        if (observableToClose != null) {
+            AsyncTask.THREAD_POOL_EXECUTOR.execute { observableToClose.closeSafe() }
         }
     }
 
     fun reobserve() {
-        AsyncTask.THREAD_POOL_EXECUTOR.execute {
-            val observableToClose = synchronized(lock) {
-                if (closed) {
-                    return@execute
-                }
-                val observable = pathObservable
-                pathObservable = null
-                isObserving = false
+        synchronized(lock) {
+            if (!closed) {
                 isUnsupported = false
-                observable
             }
-            observableToClose?.closeSafe()
-            observe()
         }
+        pause()
+        observe()
     }
 
     override fun close() {
-        AsyncTask.THREAD_POOL_EXECUTOR.execute {
-            val observableToClose = synchronized(lock) {
-                if (closed) {
-                    return@execute
-                }
-                closed = true
-                val observable = pathObservable
-                pathObservable = null
-                observable
+        val observableToClose = synchronized(lock) {
+            if (closed) {
+                return
             }
-            observableToClose?.closeSafe()
+            closed = true
+            generation += 1
+            isObserving = false
+            val observable = pathObservable
+            pathObservable = null
+            observable
+        }
+        if (observableToClose != null) {
+            AsyncTask.THREAD_POOL_EXECUTOR.execute { observableToClose.closeSafe() }
         }
     }
 
