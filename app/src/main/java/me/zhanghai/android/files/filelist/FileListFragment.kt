@@ -206,6 +206,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         val query = viewModel.searchViewQuery
         if (query.isEmpty()) {
+            viewModel.stopSearching()
             return@DebouncedRunnable
         }
         viewModel.search(query)
@@ -481,7 +482,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String): Boolean {
                 debouncedSearchRunnable.cancel()
-                viewModel.search(query)
+                if (query.isEmpty()) {
+                    viewModel.stopSearching()
+                } else {
+                    viewModel.search(query)
+                }
                 return true
             }
 
@@ -490,7 +495,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     return false
                 }
                 viewModel.searchViewQuery = query
-                debouncedSearchRunnable()
+                if (query.isEmpty()) {
+                    debouncedSearchRunnable.cancel()
+                    viewModel.stopSearching()
+                } else {
+                    debouncedSearchRunnable()
+                }
                 return false
             }
         })
