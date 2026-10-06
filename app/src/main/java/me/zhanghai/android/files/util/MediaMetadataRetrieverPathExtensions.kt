@@ -16,9 +16,10 @@ import me.zhanghai.android.files.provider.document.isDocumentPath
 import me.zhanghai.android.files.provider.document.resolver.DocumentResolver
 import me.zhanghai.android.files.provider.ftp.isFtpPath
 import me.zhanghai.android.files.provider.linux.isLinuxPath
+import me.zhanghai.android.files.provider.sftp.isSftpPath
 
 val Path.isMediaMetadataRetrieverCompatible: Boolean
-    get() = !isFtpPath
+    get() = !isFtpPath && !isSftpPath
 
 fun MediaMetadataRetriever.setDataSource(path: Path) {
     when {
