@@ -10,6 +10,7 @@
     <string name="pref_default_value_empty" />
 
     <string name="pref_key_storages">key_storages</string>
+    <string name="pref_key_sftp_socks_proxies">key_sftp_socks_proxies</string>
     <string name="pref_key_file_list_default_directory">key_file_list_default_directory</string>
     <string name="pref_key_file_list_remember_last_directory">key_file_list_remember_last_directory</string>
     <bool name="pref_default_value_file_list_remember_last_directory">false</bool>
