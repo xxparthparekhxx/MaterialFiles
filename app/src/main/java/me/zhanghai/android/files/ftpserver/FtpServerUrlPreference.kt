@@ -28,6 +28,8 @@ class FtpServerUrlPreference : Preference {
     private val receiver = FtpServerUrl.createChangeReceiver(context) { updateUrl() }
 
     private var url: String? = null
+    private var entries = emptyList<FtpServerUrl.Entry>()
+    private var entryIndex = 0
 
     constructor(context: Context) : super(context)
 
@@ -68,8 +70,30 @@ class FtpServerUrlPreference : Preference {
     }
 
     private fun updateUrl() {
-        url = FtpServerUrl.getUrl()
-        summary = url ?: context.getString(R.string.ftp_server_url_summary_no_local_inet_address)
+        entries = FtpServerUrl.getEntries()
+        if (entryIndex >= entries.size) {
+            entryIndex = 0
+        }
+        val entry = entries.getOrNull(entryIndex)
+        url = entry?.url ?: FtpServerUrl.getUrl()
+        summary = when {
+            url == null ->
+                context.getString(R.string.ftp_server_url_summary_no_local_inet_address)
+            entries.size > 1 -> context.getString(
+                R.string.ftp_server_url_summary_interface_format, url, entry!!.interfaceName
+            )
+            else -> url
+        }
+    }
+
+    // Tapping cycles through the URLs of all network interfaces.
+    override fun onClick() {
+        super.onClick()
+
+        if (entries.size > 1) {
+            entryIndex = (entryIndex + 1) % entries.size
+            updateUrl()
+        }
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
