@@ -118,6 +118,10 @@
             android:title="@string/settings_full_date_time_title"
             android:summary="@string/settings_full_date_time_summary"
             android:defaultValue="@bool/pref_default_value_full_date_time" />
+            android:key="@string/pref_key_file_list_hide_add_button"
+            android:title="@string/settings_file_list_hide_add_button_title"
+            android:summary="@string/settings_file_list_hide_add_button_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_hide_add_button" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
