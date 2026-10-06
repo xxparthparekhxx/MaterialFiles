@@ -28,9 +28,12 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.ImageViewerFragmentBinding
+import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.loadFileItem
 import me.zhanghai.android.files.fileproperties.FilePropertiesDialogFragment
+import me.zhanghai.android.files.filelist.RenameFileDialogFragment
+import me.zhanghai.android.files.provider.common.moveTo
 import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.provider.common.delete
 import me.zhanghai.android.files.ui.DepthPageTransformer
@@ -53,7 +56,8 @@ import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.withChooser
 import me.zhanghai.android.systemuihelper.SystemUiHelper
 
-class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
+class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
+    RenameFileDialogFragment.Listener {
     private val args by args<Args>()
     private val argsPaths by lazy { args.intent.extraPathList }
 
@@ -190,6 +194,10 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
                 showProperties()
                 true
             }
+            R.id.action_rename -> {
+                showRenameDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
 
@@ -229,6 +237,61 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
                 return@launch
             }
             FilePropertiesDialogFragment.show(fileItem, this@ImageViewerFragment)
+        }
+    }
+
+    private fun showRenameDialog() {
+        val path = currentPath
+        viewLifecycleOwner.lifecycleScope.launch {
+            val fileItem = withContext(Dispatchers.IO) {
+                try {
+                    path.loadFileItem()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (fileItem == null) {
+                showToast(R.string.image_viewer_rename_error)
+                return@launch
+            }
+            RenameFileDialogFragment.show(fileItem, this@ImageViewerFragment)
+        }
+    }
+
+    override fun hasFileWithName(name: String): Boolean =
+        paths.any { it.fileName?.toString() == name }
+
+    override fun renameFile(file: FileItem, newName: String) {
+        val path = file.path
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (target, error) = withContext(Dispatchers.IO) {
+                try {
+                    val target = path.resolveSibling(newName)
+                    path.moveTo(target)
+                    target to null
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null to e
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (target == null) {
+                showToast(error.toString())
+                return@launch
+            }
+            RemovedPaths.notifyRemoved(path)
+            val index = paths.indexOf(path)
+            if (index != -1) {
+                paths[index] = target
+                adapter.replace(paths)
+                updateTitle()
+            }
         }
     }
 
