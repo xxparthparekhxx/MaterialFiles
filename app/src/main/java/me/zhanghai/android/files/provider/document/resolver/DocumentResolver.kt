@@ -404,6 +404,12 @@ object DocumentResolver {
                     cursor.waitUntilChanged()
                     return@use
                 }
+                // Providers report listing failures through this extra; show their message
+                // instead of an empty directory.
+                val error = cursor.extras.getString(DocumentsContract.EXTRA_ERROR)
+                if (!error.isNullOrEmpty() && cursor.count == 0) {
+                    throw ResolverException(error)
+                }
                 val childrenPaths = mutableListOf<Path>()
                 while (cursor.moveToNext()) {
                     val childDocumentId = cursor.requireString(
