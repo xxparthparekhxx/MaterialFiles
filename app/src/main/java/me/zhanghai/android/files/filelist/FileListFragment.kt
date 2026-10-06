@@ -511,6 +511,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_FONT_SIZE.observe(viewLifecycleOwner) {
             adapter.fontScale = (it.toIntOrNull() ?: 100) / 100f
         }
+        Settings.FILE_LIST_PINNED_PATHS.observe(viewLifecycleOwner) {
+            adapter.pinnedPaths = it.toSet()
+        }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }
@@ -1208,6 +1211,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 )
             menu.findItem(R.id.action_delete).isVisible = !isAnyFileReadOnly
             menu.findItem(R.id.action_rename).isVisible = !isAnyFileReadOnly && files.size >= 2
+            val pinnedPaths = Settings.FILE_LIST_PINNED_PATHS.valueCompat.toSet()
+            menu.findItem(R.id.action_pin).isVisible =
+                files.any { it.path.toString() !in pinnedPaths }
+            menu.findItem(R.id.action_unpin).isVisible =
+                files.any { it.path.toString() in pinnedPaths }
             val areAllFilesArchiveFiles = files.all { it.isArchiveFile }
             menu.findItem(R.id.action_extract).isVisible = areAllFilesArchiveFiles
             val isCurrentPathReadOnly = viewModel.currentPath.fileSystem.isReadOnly
@@ -1270,6 +1278,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 RenameFilesDialogFragment.show(viewModel.selectedFiles, this)
                 true
             }
+            R.id.action_pin -> {
+                pinFiles(viewModel.selectedFiles, true)
+                true
+            }
+            R.id.action_unpin -> {
+                pinFiles(viewModel.selectedFiles, false)
+                true
+            }
             R.id.action_extract -> {
                 extractFiles(viewModel.selectedFiles)
                 true
@@ -1314,6 +1330,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     override fun replaceFile(file: FileItem) {
         pickFiles(fileItemSetOf(file))
+    }
+
+    private fun pinFiles(files: FileItemSet, pin: Boolean) {
+        val paths = files.map { it.path.toString() }
+        val pinnedPaths = Settings.FILE_LIST_PINNED_PATHS.valueCompat
+        Settings.FILE_LIST_PINNED_PATHS.putValue(
+            if (pin) (pinnedPaths + paths).distinct() else pinnedPaths - paths.toSet()
+        )
+        viewModel.selectFiles(files, false)
     }
 
     private fun cutFiles(files: FileItemSet) {
