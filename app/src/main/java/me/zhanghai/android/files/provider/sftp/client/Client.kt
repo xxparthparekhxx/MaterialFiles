@@ -18,7 +18,6 @@ import net.schmizz.sshj.sftp.Response
 import net.schmizz.sshj.sftp.SFTPClient
 import net.schmizz.sshj.sftp.SFTPException
 import net.schmizz.sshj.transport.TransportException
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier
 import net.schmizz.sshj.userauth.UserAuthException
 import java.io.IOException
 import java.util.Collections
@@ -241,11 +240,21 @@ object Client {
                 // The server was saved without a password; ask for it instead of failing.
                 throw SshPasswordRequiredException(authority)
             }
-            val sshClient = SSHClient().apply { addHostKeyVerifier(PromiscuousVerifier()) }
+            val hostKeyVerifier = SftpKnownHosts.Verifier()
+            val sshClient = SSHClient().apply { addHostKeyVerifier(hostKeyVerifier) }
             try {
                 sshClient.connect(authority.host, authority.port)
             } catch (e: IOException) {
                 sshClient.closeSafe()
+                val changedFingerprint = hostKeyVerifier.changedFingerprint
+                if (changedFingerprint != null) {
+                    throw ClientException(
+                        "The host key of ${authority.host}:${authority.port} has changed" +
+                            " (now $changedFingerprint). If you expected this, edit and save" +
+                            " the server again to trust the new key.",
+                        e
+                    )
+                }
                 throw ClientException(e)
             }
             try {

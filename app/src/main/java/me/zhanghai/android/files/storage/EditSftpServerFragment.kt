@@ -28,6 +28,7 @@ import me.zhanghai.android.files.filelist.FileListActivity
 import me.zhanghai.android.files.provider.sftp.client.Authority
 import me.zhanghai.android.files.provider.sftp.client.PasswordAuthentication
 import me.zhanghai.android.files.provider.sftp.client.PublicKeyAuthentication
+import me.zhanghai.android.files.provider.sftp.client.SftpKnownHosts
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.UnfilteredArrayAdapter
 import me.zhanghai.android.files.util.ActionState
@@ -247,6 +248,8 @@ class EditSftpServerFragment : Fragment() {
 
     private fun saveOrAdd() {
         val server = getServerOrSetError() ?: return
+        // Saving the server again is the user's way of trusting a changed host key.
+        SftpKnownHosts.forget(server.authority.host, server.authority.port)
         SftpServerAuthenticator.removeTransientPassword(server.authority)
         Storages.addOrReplace(server)
         finish()
@@ -257,6 +260,7 @@ class EditSftpServerFragment : Fragment() {
             return
         }
         val server = getServerOrSetError() ?: return
+        SftpKnownHosts.forget(server.authority.host, server.authority.port)
         viewModel.connect(server)
     }
 
