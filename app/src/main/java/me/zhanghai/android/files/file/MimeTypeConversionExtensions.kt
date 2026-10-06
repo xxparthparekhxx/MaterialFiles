@@ -33,6 +33,8 @@ private val extensionToMimeTypeOverrideMap = mapOf(
     "csv" to "text/csv", // Was "text/comma-separated-values"
     "sh" to "application/x-sh", // Was "text/x-sh"
     // Addition
+    // The system map has no type for cfg, so it was octet-stream and Always could not stick.
+    "cfg" to "text/plain",
     "bz" to "application/x-bzip",
     "bz2" to "application/x-bzip2",
     "z" to "application/x-compress",
