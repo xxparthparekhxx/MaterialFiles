@@ -16,6 +16,7 @@ import me.zhanghai.android.files.filelist.FileNameEllipsize
 import me.zhanghai.android.files.filelist.FileSortOptions
 import me.zhanghai.android.files.filelist.FileViewType
 import me.zhanghai.android.files.filelist.OpenApkDefaultAction
+import me.zhanghai.android.files.filelist.RecentFile
 import me.zhanghai.android.files.navigation.BookmarkDirectory
 import me.zhanghai.android.files.navigation.StandardDirectorySettings
 import me.zhanghai.android.files.provider.root.RootStrategy
@@ -352,6 +353,9 @@ object Settings {
 
     val STANDARD_DIRECTORY_SETTINGS: SettingLiveData<List<StandardDirectorySettings>> =
         ParcelValueSettingLiveData(R.string.pref_key_standard_directory_settings, emptyList())
+
+    val RECENT_FILES: SettingLiveData<List<RecentFile>> =
+        ParcelValueSettingLiveData(R.string.pref_key_recent_files, emptyList())
 
     val BOOKMARK_DIRECTORIES: SettingLiveData<List<BookmarkDirectory>> =
         ParcelValueSettingLiveData(
