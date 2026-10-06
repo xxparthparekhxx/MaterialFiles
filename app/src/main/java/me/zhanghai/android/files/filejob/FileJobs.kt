@@ -358,8 +358,9 @@ private class ScanInfo {
 
     fun shouldPostNotification(): Boolean {
         val currentTimeMillis = System.currentTimeMillis()
-        return if (fileCount % 100 == 0
-            || lastNotificationTimeMillis + NOTIFICATION_INTERVAL_MILLIS < currentTimeMillis) {
+        // A count check posts again as soon as the last update was slow, and then every
+        // file waits on the notification service. A large folder never leaves preparing.
+        return if (lastNotificationTimeMillis + NOTIFICATION_INTERVAL_MILLIS < currentTimeMillis) {
             lastNotificationTimeMillis = currentTimeMillis
             true
         } else {
