@@ -297,6 +297,7 @@
     <string name="file_list_error_directory_not_found">Folder not found</string>
     <string name="file_list_action_view_sort">View and sort</string>
     <string name="file_list_action_view_list">List</string>
+    <string name="file_list_press_back_again_to_exit">Press back again to exit</string>
     <string name="file_list_action_view_compact_list">Compact list</string>
     <string name="file_list_action_view_grid">Grid</string>
     <string name="file_list_action_sort_by_name">Name</string>
@@ -733,6 +734,9 @@
     <string name="text_editor_error_binary_file">Binary file cannot be opened as text</string>
 
     <string name="ftp_server_title">FTP server</string>
+    <string name="ftp_server_tile_confirm_start_title">Start FTP server?</string>
+    <string name="ftp_server_tile_confirm_start_message">The files on this device will be accessible to other devices on the network.</string>
+    <string name="ftp_server_tile_confirm_start_positive">Start</string>
     <string name="ftp_server_state_title">Status</string>
     <string name="ftp_server_state_summary_starting">Starting…</string>
     <string name="ftp_server_state_summary_running">Running</string>
@@ -823,6 +827,10 @@
         <item>View contents</item>
         <item>Ask what to do</item>
     </string-array>
+    <string name="settings_file_list_double_back_to_exit_title">Press back twice to exit</string>
+    <string name="settings_navigation_show_ftp_server_title">Show FTP server in navigation drawer</string>
+    <string name="settings_ftp_server_tile_confirm_start_title">Confirm FTP server start from quick settings</string>
+    <string name="settings_ftp_server_tile_confirm_start_summary">Ask before starting the FTP server from its quick settings tile</string>
     <string name="settings_show_pdf_thumbnail_title">Show thumbnail for PDF documents</string>
     <string name="settings_show_pdf_thumbnail_pre_28_title">Show thumbnail for PDF documents on older Android versions</string>
     <string name="settings_show_pdf_thumbnail_pre_28_summary">Might make the app unstable on older versions of Android</string>

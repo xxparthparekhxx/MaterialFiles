@@ -5,12 +5,17 @@
 
 package me.zhanghai.android.files.ftpserver
 
+import android.app.AlertDialog
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
+import android.view.ContextThemeWrapper
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
+import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.doWithStartForegroundServiceAllowed
+import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.util.valueCompat
 
 @RequiresApi(Build.VERSION_CODES.N)
 class FtpServerTileService : TileService() {
@@ -43,7 +48,26 @@ class FtpServerTileService : TileService() {
         super.onClick()
 
         if (isLocked) {
-            unlockAndRun { toggle() }
+            unlockAndRun { onToggleRequested() }
+        } else {
+            onToggleRequested()
+        }
+    }
+
+    private fun onToggleRequested() {
+        val starting = FtpServerService.stateLiveData.valueCompat == FtpServerService.State.STOPPED
+        if (starting && Settings.FTP_SERVER_TILE_CONFIRM_START.valueCompat) {
+            val context = ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            showDialog(
+                AlertDialog.Builder(context)
+                    .setTitle(R.string.ftp_server_tile_confirm_start_title)
+                    .setMessage(R.string.ftp_server_tile_confirm_start_message)
+                    .setPositiveButton(R.string.ftp_server_tile_confirm_start_positive) { _, _ ->
+                        toggle()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .create()
+            )
         } else {
             toggle()
         }
