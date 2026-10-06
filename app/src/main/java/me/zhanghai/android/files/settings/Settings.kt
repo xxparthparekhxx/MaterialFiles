@@ -108,6 +108,12 @@ object Settings {
             R.string.pref_default_value_text_editor_font_size
         )
 
+    val FILE_LIST_FOLDER_SORT_BY: SettingLiveData<String> =
+        StringSettingLiveData(
+            R.string.pref_key_file_list_folder_sort_by,
+            R.string.pref_default_value_file_list_folder_sort_by
+        )
+
     val FILE_LIST_SORT_OPTIONS: SettingLiveData<FileSortOptions> =
         ParcelValueSettingLiveData(
             R.string.pref_key_file_list_sort_options,

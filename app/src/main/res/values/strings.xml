@@ -852,6 +852,12 @@
         <item>20 sp</item>
         <item>24 sp</item>
     </string-array>
+    <string name="settings_file_list_folder_sort_by_title">Sort folders by</string>
+    <string-array name="settings_file_list_folder_sort_by_entries">
+        <item>Same as files</item>
+        <item>Name</item>
+        <item>Last modified</item>
+    </string-array>
     <string name="settings_file_list_loading_indicator_title">File list loading indicator</string>
     <string name="settings_open_files_in_new_task_title">Open files in a new task</string>
     <string name="settings_open_files_in_new_task_summary">Start the app that opens a file in its own task, so it shows up separately in recent apps instead of inside Material Files</string>

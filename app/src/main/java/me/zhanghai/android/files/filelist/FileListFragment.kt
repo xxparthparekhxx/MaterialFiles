@@ -516,6 +516,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
         }
         Settings.FILE_LIST_HIDDEN_FIRST.observe(viewLifecycleOwner) { adapter.isHiddenFirst = it }
+        Settings.FILE_LIST_FOLDER_SORT_BY.observe(viewLifecycleOwner) {
+            adapter.folderSortBy = when (it) {
+                "1" -> By.NAME
+                "2" -> By.LAST_MODIFIED
+                else -> null
+            }
+        }
         viewModel.sortOptionsLiveData.observe(viewLifecycleOwner) { onSortOptionsChanged(it) }
         viewModel.viewSortPathSpecificLiveData.observe(viewLifecycleOwner) {
             onViewSortPathSpecificChanged(it)

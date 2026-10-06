@@ -133,6 +133,14 @@
         </Preference>
 
         <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_file_list_folder_sort_by"
+            android:title="@string/settings_file_list_folder_sort_by_title"
+            android:defaultValue="@string/pref_default_value_file_list_folder_sort_by"
+            android:entries="@array/settings_file_list_folder_sort_by_entries"
+            android:entryValues="@array/pref_entry_values_file_list_folder_sort_by"
+            app:useSimpleSummaryProvider="true" />
+
+        <rikka.preference.SimpleMenuPreference
             android:key="@string/pref_key_file_list_grid_span_count"
             android:title="@string/settings_file_list_grid_span_count_title"
             android:defaultValue="@string/pref_default_value_file_list_grid_span_count"
