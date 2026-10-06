@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.viewpager2.widget.ViewPager2
 import dev.chrisbanes.insetter.applySystemWindowInsetsToPadding
@@ -39,11 +40,13 @@ import me.zhanghai.android.files.util.finish
 import me.zhanghai.android.files.util.getState
 import me.zhanghai.android.files.util.mediumAnimTime
 import me.zhanghai.android.files.util.putState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.withChooser
 import me.zhanghai.android.systemuihelper.SystemUiHelper
-import java.io.IOException
 
 class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     private val args by args<Args>()
@@ -55,12 +58,16 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
 
     private lateinit var systemUiHelper: SystemUiHelper
 
+    private var isAppBarVisible = true
+
     private lateinit var adapter: ImageViewerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        paths = (savedInstanceState?.getState<State>()?.paths ?: argsPaths).toMutableList()
+        val state = savedInstanceState?.getState<State>()
+        paths = (state?.paths ?: argsPaths).toMutableList()
+        isAppBarVisible = state?.isAppBarVisible ?: true
 
         setHasOptionsMenu(true)
     }
@@ -92,16 +99,22 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         systemUiHelper = SystemUiHelper(
             activity, SystemUiHelper.LEVEL_IMMERSIVE, SystemUiHelper.FLAG_IMMERSIVE_STICKY
         ) { visible: Boolean ->
-            binding.appBarLayout.animate()
-                .alpha(if (visible) 1f else 0f)
-                .translationY(if (visible) 0f else -binding.appBarLayout.bottom.toFloat())
-                .setDuration(mediumAnimTime.toLong())
-                .setInterpolator(FastOutSlowInInterpolator())
-                .start()
+            if (isAppBarVisible != visible) {
+                isAppBarVisible = visible
+                animateAppBar(visible)
+            }
         }
-        // This will set up window flags.
-        systemUiHelper.show()
-        adapter = ImageViewerAdapter(viewLifecycleOwner) { systemUiHelper.toggle() }.apply {
+        if (isAppBarVisible) {
+            systemUiHelper.show()
+        } else {
+            systemUiHelper.hide()
+            binding.appBarLayout.alpha = 0f
+            binding.appBarLayout.doOnPreDraw {
+                binding.appBarLayout.translationY =
+                    -(binding.appBarLayout.bottom.takeIf { it > 0 } ?: binding.appBarLayout.height).toFloat()
+            }
+        }
+        adapter = ImageViewerAdapter(viewLifecycleOwner) { toggleAppBar() }.apply {
             replace(paths)
         }
         binding.viewPager.apply {
@@ -134,7 +147,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putState(State(paths))
+        outState.putState(State(paths, isAppBarVisible))
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -161,13 +174,29 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     }
 
     override fun delete(path: Path) {
-        try {
-            path.delete()
-        } catch (e: IOException) {
-            e.printStackTrace()
-            showToast(e.toString())
-            return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val error = withContext(Dispatchers.IO) {
+                try {
+                    path.delete()
+                    null
+                } catch (e: Exception) {
+                    // SMB delete throws SMBRuntimeException, which is not an IOException.
+                    e
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (error != null) {
+                error.printStackTrace()
+                showToast(error.toString())
+                return@launch
+            }
+            removeDeletedPath(path)
         }
+    }
+
+    private fun removeDeletedPath(path: Path) {
         paths.removeAll(listOf(path))
         if (paths.isEmpty()) {
             finish()
@@ -206,6 +235,37 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         startActivitySafe(intent)
     }
 
+    private fun toggleAppBar() {
+        setAppBarVisible(!isAppBarVisible)
+    }
+
+    private fun setAppBarVisible(visible: Boolean) {
+        if (isAppBarVisible == visible) {
+            return
+        }
+        isAppBarVisible = visible
+        if (visible) {
+            systemUiHelper.show()
+        } else {
+            systemUiHelper.hide()
+        }
+        animateAppBar(visible)
+    }
+
+    private fun animateAppBar(visible: Boolean) {
+        val translationY = if (visible) {
+            0f
+        } else {
+            -(binding.appBarLayout.bottom.takeIf { it > 0 } ?: binding.appBarLayout.height).toFloat()
+        }
+        binding.appBarLayout.animate()
+            .alpha(if (visible) 1f else 0f)
+            .translationY(translationY)
+            .setDuration(mediumAnimTime.toLong())
+            .setInterpolator(FastOutSlowInInterpolator())
+            .start()
+    }
+
     private val currentPath: Path
         get() = paths[binding.viewPager.currentItem]
 
@@ -213,5 +273,8 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
     class Args(val intent: Intent, val position: Int) : ParcelableArgs
 
     @Parcelize
-    private class State(val paths: @WriteWith<ParcelableListParceler> List<Path>) : ParcelableState
+    private class State(
+        val paths: @WriteWith<ParcelableListParceler> List<Path>,
+        val isAppBarVisible: Boolean = true
+    ) : ParcelableState
 }

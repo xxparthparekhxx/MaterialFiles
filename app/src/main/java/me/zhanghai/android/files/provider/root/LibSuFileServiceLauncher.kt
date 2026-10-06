@@ -9,7 +9,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import com.topjohnwu.superuser.NoShellException
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ipc.RootService
@@ -19,26 +21,91 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.provider.remote.IRemoteFileService
 import me.zhanghai.android.files.provider.remote.RemoteFileServiceInterface
 import me.zhanghai.android.files.provider.remote.RemoteFileSystemException
 import me.zhanghai.android.files.util.createIntent
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 object LibSuFileServiceLauncher {
+    private val LOG_TAG = LibSuFileServiceLauncher::class.java.simpleName
+
     private val lock = Any()
+
+    @Volatile
+    private var isMountMasterSupported: Boolean? = null
 
     init {
         Shell.enableVerboseLogging = true
-        Shell.setDefaultBuilder(
-            Shell.Builder.create()
-                .setInitializers(LibSuShellInitializer::class.java)
-                .setFlags(Shell.FLAG_MOUNT_MASTER or Shell.FLAG_REDIRECT_STDERR)
-                .setTimeout(TimeUnit.MILLISECONDS.toSeconds(RootFileService.TIMEOUT_MILLIS))
-        )
+    }
+
+    private fun isMountMasterSupported(): Boolean {
+        isMountMasterSupported?.let { return it }
+        val supported = try {
+            val process = ProcessBuilder("su", "--help").start()
+            val stdoutFuture = Shell.EXECUTOR.submit<String> {
+                process.inputStream.bufferedReader().use { it.readText() }
+            }
+            val stderrFuture = Shell.EXECUTOR.submit<String> {
+                process.errorStream.bufferedReader().use { it.readText() }
+            }
+            val finished = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                process.waitFor(2, TimeUnit.SECONDS)
+            } else {
+                val waitFuture = Shell.EXECUTOR.submit { process.waitFor() }
+                try {
+                    waitFuture.get(2, TimeUnit.SECONDS)
+                    true
+                } catch (e: TimeoutException) {
+                    false
+                }
+            }
+            if (!finished) {
+                process.destroy()
+                false
+            } else {
+                val output =
+                    stdoutFuture.get(1, TimeUnit.SECONDS) + stderrFuture.get(1, TimeUnit.SECONDS)
+                output.contains("--mount-master")
+            }
+        } catch (e: Exception) {
+            false
+        }
+        isMountMasterSupported = supported
+        return supported
+    }
+
+    private fun prepareRootEnvironment(shell: Shell) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return
+        }
+        try {
+            val nativeLibDir = application.applicationInfo.nativeLibraryDir
+            val quotedDir = "'" + nativeLibDir.replace("'", "'\\''") + "'"
+            shell.newJob()
+                .add(
+                    "supolicy --live \"allow zygote apk_data_file file { read execute rx_file_perms }\" 2>/dev/null",
+                    "magiskpolicy --live \"allow zygote apk_data_file file { read execute rx_file_perms }\" 2>/dev/null",
+                    "chcon -R u:object_r:system_file:s0 $quotedDir 2>/dev/null",
+                    "toolbox chcon -R u:object_r:system_file:s0 $quotedDir 2>/dev/null",
+                    "chcon u:object_r:system_file:s0 $quotedDir/* 2>/dev/null",
+                    "toolbox chcon u:object_r:system_file:s0 $quotedDir/* 2>/dev/null",
+                    "mkdir -p /data/dalvik-cache/materialfiles_lib 2>/dev/null",
+                    "cp $quotedDir/*.so /data/dalvik-cache/materialfiles_lib/ 2>/dev/null",
+                    "chmod 755 /data/dalvik-cache/materialfiles_lib 2>/dev/null",
+                    "chmod 644 /data/dalvik-cache/materialfiles_lib/*.so 2>/dev/null",
+                    "chcon u:object_r:system_file:s0 /data/dalvik-cache/materialfiles_lib/*.so 2>/dev/null",
+                    "toolbox chcon u:object_r:system_file:s0 /data/dalvik-cache/materialfiles_lib/*.so 2>/dev/null"
+                )
+                .exec()
+        } catch (t: Throwable) {
+            Log.w(LOG_TAG, "Failed to prepare root environment", t)
+        }
     }
 
     fun isSuAvailable(): Boolean =
@@ -58,6 +125,14 @@ object LibSuFileServiceLauncher {
             if (!isSuAvailable()) {
                 throw RemoteFileSystemException("Root isn't available")
             }
+            val flags = Shell.FLAG_REDIRECT_STDERR or
+                (if (isMountMasterSupported()) Shell.FLAG_MOUNT_MASTER else 0)
+            Shell.setDefaultBuilder(
+                Shell.Builder.create()
+                    .setInitializers(LibSuShellInitializer::class.java)
+                    .setFlags(flags)
+                    .setTimeout(TimeUnit.MILLISECONDS.toSeconds(RootFileService.TIMEOUT_MILLIS))
+            )
             return try {
                 runBlocking {
                     try {
@@ -68,7 +143,8 @@ object LibSuFileServiceLauncher {
                                 // Shell.getShell(GetShellCallback) doesn't allow handling errors.
                                 Shell.EXECUTOR.submit {
                                     try {
-                                        Shell.getShell()
+                                        val shell = Shell.getShell()
+                                        prepareRootEnvironment(shell)
                                         continuation.resume(Unit)
                                     } catch (e: NoShellException) {
                                         continuation.resumeWithException(

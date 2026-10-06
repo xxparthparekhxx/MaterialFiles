@@ -31,6 +31,7 @@ import me.zhanghai.android.files.provider.common.Searchable
 import me.zhanghai.android.files.provider.common.WalkFileTreeSearchable
 import me.zhanghai.android.files.provider.common.WatchServicePathObservable
 import me.zhanghai.android.files.provider.common.decodedPathByteString
+import me.zhanghai.android.files.provider.common.parsedAuthority
 import me.zhanghai.android.files.provider.common.toAccessModes
 import me.zhanghai.android.files.provider.common.toByteString
 import me.zhanghai.android.files.provider.common.toCopyOptions
@@ -107,9 +108,10 @@ object SftpFileSystemProvider : FileSystemProvider(), PathObservableProvider, Se
 
     private val URI.sftpAuthority: Authority
         get() {
-            val port = if (port != -1) port else Authority.DEFAULT_PORT
-            val username = userInfo.orEmpty()
-            return Authority(host, port, username)
+            val parsed = parsedAuthority()
+            val port = if (parsed.port != -1) parsed.port else Authority.DEFAULT_PORT
+            val username = parsed.userInfo.orEmpty()
+            return Authority(parsed.host, port, username)
         }
 
     @Throws(IOException::class)

@@ -16,6 +16,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -34,6 +36,7 @@ import me.zhanghai.android.files.util.args
 import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.fadeInUnsafe
 import me.zhanghai.android.files.util.fadeOutUnsafe
+import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.viewModels
@@ -59,10 +62,24 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
 
         setHasOptionsMenu(true)
 
+        val file = args.intent.extraPath
+        if (file == null) {
+            finish()
+            return
+        }
+        argsFile = file
+
         lifecycleScope.launchWhenStarted {
             onBackPressedCallback = object : OnBackPressedCallback(false) {
                 override fun handleOnBackPressed() {
-                    ConfirmCloseDialogFragment.show(this@TextEditorFragment)
+                    val isKeyboardVisible = ViewCompat.getRootWindowInsets(binding.textEdit)
+                        ?.isVisible(WindowInsetsCompat.Type.ime()) == true
+                    if (isKeyboardVisible || binding.textEdit.hasFocus()) {
+                        binding.textEdit.clearFocus()
+                        binding.textEdit.hideSoftInput()
+                    } else {
+                        ConfirmCloseDialogFragment.show(this@TextEditorFragment)
+                    }
                 }
             }
             launch {
@@ -91,13 +108,9 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val argsFile = args.intent.extraPath
-        if (argsFile == null) {
-            // TODO: Show a toast.
-            finish()
+        if (!::argsFile.isInitialized) {
             return
         }
-        this.argsFile = argsFile
 
         val activity = requireActivity() as AppCompatActivity
         activity.lifecycleScope.launchWhenCreated {
@@ -131,6 +144,9 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
+        if (!::argsFile.isInitialized || !::binding.isInitialized) {
+            return
+        }
         viewModel.setEditTextSavedState(binding.textEdit.onSaveInstanceState())
     }
 
@@ -220,7 +236,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         // This is also called after saving because we'll be updating our state of the unchanged
         // text, but we don't want to call TextView.setText() again which resets things like cursor
         // position.
-        if (binding.textEdit.text.toString() != text) {
+        if (binding.textEdit.text?.contentEquals(text) != true) {
             isSettingText = true
             binding.textEdit.setText(text)
             isSettingText = false
@@ -258,11 +274,11 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     }
 
     private fun save() {
-        val text = binding.textEdit.text.toString()
+        val text = binding.textEdit.text ?: return
         viewModel.writeFile(argsFile, text, requireContext())
     }
 
-    private fun onWriteFileStateChanged(state: ActionState<Pair<Path, String>, Unit>) {
+    private fun onWriteFileStateChanged(state: ActionState<Path, Unit>) {
         when (state) {
             is ActionState.Ready, is ActionState.Running -> updateSaveMenuItem()
             is ActionState.Success -> {

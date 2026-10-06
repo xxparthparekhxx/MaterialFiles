@@ -15,6 +15,7 @@ import me.zhanghai.android.files.util.Failure
 import me.zhanghai.android.files.util.Loading
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.Success
+import me.zhanghai.android.files.util.findCauseByClass
 import me.zhanghai.android.files.util.valueCompat
 import java.io.IOException
 import java.util.concurrent.ExecutorService
@@ -25,19 +26,37 @@ class SearchFileListLiveData(
     private val query: String
 ) : CloseableLiveData<Stateful<List<FileItem>>>() {
     private var future: Future<Unit>? = null
+    private var currentTask: LoadTask? = null
+
+    private class LoadTask {
+        @Volatile
+        var isCancelled = false
+    }
 
     init {
         loadValue()
     }
 
     fun loadValue() {
-        future?.cancel(true)
+        currentTask?.isCancelled = true
+        future?.cancel(false)
+        val task = LoadTask()
+        currentTask = task
         value = Loading(emptyList())
         future = (AsyncTask.THREAD_POOL_EXECUTOR as ExecutorService).submit<Unit> {
+            if (task.isCancelled) {
+                return@submit
+            }
             val fileList = mutableListOf<FileItem>()
             try {
                 path.search(query, INTERVAL_MILLIS) { paths: List<Path> ->
+                    if (task.isCancelled) {
+                        return@search
+                    }
                     for (path in paths) {
+                        if (task.isCancelled) {
+                            return@search
+                        }
                         val fileItem = try {
                             path.loadFileItem()
                         } catch (e: IOException) {
@@ -47,10 +66,19 @@ class SearchFileListLiveData(
                         }
                         fileList.add(fileItem)
                     }
-                    postValue(Loading(fileList.toList()))
+                    if (!task.isCancelled) {
+                        postValue(Loading(fileList.toList()))
+                    }
                 }
-                postValue(Success(fileList))
+                if (!task.isCancelled) {
+                    postValue(Success(fileList))
+                }
             } catch (e: Exception) {
+                if (task.isCancelled || Thread.currentThread().isInterrupted ||
+                    e.findCauseByClass<InterruptedException>() != null
+                ) {
+                    return@submit
+                }
                 // TODO: Retrieval of previous value is racy.
                 postValue(Failure(valueCompat.value, e))
             }
@@ -58,7 +86,8 @@ class SearchFileListLiveData(
     }
 
     override fun close() {
-        future?.cancel(true)
+        currentTask?.isCancelled = true
+        future?.cancel(false)
     }
 
     companion object {

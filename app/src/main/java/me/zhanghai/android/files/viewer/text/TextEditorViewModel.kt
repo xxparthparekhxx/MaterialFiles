@@ -103,7 +103,6 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                     when (bytesState) {
                         is DataState.Loading -> _textState.value = _textState.value.toLoading()
                         is DataState.Success -> {
-                            _textState.value = _textState.value.toLoading()
                             try {
                                 val text = withContext(Dispatchers.Default) {
                                     String(bytesState.data, encoding)
@@ -126,16 +125,15 @@ class TextEditorViewModel(file: Path) : ViewModel() {
     val isTextChanged = MutableStateFlow(false)
 
     private val _writeFileState =
-        MutableStateFlow<ActionState<Pair<Path, String>, Unit>>(ActionState.Ready())
+        MutableStateFlow<ActionState<Path, Unit>>(ActionState.Ready())
     val writeFileState = _writeFileState.asStateFlow()
 
-    fun writeFile(path: Path, text: String, context: Context) {
+    fun writeFile(path: Path, text: CharSequence, context: Context) {
         viewModelScope.launch {
             check(_writeFileState.value.isReady)
-            val argument = path to text
-            _writeFileState.value = ActionState.Running(argument)
+            _writeFileState.value = ActionState.Running(path)
             val bytes = withContext(Dispatchers.Default) {
-                text.toByteArray(encoding.value)
+                text.toString().toByteArray(encoding.value)
             }
             FileJobService.write(path, bytes, context) { successful ->
                 if (successful) {
@@ -144,11 +142,11 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                     _bytesState.value = DataState.Success(bytes)
                 }
                 _writeFileState.value = if (successful) {
-                    ActionState.Success(argument, Unit)
+                    ActionState.Success(path, Unit)
                 } else {
                     // The error will be toasted by service so we should never show it in UI, but we
                     // need a non-null value here.
-                    ActionState.Error(argument, Throwable())
+                    ActionState.Error(path, Throwable())
                 }
             }
         }

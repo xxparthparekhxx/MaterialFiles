@@ -29,7 +29,12 @@ class FileByteChannel(
     private val file: File,
     isAppend: Boolean
 // Cancelling reads leads to TransportException: Received response with unknown sequence number
-) : AbstractFileByteChannel(isAppend, shouldCancelRead = false) {
+) : AbstractFileByteChannel(
+    isAppend,
+    shouldCancelRead = false,
+    bufferSize = Client.SMB_IO_BUFFER_SIZE,
+    readAhead = Client.SMB_READ_AHEAD
+) {
     @Throws(IOException::class)
     override fun onReadAsync(position: Long, size: Int, timeoutMillis: Long): Future<ByteBuffer> =
         try {

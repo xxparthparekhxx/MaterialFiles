@@ -15,6 +15,7 @@ import java8.nio.file.Path
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.filelist.FileSortOptions.By
 import me.zhanghai.android.files.filelist.FileSortOptions.Order
+import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.provider.archive.archiveRefresh
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.util.CloseableLiveData
@@ -35,6 +36,16 @@ class FileListViewModel : ViewModel() {
     fun resetTo(path: Path) = trailLiveData.resetTo(path)
 
     fun navigateUp(): Boolean = trailLiveData.navigateUp()
+
+    fun dropMissingCurrentPath(): Boolean = trailLiveData.dropFromCurrent()
+
+    private val removedPathsListener: (List<Path>) -> Unit = { paths ->
+        trailLiveData.removePaths(paths)
+    }
+
+    init {
+        RemovedPaths.addListener(removedPathsListener)
+    }
 
     val currentPathLiveData = trailLiveData.map { it.currentPath }
     val currentPath: Path
@@ -234,6 +245,7 @@ class FileListViewModel : ViewModel() {
         }
 
     override fun onCleared() {
+        RemovedPaths.removeListener(removedPathsListener)
         _fileListLiveData.close()
     }
 

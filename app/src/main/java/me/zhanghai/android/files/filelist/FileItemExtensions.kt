@@ -11,6 +11,7 @@ import java8.nio.file.Path
 import java8.nio.file.attribute.BasicFileAttributes
 import java8.nio.file.attribute.FileTime
 import me.zhanghai.android.files.file.FileItem
+import me.zhanghai.android.files.coil.MAX_THUMBNAIL_FILE_SIZE
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.getBrokenSymbolicLinkName
 import me.zhanghai.android.files.file.getName
@@ -67,6 +68,11 @@ val FileItem.supportsThumbnail: Boolean
             if (!shouldReadRemotePath) {
                 return false
             }
+        }
+        // Thumbnail loaders read the file (images wholly, video via MediaMetadataRetriever).
+        // A multi-gigabyte or large file does that in this process and Android kills the app.
+        if (attributes.size() > MAX_THUMBNAIL_FILE_SIZE) {
+            return false
         }
         return when {
             mimeType.isApk && path.isGetPackageArchiveInfoCompatible -> true

@@ -9,14 +9,15 @@ data class UriAuthority(
     val port: Int?
 ) {
     fun encode(): String {
-        val uri = try {
+        try {
             // HACK: An empty host/authority requires a path, so use "/" as path here.
-            URI(null, userInfo, host, port ?: -1, "/", null, null)
+            val uri = URI(null, userInfo, host, port ?: -1, "/", null, null)
+            // URI.getRawAuthority() returns null when authority is empty.
+            return uri.rawAuthority.orEmpty()
         } catch (e: URISyntaxException) {
-            throw IllegalArgumentException(e)
+            // java.net.URI rejects host names with '_', which real servers use.
+            return toString()
         }
-        // URI.getRawAuthority() returns null when authority is empty.
-        return uri.rawAuthority.orEmpty()
     }
 
     // toString() is called by UI when the URI may not be valid, so build the string manually.

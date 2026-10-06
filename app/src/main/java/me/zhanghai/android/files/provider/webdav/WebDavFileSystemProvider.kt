@@ -38,6 +38,7 @@ import me.zhanghai.android.files.provider.common.Searchable
 import me.zhanghai.android.files.provider.common.WalkFileTreeSearchable
 import me.zhanghai.android.files.provider.common.WatchServicePathObservable
 import me.zhanghai.android.files.provider.common.decodedPathByteString
+import me.zhanghai.android.files.provider.common.parsedAuthority
 import me.zhanghai.android.files.provider.common.toAccessModes
 import me.zhanghai.android.files.provider.common.toByteString
 import me.zhanghai.android.files.provider.common.toCopyOptions
@@ -108,10 +109,11 @@ object WebDavFileSystemProvider : FileSystemProvider(), PathObservableProvider, 
 
     private val URI.webDavAuthority: Authority
         get() {
+            val parsed = parsedAuthority()
             val protocol = Protocol.fromScheme(scheme)
-            val port = if (port != -1) port else protocol.defaultPort
-            val username = userInfo.orEmpty()
-            return Authority(protocol, host, port, username)
+            val port = if (parsed.port != -1) parsed.port else protocol.defaultPort
+            val username = parsed.userInfo.orEmpty()
+            return Authority(protocol, parsed.host, port, username)
         }
 
     @Throws(IOException::class)
@@ -300,8 +302,13 @@ object WebDavFileSystemProvider : FileSystemProvider(), PathObservableProvider, 
     @Throws(IOException::class)
     override fun delete(path: Path) {
         path as? WebDavPath ?: throw ProviderMismatchException(path.toString())
+        val directory = try {
+            readAttributes(path, BasicFileAttributes::class.java).isDirectory
+        } catch (e: IOException) {
+            false
+        }
         try {
-            Client.delete(path)
+            Client.delete(path, directory)
         } catch (e: DavException) {
             throw e.toFileSystemException(path.toString())
         }

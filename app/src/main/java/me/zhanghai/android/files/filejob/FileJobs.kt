@@ -125,11 +125,18 @@ private fun FileJob.postNotification(
     max: Int,
     progress: Int,
     indeterminate: Boolean,
-    showCancel: Boolean
+    showCancel: Boolean,
+    fileName: String? = null,
+    fileText: String? = null,
+    speedText: String? = null,
+    fileMax: Int = 0,
+    fileProgress: Int = 0,
+    showFileProgress: Boolean = false,
+    notificationText: CharSequence? = null
 ) {
     val notification = fileJobNotificationTemplate.createBuilder(service).apply {
         setContentTitle(title)
-        setContentText(text)
+        setContentText(notificationText ?: text)
         setSubText(subText)
         setContentInfo(info)
         setProgress(max, progress, indeterminate)
@@ -147,6 +154,12 @@ private fun FileJob.postNotification(
         }
     }.build()
     service.notificationManager.notify(id, notification)
+    FileJobProgresses.update(
+        FileJobProgress(
+            id, title.toString(), text?.toString(), fileName, fileText, speedText, max, progress,
+            indeterminate, fileMax, fileProgress, showFileProgress
+        )
+    )
 }
 
 private const val PROGRESS_INTERVAL_MILLIS = 200L
@@ -163,6 +176,18 @@ private fun FileJob.showToast(text: CharSequence, duration: Int = Toast.LENGTH_S
     service.mainExecutorCompat.execute {
         service.showToast(text, duration)
     }
+}
+
+private fun FileJob.prepareCurrentFile(transferInfo: TransferInfo, source: Path) {
+    val size = try {
+        val attributes = source.readAttributes(
+            BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS
+        )
+        if (attributes.isDirectory || attributes.isSymbolicLink) 0L else attributes.size()
+    } catch (e: IOException) {
+        0L
+    }
+    transferInfo.beginFile(size)
 }
 
 private fun FileJob.getFileName(path: Path): String =
@@ -346,45 +371,112 @@ private fun FileJob.postTransferSizeNotification(
     if (!transferInfo.shouldPostNotification()) {
         return
     }
-    val title: String
-    val text: String
     val fileCount = transferInfo.fileCount
     val target = transferInfo.target!!
     val size = transferInfo.size
     val transferredSize = transferInfo.transferredSize
+    val sizeString = size.asFileSize().formatHumanReadable(service)
+    val transferredSizeString = transferredSize.asFileSize().formatHumanReadable(service)
+    val speed = transferInfo.sampleSpeed()
+    val readableSpeed = if (speed > 0L) speed.asFileSize().formatHumanReadable(service) else null
+    val speedString = readableSpeed?.let {
+        getString(R.string.file_job_transfer_speed_format, it)
+    }
+    val speedText = readableSpeed?.let { stackedSpeedText(it) } ?: speedString
+    val (max, progress) = scaledProgress(size, transferredSize)
+    val currentFileSize = transferInfo.currentFileSize
+    val currentFileTransferredSize = transferInfo.currentFileTransferredSize
+        .coerceAtMost(currentFileSize)
+    val showFileProgress = fileCount > 1 && currentFileSize > 0L
+    val (fileMax, fileProgress) = scaledProgress(currentFileSize, currentFileTransferredSize)
+    val title: String
+    val fileName: String?
+    val fileText: String
+    val text: String?
+    val notificationText: String
+    val sizeText = getString(
+        R.string.file_job_transfer_size_notification_text_one_format, transferredSizeString,
+        sizeString
+    )
     if (fileCount == 1) {
         title = getString(titleOneRes, getFileName(currentSource), getFileName(target))
-        val sizeString = size.asFileSize().formatHumanReadable(service)
-        val transferredSizeString = transferredSize.asFileSize().formatHumanReadable(service)
-        text = getString(
-            R.string.file_job_transfer_size_notification_text_one_format, transferredSizeString,
-            sizeString
-        )
+        fileName = getFileName(currentSource)
+        fileText = sizeText
+        text = null
+        notificationText = if (speedString != null) {
+            getString(
+                R.string.file_job_transfer_size_speed_notification_text_format,
+                transferredSizeString, sizeString, speedString
+            )
+        } else {
+            sizeText
+        }
     } else {
         title = getQuantityString(titleMultipleRes, fileCount, fileCount, getFileName(target))
-        val currentFileIndex = (transferInfo.transferredFileCount + 1)
-            .coerceAtMost(fileCount)
-        text = getString(
-            R.string.file_job_transfer_size_notification_text_multiple_format, currentFileIndex,
-            fileCount
-        )
-    }
-    val max: Int
-    val progress: Int
-    if (size <= Int.MAX_VALUE) {
-        max = size.toInt()
-        progress = transferredSize.toInt()
-    } else {
-        var maxLong = size
-        var progressLong = transferredSize
-        while (maxLong > Int.MAX_VALUE) {
-            maxLong /= 2
-            progressLong /= 2
+        fileName = getFileName(currentSource)
+        val currentFileIndex = (transferInfo.transferredFileCount + 1).coerceAtMost(fileCount)
+        val countText = if (speedString != null) {
+            getString(
+                R.string.file_job_transfer_count_size_speed_notification_text_format,
+                currentFileIndex, fileCount, transferredSizeString, sizeString, speedString
+            )
+        } else {
+            getString(
+                R.string.file_job_transfer_count_size_notification_text_format, currentFileIndex,
+                fileCount, transferredSizeString, sizeString
+            )
         }
-        max = maxLong.toInt()
-        progress = progressLong.toInt()
+        val countSizeText = getString(
+            R.string.file_job_transfer_count_size_notification_text_format, currentFileIndex,
+            fileCount, transferredSizeString, sizeString
+        )
+        if (showFileProgress) {
+            fileText = getString(
+                R.string.file_job_transfer_size_notification_text_one_format,
+                currentFileTransferredSize.asFileSize().formatHumanReadable(service),
+                currentFileSize.asFileSize().formatHumanReadable(service)
+            )
+            text = countSizeText
+        } else {
+            fileText = countSizeText
+            text = null
+        }
+        notificationText = countText
     }
-    postNotification(title, text, null, null, max, progress, false, true)
+    postNotification(
+        title, text, fileName, null, max, progress, false, true, fileName, fileText, speedText,
+        fileMax, fileProgress, showFileProgress, notificationText
+    )
+}
+
+private fun FileJob.stackedSpeedText(readable: String): String {
+    val unitStart = readable.indexOfFirst { it.isLetter() }
+    if (unitStart <= 0) {
+        return getString(R.string.file_job_transfer_speed_format, readable)
+    }
+    val number = readable.substring(0, unitStart).trim()
+    val unit = readable.substring(unitStart).trim()
+    if (number.isEmpty() || unit.isEmpty()) {
+        return getString(R.string.file_job_transfer_speed_format, readable)
+    }
+    return "$number\n${getString(R.string.file_job_transfer_speed_format, unit)}"
+}
+
+private fun scaledProgress(total: Long, transferred: Long): Pair<Int, Int> {
+    if (total <= 0L) {
+        return 1 to 0
+    }
+    val clamped = transferred.coerceIn(0L, total)
+    if (total <= Int.MAX_VALUE) {
+        return total.toInt() to clamped.toInt()
+    }
+    var maxLong = total
+    var progressLong = clamped
+    while (maxLong > Int.MAX_VALUE) {
+        maxLong /= 2
+        progressLong /= 2
+    }
+    return maxLong.toInt().coerceAtLeast(1) to progressLong.toInt()
 }
 
 private fun FileJob.postTransferCountNotification(
@@ -432,8 +524,15 @@ private class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
         private set
     var transferredSize = 0L
         private set
+    var currentFileSize = 0L
+        private set
+    var currentFileTransferredSize = 0L
+        private set
 
     private var lastNotificationTimeMillis = 0L
+    private var speedSampleTimeMillis = 0L
+    private var speedSampleTransferredSize = 0L
+    private var speedBytesPerSecond = 0L
 
     fun incrementTransferredFileCount() {
         ++transferredFileCount
@@ -467,6 +566,35 @@ private class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
 
     fun addToTransferredSize(size: Long) {
         transferredSize += size
+        currentFileTransferredSize += size
+    }
+
+    fun beginFile(size: Long) {
+        currentFileSize = size.coerceAtLeast(0L)
+        currentFileTransferredSize = 0L
+    }
+
+    fun sampleSpeed(): Long {
+        val now = System.currentTimeMillis()
+        if (speedSampleTimeMillis == 0L) {
+            speedSampleTimeMillis = now
+            speedSampleTransferredSize = transferredSize
+            return 0L
+        }
+        val elapsedMillis = now - speedSampleTimeMillis
+        if (elapsedMillis <= 0L) {
+            return speedBytesPerSecond
+        }
+        val bytes = (transferredSize - speedSampleTransferredSize).coerceAtLeast(0L)
+        val instantBytesPerSecond = bytes * 1000 / elapsedMillis
+        speedBytesPerSecond = if (speedBytesPerSecond == 0L) {
+            instantBytesPerSecond
+        } else {
+            (speedBytesPerSecond * 7 + instantBytesPerSecond * 3) / 10
+        }
+        speedSampleTimeMillis = now
+        speedSampleTransferredSize = transferredSize
+        return speedBytesPerSecond
     }
 
     fun shouldPostNotification(): Boolean {
@@ -692,6 +820,7 @@ private fun FileJob.archive(
     transferInfo: TransferInfo
 ) {
     try {
+        prepareCurrentFile(transferInfo, file)
         postArchiveNotification(transferInfo, file)
         writer.write(file, entryName, PROGRESS_INTERVAL_MILLIS) {
             transferInfo.addToTransferredSize(it)
@@ -996,6 +1125,7 @@ private fun FileJob.delete(path: Path, transferInfo: TransferInfo?, actionAllInf
         retry = false
         try {
             path.delete()
+            RemovedPaths.notifyRemoved(path)
             if (transferInfo != null) {
                 transferInfo.incrementTransferredFileCount()
                 postDeleteNotification(transferInfo, path)
@@ -1276,6 +1406,7 @@ private fun FileJob.copyOrMove(
     var retry: Boolean
     do {
         retry = false
+        prepareCurrentFile(transferInfo, source)
         val options = mutableListOf<CopyOption>().apply {
             this += LinkOption.NOFOLLOW_LINKS
             if (copyAttributes) {
