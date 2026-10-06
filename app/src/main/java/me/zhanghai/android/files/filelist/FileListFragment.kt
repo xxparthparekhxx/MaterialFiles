@@ -58,10 +58,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.leinardi.android.speeddial.SpeedDialView
+import java8.nio.file.AccessDeniedException
 import java8.nio.file.NoSuchFileException
 import java8.nio.file.NotDirectoryException
 import java8.nio.file.Path
 import java8.nio.file.Paths
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlin.math.roundToInt
 import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
@@ -2156,8 +2160,22 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private fun Throwable.toUserFriendlyMessage(): String =
         when {
             isMissingDirectory() -> getString(R.string.file_list_error_directory_not_found)
+            hasCauseMessage("Root isn't available") ->
+                getString(R.string.file_list_error_root_unavailable)
+            hasCauseMessage("Shizuku isn't available") ->
+                getString(R.string.file_list_error_shizuku_unavailable)
+            hasCause<AccessDeniedException>() -> getString(R.string.file_list_error_access_denied)
+            hasCause<UnknownHostException>() -> getString(R.string.file_list_error_unknown_host)
+            hasCause<ConnectException>() || hasCause<SocketTimeoutException>() ->
+                getString(R.string.file_list_error_connection_failed)
             else -> localizedMessage?.takeIfNotEmpty() ?: toString()
         }
+
+    private inline fun <reified T : Throwable> Throwable.hasCause(): Boolean =
+        generateSequence(this) { it.cause }.any { it is T }
+
+    private fun Throwable.hasCauseMessage(message: String): Boolean =
+        generateSequence(this) { it.cause }.any { it.message == message }
 
     private class MenuBinding private constructor(
         val menu: Menu,
