@@ -50,11 +50,10 @@ data class PublicKeyAuthentication(
         AuthPublickey(createKeyProvider(privateKey, privateKeyPassword))
 
     companion object {
-        init {
+        private val KEY_PROVIDER_FACTORIES by lazy {
             SecurityProviderHelper.init()
+            DefaultConfig().fileKeyProviderFactories
         }
-
-        private val KEY_PROVIDER_FACTORIES = DefaultConfig().fileKeyProviderFactories
 
         fun validate(privateKey: String, privateKeyPassword: String?): Exception? =
             try {
