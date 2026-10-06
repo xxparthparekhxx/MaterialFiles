@@ -219,6 +219,35 @@ private fun FileJob.getTargetFileName(source: Path): Path {
     return source.fileName
 }
 
+private fun isSingleTopLevelArchiveRoot(source: Path): Boolean {
+    if (!source.isArchivePath) {
+        return false
+    }
+    val archiveFile = try {
+        source.archiveFile.asByteStringListPath()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return false
+    }
+    if (source != archiveFile.createArchiveRootPath()) {
+        return false
+    }
+    return try {
+        source.newDirectoryStream().use { stream ->
+            val iterator = stream.iterator()
+            if (!iterator.hasNext()) {
+                false
+            } else {
+                iterator.next()
+                !iterator.hasNext()
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
+    }
+}
+
 // The attributes for start path prefers following links, but falls back to not following.
 // FileVisitResult returned from visitor may be ignored and always considered CONTINUE.
 @Throws(IOException::class)
@@ -909,8 +938,13 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
         val transferInfo = TransferInfo(scanInfo, targetDirectory)
         val actionAllInfo = ActionAllInfo()
         for (source in sources) {
+            // Single-file and single-directory archives extract directly without the extra
+            // tarbomb-protection directory; true tarbombs keep the previous behaviour.
+            val isSingleTopLevel = isExtract && isSingleTopLevelArchiveRoot(source)
             val rawTarget = if (source.parent == targetDirectory) {
                 getTargetPathForDuplicate(source)
+            } else if (isSingleTopLevel) {
+                targetDirectory
             } else {
                 targetDirectory.resolveForeign(getTargetFileName(source))
             }
