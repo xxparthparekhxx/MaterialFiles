@@ -5,10 +5,16 @@
 
 package me.zhanghai.android.files.ftpserver
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.AttributeSet
 import androidx.annotation.AttrRes
 import androidx.annotation.StyleRes
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.preference.SwitchPreferenceCompat
 import me.zhanghai.android.files.R
@@ -62,6 +68,37 @@ class FtpServerStatePreference : SwitchPreferenceCompat {
     }
 
     override fun onClick() {
+        val state = FtpServerService.stateLiveData.value
+        val isRunning = state == FtpServerService.State.RUNNING
+            || state == FtpServerService.State.STARTING
+        if (!isRunning && requestNearbyWifiPermission()) {
+            return
+        }
         FtpServerService.toggle(context)
+    }
+
+    private fun requestNearbyWifiPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return false
+        }
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.NEARBY_WIFI_DEVICES)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+        val activity = context.findActivity() ?: return false
+        activity.requestPermissions(arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES), 0)
+        return true
+    }
+
+    private fun Context.findActivity(): Activity? {
+        var current = this
+        while (current is ContextWrapper) {
+            if (current is Activity) {
+                return current
+            }
+            current = current.baseContext
+        }
+        return null
     }
 }

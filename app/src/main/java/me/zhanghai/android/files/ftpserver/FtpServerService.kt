@@ -114,11 +114,13 @@ class FtpServerService : Service() {
             mainExecutorCompat.execute { onStartError(e) }
             return
         }
+        mainExecutorCompat.execute { FtpServerNsd.register(port) }
         postState(State.RUNNING)
     }
 
     @WorkerThread
     private fun doStop() {
+        mainExecutorCompat.execute { FtpServerNsd.unregister() }
         val server = server ?: return
         server.stop()
         this.server = null
