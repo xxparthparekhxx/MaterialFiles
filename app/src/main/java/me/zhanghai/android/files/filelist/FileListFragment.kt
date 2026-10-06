@@ -439,6 +439,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         viewModel.selectedFilesLiveData.observe(viewLifecycleOwner) { onSelectedFilesChanged(it) }
         viewModel.pasteStateLiveData.observe(viewLifecycleOwner) { onPasteStateChanged(it) }
         Settings.FILE_NAME_ELLIPSIZE.observe(viewLifecycleOwner) { onFileNameEllipsizeChanged(it) }
+        Settings.FILE_LIST_FONT_SIZE.observe(viewLifecycleOwner) {
+            adapter.fontScale = (it.toIntOrNull() ?: 100) / 100f
+        }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }

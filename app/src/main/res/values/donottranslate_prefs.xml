@@ -66,6 +66,15 @@
     <bool name="pref_default_value_file_list_animation">true</bool>
     <string name="pref_key_file_list_loading_indicator">key_file_list_loading_indicator</string>
     <bool name="pref_default_value_file_list_loading_indicator">true</bool>
+    <string name="pref_key_file_list_font_size">key_file_list_font_size</string>
+    <string name="pref_default_value_file_list_font_size">100</string>
+    <string-array name="pref_entry_values_file_list_font_size">
+        <item>80</item>
+        <item>90</item>
+        <item>100</item>
+        <item>115</item>
+        <item>130</item>
+    </string-array>
     <string name="pref_key_file_name_ellipsize">key_file_name_ellipsize</string>
     <string name="pref_default_value_file_name_ellipsize">1</string>
     <string-array name="pref_entry_values_file_name_ellipsize">

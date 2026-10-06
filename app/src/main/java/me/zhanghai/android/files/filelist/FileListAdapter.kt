@@ -6,6 +6,7 @@
 package me.zhanghai.android.files.filelist
 
 import android.text.TextUtils
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -90,6 +91,15 @@ class FileListAdapter(
         get() = _nameEllipsize
         set(value) {
             _nameEllipsize = value
+            notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
+        }
+
+    var fontScale: Float = 1f
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = value
             notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
         }
 
@@ -252,6 +262,12 @@ class FileListAdapter(
         menu.findItem(R.id.action_copy).isVisible = !hasPickOptions
         val checked = file in selectedFiles
         holder.itemLayout.isChecked = checked
+        holder.nameText.setTextSize(
+            TypedValue.COMPLEX_UNIT_PX, holder.nameTextBaseSize * fontScale
+        )
+        holder.descriptionText?.setTextSize(
+            TypedValue.COMPLEX_UNIT_PX, holder.descriptionTextBaseSize * fontScale
+        )
         holder.nameText.apply {
             if (isSingleLineCompat) {
                 val nameEllipsize = nameEllipsize
@@ -459,6 +475,10 @@ class FileListAdapter(
         val descriptionText: TextView?,
         val menuButton: ImageButton
     ) : RecyclerView.ViewHolder(root) {
+        // The sizes from the layout, so that the font scale is always applied to the original.
+        val nameTextBaseSize = nameText.textSize
+        val descriptionTextBaseSize = descriptionText?.textSize ?: 0f
+
         constructor(binding: FileItemListBinding) : this(
             binding.root,
             binding.itemLayout,
