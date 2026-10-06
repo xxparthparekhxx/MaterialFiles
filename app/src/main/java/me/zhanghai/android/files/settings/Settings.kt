@@ -153,6 +153,12 @@ object Settings {
             R.bool.pref_default_value_navigation_show_ftp_server
         )
 
+    val NAVIGATION_SHOW_RECENT_FILES: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_navigation_show_recent_files,
+            R.bool.pref_default_value_navigation_show_recent_files
+        )
+
     val FTP_SERVER_TILE_CONFIRM_START: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_ftp_server_tile_confirm_start,
@@ -202,6 +208,12 @@ object Settings {
     val FTP_SERVER_WRITABLE: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_ftp_server_writable, R.bool.pref_default_value_ftp_server_writable
+        )
+
+    val FTP_SERVER_EXPOSE_ALL_STORAGES: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_ftp_server_expose_all_storages,
+            R.bool.pref_default_value_ftp_server_expose_all_storages
         )
 
     val THEME_COLOR: SettingLiveData<ThemeColor> =

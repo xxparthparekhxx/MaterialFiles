@@ -363,6 +363,8 @@
     <string name="file_list_paste_action_delete_archive">Delete archive</string>
     <string name="settings_delete_archive_after_extract_title">Delete archive after extracting</string>
     <string name="settings_delete_archive_after_extract_summary">Remove the archive once every file in it has been extracted</string>
+    <string name="file_job_extract_archive_kept_into_itself">Archive kept: cannot delete when extracting into its own folder</string>
+    <string name="file_job_extract_archive_kept_skipped_format">Extracted with skips — archive kept: “%1$s”</string>
     <string name="file_list_empty">No files</string>
     <string name="file_list_action_create_file">File</string>
     <string name="file_list_action_create_directory">Folder</string>
@@ -836,6 +838,8 @@
     <string name="ftp_server_port_title">Port</string>
     <string name="ftp_server_home_directory_title">Root folder</string>
     <string name="ftp_server_writable_title">Allow writing</string>
+    <string name="ftp_server_expose_all_storages_title">Show all storages</string>
+    <string name="ftp_server_expose_all_storages_summary">List every storage at the top level instead of only the root folder. Only applies when anonymous login is off; keep off for anonymous access</string>
     <string name="ftp_server_notification_title" translatable="false">@string/ftp_server_title</string>
     <string name="ftp_server_notification_text_no_local_inet_address" translatable="false">@string/ftp_server_url_summary_no_local_inet_address</string>
 
@@ -990,6 +994,7 @@
     </string-array>
     <string name="settings_file_list_double_back_to_exit_title">Press back twice to exit</string>
     <string name="settings_navigation_show_ftp_server_title">Show FTP server in navigation drawer</string>
+    <string name="settings_navigation_show_recent_files_title">Show recent files in navigation drawer</string>
     <string name="settings_ftp_server_tile_confirm_start_title">Confirm FTP server start from quick settings</string>
     <string name="settings_ftp_server_tile_confirm_start_summary">Ask before starting the FTP server from its quick settings tile</string>
     <string name="settings_storage_reveal_saved_password_title">Allow revealing saved passwords</string>
@@ -1000,6 +1005,16 @@
     <string name="settings_show_pdf_thumbnail_pre_28_title">Show thumbnail for PDF documents on older Android versions</string>
     <string name="settings_show_pdf_thumbnail_pre_28_summary">Might make the app unstable on older versions of Android</string>
     <string name="settings_read_remote_files_for_thumbnail_title">Read remote files for thumbnail</string>
+    <string name="settings_backup_restore_title">Backup and restore</string>
+    <string name="settings_backup_restore_summary">Saves settings without server passwords. Anyone with the file can read your preferences, so keep it private</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_restore">Restore</string>
+    <string name="settings_restore_confirm">Replace the settings on this device with the backup? Only restore files you trust. Current settings will be erased.</string>
+    <string name="settings_backup_success">Settings saved</string>
+    <string name="settings_backup_error">Could not save settings</string>
+    <string name="settings_restore_success">Settings restored</string>
+    <string name="settings_restore_error">Could not restore settings: invalid backup file</string>
+    <string name="settings_restore_credentials_error">Could not restore: backup contains server credentials which are not supported</string>
 
     <string name="about_title">About</string>
     <string name="about_version_title">Version</string>

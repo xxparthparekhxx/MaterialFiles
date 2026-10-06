@@ -226,6 +226,16 @@ class ReadArchive : Closeable {
         stringUtf8 ?: string?.toString(charset)
 
     @Throws(ArchiveException::class)
+    fun findEntry(name: String, charset: Charset): Boolean {
+        while (true) {
+            val currentEntry = readEntry(charset) ?: return false
+            if (currentEntry.name == name) {
+                return true
+            }
+        }
+    }
+
+    @Throws(ArchiveException::class)
     fun newDataInputStream(): InputStream = DataInputStream()
 
     @Throws(ArchiveException::class)

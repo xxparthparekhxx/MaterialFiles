@@ -48,6 +48,7 @@ import me.zhanghai.android.files.file.loadFileItem
 import me.zhanghai.android.files.filelist.OpenFileAsDialogActivity
 import me.zhanghai.android.files.filelist.OpenFileAsDialogFragment
 import me.zhanghai.android.files.provider.archive.archiveFile
+import me.zhanghai.android.files.provider.archive.archiver.ArchiveReader
 import me.zhanghai.android.files.provider.archive.archiver.ArchiveWriter
 import me.zhanghai.android.files.provider.archive.createArchiveRootPath
 import me.zhanghai.android.files.provider.archive.isArchivePath
@@ -969,12 +970,22 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
                 source, target, isExtract, transferInfo, actionAllInfo
             )
             throwIfInterrupted()
-            if (isExtract && fullyExtracted &&
-                Settings.DELETE_ARCHIVE_AFTER_EXTRACT.valueCompat
-            ) {
+            if (isExtract && Settings.DELETE_ARCHIVE_AFTER_EXTRACT.valueCompat) {
                 val archive = source.archiveFile
-                if (!target.startsWith(archive) && !archive.startsWith(target)) {
+                // Close any cached one-pass archive handle before deleting, otherwise
+                // delete-while-open fails on remote storage (SFTP/SMB/Document).
+                ArchiveReader.invalidateSequentialArchive(archive)
+                if (!fullyExtracted) {
+                    showToast(
+                        getString(
+                            R.string.file_job_extract_archive_kept_skipped_format,
+                            archive.fileName.toString()
+                        )
+                    )
+                } else if (!target.startsWith(archive) && !archive.startsWith(target)) {
                     delete(archive, null, actionAllInfo)
+                } else {
+                    showToast(R.string.file_job_extract_archive_kept_into_itself)
                 }
             }
         }

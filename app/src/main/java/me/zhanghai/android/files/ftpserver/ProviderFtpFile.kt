@@ -72,11 +72,20 @@ class ProviderFtpFile(
         if (relativePath.nameCount == 1 && relativePath.getName(0).toString().isEmpty()) {
             return false
         }
+        // Top-level storage roots (e.g. "/Internal storage") must not be deleted or renamed.
+        if (isVolumeRoot) {
+            return false
+        }
         if (user.authorize(WriteRequest(absolutePath)) == null) {
             return false
         }
         return path.parent.isWritable
     }
+
+    private val isVolumeRoot: Boolean
+        get() =
+            relativePath.nameCount == 1 && relativePath.getName(0).toString().isNotEmpty() &&
+                FtpServerRoots.get(user).any { it.name == relativePath.getName(0).toString() }
 
     override fun getOwnerName(): String =
         try {
@@ -164,10 +173,10 @@ class ProviderFtpFile(
         }
 
     override fun move(destination: FtpFile): Boolean {
-        if (!(isRemovable && destination.isWritable)) {
+        if (isVolumeRoot || !(isRemovable && destination.isWritable)) {
             return false
         }
-        val targetPath = (destination as ProviderFtpFile).path
+        val targetPath = (destination as? ProviderFtpFile)?.path ?: return false
         return try {
             path.moveTo(targetPath)
             NavigationStorageRefreshLiveData.notifyChanged()

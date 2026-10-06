@@ -212,6 +212,11 @@
             android:defaultValue="@bool/pref_default_value_navigation_show_ftp_server" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_navigation_show_recent_files"
+            android:title="@string/settings_navigation_show_recent_files_title"
+            android:defaultValue="@bool/pref_default_value_navigation_show_recent_files" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_ftp_server_tile_confirm_start"
             android:title="@string/settings_ftp_server_tile_confirm_start_title"
             android:summary="@string/settings_ftp_server_tile_confirm_start_summary"
@@ -303,5 +308,13 @@
             android:key="@string/pref_key_read_remote_files_for_thumbnail"
             android:title="@string/settings_read_remote_files_for_thumbnail_title"
             android:defaultValue="@bool/pref_default_value_read_remote_files_for_thumbnail" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/settings_backup_restore_title">
+        <Preference
+            android:key="@string/pref_key_settings_backup_restore"
+            android:persistent="false"
+            android:title="@string/settings_backup_restore_title"
+            android:summary="@string/settings_backup_restore_summary" />
     </PreferenceCategory>
 </PreferenceScreen>

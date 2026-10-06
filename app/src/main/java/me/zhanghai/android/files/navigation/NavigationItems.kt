@@ -327,12 +327,16 @@ private class BookmarkDirectoryItem(
 }
 
 private val menuItems: List<NavigationItem>
-    @Size(min = 3)
+    @Size(min = 2)
     get() = listOfNotNull(
-        IntentMenuItem(
-            R.drawable.history_icon_white_24dp, R.string.navigation_recent_files,
-            RecentFilesActivity::class.createIntent()
-        ),
+        if (Settings.NAVIGATION_SHOW_RECENT_FILES.valueCompat) {
+            IntentMenuItem(
+                R.drawable.history_icon_white_24dp, R.string.navigation_recent_files,
+                RecentFilesActivity::class.createIntent()
+            )
+        } else {
+            null
+        },
         if (Settings.NAVIGATION_SHOW_FTP_SERVER.valueCompat) {
             IntentMenuItem(
                 R.drawable.shared_directory_icon_white_24dp, R.string.navigation_ftp_server,

@@ -38,6 +38,8 @@
     <bool name="pref_default_value_file_list_double_back_to_exit">false</bool>
     <string name="pref_key_navigation_show_ftp_server">key_navigation_show_ftp_server</string>
     <bool name="pref_default_value_navigation_show_ftp_server">true</bool>
+    <string name="pref_key_navigation_show_recent_files">key_navigation_show_recent_files</string>
+    <bool name="pref_default_value_navigation_show_recent_files">true</bool>
     <string name="pref_key_ftp_server_tile_confirm_start">key_ftp_server_tile_confirm_start</string>
     <bool name="pref_default_value_ftp_server_tile_confirm_start">false</bool>
     <string name="pref_key_file_list_drawer_swipe">key_file_list_drawer_swipe</string>
@@ -92,6 +94,8 @@
     <string name="pref_key_ftp_server_home_directory">key_ftp_server_home_directory</string>
     <string name="pref_key_ftp_server_writable">key_ftp_server_writable</string>
     <bool name="pref_default_value_ftp_server_writable">true</bool>
+    <string name="pref_key_ftp_server_expose_all_storages">key_ftp_server_expose_all_storages</string>
+    <bool name="pref_default_value_ftp_server_expose_all_storages">false</bool>
 
     <string name="pref_key_locale">key_locale</string>
     <string name="pref_key_theme_color">key_theme_color</string>
@@ -152,6 +156,7 @@
     <bool name="pref_default_value_delete_archive_after_extract">false</bool>
     <string name="pref_key_archive_file_name_encoding">key_archive_file_name_encoding</string>
     <string name="pref_default_value_archive_file_name_encoding">UTF-8</string>
+    <string name="pref_key_settings_backup_restore">key_settings_backup_restore</string>
     <string name="pref_key_file_open_defaults">key_file_open_defaults</string>
     <string-array name="pref_default_value_file_open_defaults" />
     <string name="pref_key_open_apk_default_action">key_open_apk_default_action</string>

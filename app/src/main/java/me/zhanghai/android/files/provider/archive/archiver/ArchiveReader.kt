@@ -22,6 +22,7 @@ import me.zhanghai.android.files.provider.root.isRunningAsRoot
 import me.zhanghai.android.files.provider.root.rootContext
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.valueCompat
+import me.zhanghai.android.libarchive.ArchiveException
 import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
@@ -111,26 +112,96 @@ object ArchiveReader {
     @Throws(IOException::class)
     fun newInputStream(file: Path, passwords: List<String>, entry: ReadArchive.Entry): InputStream? {
         val charset = archiveFileNameCharset
-        val (archive, closeable) = openArchive(file, passwords)
-        var successful = false
-        return try {
-            while (true) {
-                val currentEntry = archive.readEntry(charset) ?: break
-                if (currentEntry.name != entry.name) {
-                    continue
+        synchronized(sequentialLock) {
+            // A gzip or xz archive cannot seek, so reopening it decompresses from the start.
+            // Keep the last archive open and continue when the next entry is still ahead.
+            continueSequential(file, passwords, charset, entry.name)?.let { return it }
+            val (archive, closeable) = openArchive(file, passwords)
+            var successful = false
+            try {
+                if (!archive.findEntry(entry.name, charset)) {
+                    return null
+                }
+                val sequential = sequentialArchive
+                if (sequential != null && !sequential.inUse) {
+                    dropSequential(sequential)
+                }
+                if (sequentialArchive == null) {
+                    val opened = SequentialArchive(file, passwords, charset, archive, closeable)
+                    opened.inUse = true
+                    sequentialArchive = opened
+                    successful = true
+                    return SequentialEntryInputStream(opened)
                 }
                 successful = true
-                break
+                return CloseableInputStream(archive.newDataInputStream(), closeable)
+            } catch (e: ArchiveException) {
+                throw IOException(e)
+            } finally {
+                if (!successful) {
+                    try {
+                        closeable.close()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             }
-            if (successful) {
-                CloseableInputStream(archive.newDataInputStream(), closeable)
-            } else {
-                null
+        }
+    }
+
+    private val sequentialLock = Any()
+
+    private var sequentialArchive: SequentialArchive? = null
+
+    private fun continueSequential(
+        file: Path,
+        passwords: List<String>,
+        charset: Charset,
+        entryName: String
+    ): InputStream? {
+        val sequential = sequentialArchive ?: return null
+        if (sequential.inUse) {
+            return null
+        }
+        if (sequential.file != file || sequential.passwords != passwords ||
+            sequential.charset != charset
+        ) {
+            dropSequential(sequential)
+            return null
+        }
+        val found = try {
+            sequential.archive.findEntry(entryName, charset)
+        } catch (e: ArchiveException) {
+            e.printStackTrace()
+            dropSequential(sequential)
+            return null
+        }
+        if (!found) {
+            dropSequential(sequential)
+            return null
+        }
+        sequential.inUse = true
+        return SequentialEntryInputStream(sequential)
+    }
+
+    private fun dropSequential(sequential: SequentialArchive) {
+        if (sequentialArchive === sequential) {
+            sequentialArchive = null
+        }
+        try {
+            sequential.closeable.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun invalidateSequentialArchive(file: Path? = null) {
+        synchronized(sequentialLock) {
+            val sequential = sequentialArchive ?: return
+            if (file != null && sequential.file != file) {
+                return
             }
-        } finally {
-            if (!successful) {
-                closeable.close()
-            }
+            dropSequential(sequential)
         }
     }
 
@@ -235,6 +306,37 @@ object ArchiveReader {
                 archive.close()
             } finally {
                 closeable.close()
+            }
+        }
+    }
+
+    private class SequentialArchive(
+        val file: Path,
+        val passwords: List<String>,
+        val charset: Charset,
+        val archive: ReadArchive,
+        val closeable: Closeable
+    ) {
+        var inUse = false
+    }
+
+    private class SequentialEntryInputStream(
+        private val sequential: SequentialArchive
+    ) : DelegateInputStream(sequential.archive.newDataInputStream()) {
+        private var closed = false
+
+        @Throws(IOException::class)
+        override fun close() {
+            if (closed) {
+                return
+            }
+            closed = true
+            try {
+                super.close()
+            } finally {
+                synchronized(sequentialLock) {
+                    sequential.inUse = false
+                }
             }
         }
     }

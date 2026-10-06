@@ -24,6 +24,9 @@ data class RecentFile(
 
 object RecentFiles {
     fun add(file: FileItem) {
+        if (!Settings.NAVIGATION_SHOW_RECENT_FILES.valueCompat) {
+            return
+        }
         if (file.attributes.isDirectory) {
             return
         }

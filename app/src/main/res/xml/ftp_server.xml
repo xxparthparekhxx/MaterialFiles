@@ -66,5 +66,11 @@
             android:key="@string/pref_key_ftp_server_writable"
             android:title="@string/ftp_server_writable_title"
             android:defaultValue="@bool/pref_default_value_ftp_server_writable" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_ftp_server_expose_all_storages"
+            android:title="@string/ftp_server_expose_all_storages_title"
+            android:summary="@string/ftp_server_expose_all_storages_summary"
+            android:defaultValue="@bool/pref_default_value_ftp_server_expose_all_storages" />
     </PreferenceCategory>
 </PreferenceScreen>
