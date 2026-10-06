@@ -49,6 +49,12 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
         listener.observeCurrentPath(viewLifecycleOwner) { onCurrentPathChanged(it) }
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        NavigationStorageRefreshLiveData.notifyChanged()
+    }
+
     private fun onNavigationItemsChanged(navigationItems: List<NavigationItem?>) {
         adapter.replace(navigationItems)
     }
