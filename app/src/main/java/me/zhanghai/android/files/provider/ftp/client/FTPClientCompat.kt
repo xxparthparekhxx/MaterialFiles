@@ -18,15 +18,22 @@ private val DUMMY_ROOT_FTP_FILE = FTPFile().apply {
     name = "/"
 }
 
+private val SPECIAL_FTP_CHARACTERS = charArrayOf('[', ']', '*', '?', '{', '}', '~')
+
+private fun String.hasSpecialFtpCharacters(): Boolean =
+    any { it in SPECIAL_FTP_CHARACTERS }
+
 @Throws(IOException::class)
 fun FTPClient.mlistFileCompat(pathname: String): FTPFile? {
-    if (hasFeature(FTPCmd.MLST)) {
-        return mlistFile(pathname)
-    } else {
-        val path = File(pathname)
-        val parent = path.parent ?: return DUMMY_ROOT_FTP_FILE
-        return mlistDirCompat(parent)?.firstOrNull { it.name == path.name }
+    val path = File(pathname)
+    val parent = path.parent ?: if (pathname == "/" || pathname.isEmpty()) return DUMMY_ROOT_FTP_FILE else "/"
+    if (hasFeature(FTPCmd.MLST) && !pathname.hasSpecialFtpCharacters()) {
+        val file = mlistFile(pathname)
+        if (file != null && (File(file.name).name == path.name || path.name.isEmpty())) {
+            return file
+        }
     }
+    return mlistDirCompat(parent)?.firstOrNull { it.name == path.name }
 }
 
 @Throws(IOException::class)
@@ -36,21 +43,27 @@ fun FTPClient.mlistDirCompat(pathname: String): Array<FTPFile>? {
     // @see https://datatracker.ietf.org/doc/html/rfc3659#section-7.8
     // FTPClient silently returns an empty array even when server returns an error for unknown
     // command, so we have to rely on checking the feature.
-    if (hasFeature(FTPCmd.MLST)) {
+    if (hasFeature(FTPCmd.MLST) && !pathname.hasSpecialFtpCharacters()) {
         return mlistDir(pathname)
     }
-    // Changing working directory avoids globbing issues with special characters (such as '[')
-    // in pathname on LIST.
+    // Changing working directory avoids globbing and syntax issues with special characters
+    // (such as '[') in pathname on MLSD and LIST.
     val previousWorkingDirectory = printWorkingDirectory()
     val changed = changeWorkingDirectory(pathname)
     if (!changed) {
         return null
     }
     try {
-        return listFiles()
+        if (hasFeature(FTPCmd.MLST)) {
+            return mlistDir()
+        } else {
+            return listFiles()
+        }
     } finally {
         if (previousWorkingDirectory != null) {
-            changeWorkingDirectory(previousWorkingDirectory)
+            if (!changeWorkingDirectory(previousWorkingDirectory)) {
+                disconnect()
+            }
         }
     }
 }

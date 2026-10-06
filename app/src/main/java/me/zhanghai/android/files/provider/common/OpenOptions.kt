@@ -9,6 +9,8 @@ import java8.nio.file.LinkOption
 import java8.nio.file.OpenOption
 import java8.nio.file.StandardOpenOption
 
+class MtimeOpenOption(val epochSecond: Long) : OpenOption
+
 class OpenOptions(
     val read: Boolean,
     val write: Boolean,
@@ -20,7 +22,8 @@ class OpenOptions(
     val sparse: Boolean,
     val sync: Boolean,
     val dsync: Boolean,
-    val noFollowLinks: Boolean
+    val noFollowLinks: Boolean,
+    val mtimeEpochSecond: Long? = null
 )
 
 fun Array<out OpenOption>.toOpenOptions(): OpenOptions = setOf(*this).toOpenOptions()
@@ -37,6 +40,7 @@ fun Set<OpenOption>.toOpenOptions(): OpenOptions {
     var sync = false
     var dsync = false
     var noFollowLinks = false
+    var mtimeEpochSecond: Long? = null
     for (option in this) {
         when (option) {
             is StandardOpenOption -> when (option) {
@@ -53,6 +57,7 @@ fun Set<OpenOption>.toOpenOptions(): OpenOptions {
                 else -> throw UnsupportedOperationException(option.toString())
             }
             LinkOption.NOFOLLOW_LINKS -> noFollowLinks = true
+            is MtimeOpenOption -> mtimeEpochSecond = option.epochSecond
             else -> throw UnsupportedOperationException(option.toString())
         }
     }
@@ -78,6 +83,6 @@ fun Set<OpenOption>.toOpenOptions(): OpenOptions {
     }
     return OpenOptions(
         read, write, append, truncateExisting, create, createNew, deleteOnClose, sparse,
-        sync, dsync, noFollowLinks
+        sync, dsync, noFollowLinks, mtimeEpochSecond
     )
 }
