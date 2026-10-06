@@ -289,6 +289,7 @@
     <string name="file_list_subtitle_separator">,\u0020</string>
     <string name="file_list_path_error_empty">Path cannot be empty</string>
     <string name="file_list_path_error_invalid">Invalid path</string>
+    <string name="file_list_error_directory_not_found">Folder not found</string>
     <string name="file_list_action_view_sort">View and sort</string>
     <string name="file_list_action_view_list">List</string>
     <string name="file_list_action_view_compact_list">Compact list</string>

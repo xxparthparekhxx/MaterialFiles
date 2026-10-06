@@ -790,14 +790,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         )
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
-        if (throwable != null && !isSearching && throwable.isMissingDirectory() &&
-            viewModel.dropMissingCurrentPath()
-        ) {
-            return
+        if (throwable != null && !isSearching && throwable.isMissingDirectory()) {
+            if (viewModel.dropMissingCurrentPath()) {
+                return
+            }
+            val defaultDirectory = Settings.FILE_LIST_DEFAULT_DIRECTORY.valueCompat
+            if (currentPath != defaultDirectory) {
+                showToast(throwable.toUserFriendlyMessage())
+                viewModel.resetTo(defaultDirectory)
+                return
+            }
         }
         if (throwable != null) {
             throwable.printStackTrace()
-            val error = throwable.toString()
+            val error = throwable.toUserFriendlyMessage()
             if (hasFiles) {
                 showToast(error)
             } else {
@@ -1924,6 +1930,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         return false
     }
+
+    private fun Throwable.toUserFriendlyMessage(): String =
+        when {
+            isMissingDirectory() -> getString(R.string.file_list_error_directory_not_found)
+            else -> localizedMessage?.takeIfNotEmpty() ?: toString()
+        }
 
     private class MenuBinding private constructor(
         val menu: Menu,
