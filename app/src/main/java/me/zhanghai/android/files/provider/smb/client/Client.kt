@@ -45,10 +45,13 @@ import me.zhanghai.android.files.util.closeSafe
 import me.zhanghai.android.files.util.enumSetOf
 import me.zhanghai.android.files.util.hasBits
 import java.io.Closeable
+import java.io.EOFException
 import java.io.IOException
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
+import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.Collections
 import java.util.WeakHashMap
@@ -82,6 +85,10 @@ object Client {
     )
 
     private val sessions = mutableMapOf<Authority, Session>()
+
+    private val sessionUsedAt = mutableMapOf<Authority, Long>()
+
+    private const val SESSION_IDLE_PROBE_NANOS = 15L * 1_000_000_000L
 
     private val directoryFileInformationCache =
         Collections.synchronizedMap(WeakHashMap<Path, FileInformation>())
@@ -674,12 +681,14 @@ object Client {
             var session = sessions[authority]
             if (session != null) {
                 val connection = session.connection
-                if (connection.isConnected) {
+                val idleNanos = System.nanoTime() - (sessionUsedAt[authority] ?: 0L)
+                val usable = connection.isConnected &&
+                    (idleNanos < SESSION_IDLE_PROBE_NANOS || session.isUsable())
+                if (usable) {
+                    sessionUsedAt[authority] = System.nanoTime()
                     return session
                 } else {
-                    session.closeSafe()
-                    connection.closeSafe()
-                    sessions -= authority
+                    dropSessionLocked(session, authority)
                 }
             }
             val password = authenticator.getPassword(authority)
@@ -704,8 +713,56 @@ object Client {
             //}
             }!!
             sessions[authority] = session
+            sessionUsedAt[authority] = System.nanoTime()
             return session
         }
+    }
+
+    private fun dropSessionLocked(session: Session, authority: Authority) {
+        session.closeSafe()
+        session.connection.closeSafe()
+        sessions -= authority
+        sessionUsedAt -= authority
+    }
+
+    private fun dropSession(session: Session) {
+        synchronized(sessions) {
+            val authority = sessions.entries.firstOrNull { it.value === session }?.key ?: return
+            dropSessionLocked(session, authority)
+        }
+    }
+
+    /**
+     * An idle Windows session stays marked connected after the server has deleted it.
+     * Tree-connect to IPC$ is a session call, so a deleted session fails here and the next
+     * request signs in again.
+     */
+    private fun Session.isUsable(): Boolean =
+        try {
+            connectShare("IPC$").closeSafe()
+            true
+        } catch (e: SMBRuntimeException) {
+            !e.isBrokenConnection()
+        }
+
+    private fun SMBRuntimeException.isBrokenConnection(): Boolean {
+        val brokenStatus = setOf(
+            NtStatus.STATUS_USER_SESSION_DELETED,
+            NtStatus.STATUS_NETWORK_SESSION_EXPIRED,
+            NtStatus.STATUS_CONNECTION_DISCONNECTED,
+            NtStatus.STATUS_CONNECTION_RESET,
+            NtStatus.STATUS_IO_TIMEOUT
+        )
+        var current: Throwable? = this
+        while (current != null) {
+            when (current) {
+                is TransportException, is SocketException, is SocketTimeoutException, is EOFException ->
+                    return true
+                is SMBApiException -> if (current.status in brokenStatus) return true
+            }
+            current = current.cause
+        }
+        return false
     }
 
     @Throws(ClientException::class)
@@ -764,6 +821,9 @@ object Client {
         return try {
             session.connectShare(shareName)
         } catch (e: SMBRuntimeException) {
+            if (e.isBrokenConnection()) {
+                dropSession(session)
+            }
             throw ClientException(e)
         }
     }
