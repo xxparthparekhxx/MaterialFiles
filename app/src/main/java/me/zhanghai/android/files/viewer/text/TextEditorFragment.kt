@@ -190,7 +190,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
             }
             R.id.action_encoding -> {
                 requireContext().showCharsetPickerDialog(viewModel.encoding.value.name()) {
-                    viewModel.encoding.value = it
+                    viewModel.chooseEncoding(it)
                 }
                 true
             }
