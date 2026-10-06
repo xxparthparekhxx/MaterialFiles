@@ -46,6 +46,13 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_archive_file_name_encoding"
+        android:orderInCategory="100"
+        android:title="@string/settings_archive_file_name_encoding_title"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_refresh"
         android:alphabeticShortcut="r"
         android:orderInCategory="100"
