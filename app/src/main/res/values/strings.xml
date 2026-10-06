@@ -339,6 +339,8 @@
     <string name="file_list_select_title_format">%1$,d</string>
     <string name="file_list_select_title_size_format">%1$,d · %2$s</string>
     <string name="file_list_select_action_extract" translatable="false">@string/file_item_action_extract</string>
+    <string name="file_list_select_action_pin">Pin to top</string>
+    <string name="file_list_select_action_unpin">Unpin</string>
     <string name="file_list_select_action_archive" translatable="false">@string/file_item_action_archive</string>
     <string name="file_list_create_file_name_hint">File name</string>
     <string name="file_list_create_file_name_error_empty" translatable="false">@string/file_name_error_empty</string>

@@ -30,6 +30,7 @@
     <bool name="pref_default_value_file_list_drawer_swipe">true</bool>
     <string name="pref_key_storage_reveal_saved_password">key_storage_reveal_saved_password</string>
     <bool name="pref_default_value_storage_reveal_saved_password">true</bool>
+    <string name="pref_key_file_list_pinned_paths">key_file_list_pinned_paths</string>
     <string name="pref_key_file_list_grid_span_count">key_file_list_grid_span_count</string>
     <string name="pref_default_value_file_list_grid_span_count">0</string>
     <string-array name="pref_entry_values_file_list_grid_span_count">
