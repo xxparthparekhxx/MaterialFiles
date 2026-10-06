@@ -9,6 +9,7 @@ import java8.nio.file.Path as Java8Path
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import javax.net.ssl.SSLException
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.chrono.IsoChronology
@@ -22,6 +23,7 @@ import me.zhanghai.android.files.provider.common.DelegateOutputStream
 import me.zhanghai.android.files.provider.common.LocalWatchService
 import me.zhanghai.android.files.provider.common.NotifyEntryModifiedOutputStream
 import me.zhanghai.android.files.provider.common.NotifyEntryModifiedSeekableByteChannel
+import me.zhanghai.android.files.util.findCauseByClass
 import org.apache.commons.net.ftp.FTPClient
 import org.apache.commons.net.ftp.FTPClientConfig
 import org.apache.commons.net.ftp.FTPCmd
@@ -65,6 +67,11 @@ object Client {
         return createClient(authority)
     }
 
+    private fun IOException.isPlaintextTlsGreeting(): Boolean {
+        val sslException = findCauseByClass<SSLException>() ?: this as? SSLException
+        return sslException?.message?.contains("Unable to parse TLS packet header") == true
+    }
+
     private fun acquireClientUnchecked(authority: Authority): FTPClient? =
         synchronized(clientPool) {
             val pooledClients = clientPool[authority] ?: return null
@@ -76,10 +83,24 @@ object Client {
         }
 
     @Throws(IOException::class)
-    private fun createClient(authority: Authority): FTPClient {
+    private fun createClient(authority: Authority): FTPClient =
+        try {
+            openClient(authority, authority.protocol)
+        } catch (e: IOException) {
+            // Implicit FTPS wraps the socket before reading the greeting. A plaintext 220 means
+            // this port speaks explicit FTPS instead.
+            if (authority.protocol == Protocol.FTPS && e.isPlaintextTlsGreeting()) {
+                openClient(authority, Protocol.FTPES)
+            } else {
+                throw e
+            }
+        }
+
+    @Throws(IOException::class)
+    private fun openClient(authority: Authority, protocol: Protocol): FTPClient {
         val password = authenticator.getPassword(authority)
             ?: throw IOException("No password found for $authority")
-        return authority.protocol.createClient().apply {
+        return protocol.createClient().apply {
             configure(FTPClientConfig(""))
             // This has to be set before connect().
             controlEncoding = authority.encoding
@@ -90,7 +111,12 @@ object Client {
             setAutodetectUTF8(false)
             setUseEPSVwithIPv4(false)
             connectTimeout = 30_000
-            connect(authority.host, authority.port)
+            try {
+                connect(authority.host, authority.port)
+            } catch (t: Throwable) {
+                disconnect()
+                throw t
+            }
             try {
                 if (!FTPReply.isPositiveCompletion(replyCode)) {
                     throwNegativeReplyCodeException()
