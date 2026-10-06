@@ -247,6 +247,14 @@ object DocumentResolver {
         }
 
     @Throws(ResolverException::class)
+    fun getOpenedSize(path: Path): Long? {
+        openParcelFileDescriptor(path, "r").use { descriptor ->
+            val statSize = descriptor.statSize
+            return if (statSize > 0) statSize else null
+        }
+    }
+
+    @Throws(ResolverException::class)
     fun getThumbnail(path: Path, width: Int, height: Int, signal: CancellationSignal): Bitmap? {
         val uri = getDocumentUri(path)
         return try {

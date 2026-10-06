@@ -42,8 +42,22 @@ internal class DocumentFileAttributeView(
                     DocumentsContract.Document.COLUMN_LAST_MODIFIED
                 ) ?: 0
                 mimeType = cursor.getString(DocumentsContract.Document.COLUMN_MIME_TYPE)
-                size = cursor.getLong(DocumentsContract.Document.COLUMN_SIZE) ?: 0
+                val reportedSize = cursor.getLong(DocumentsContract.Document.COLUMN_SIZE)
                 flags = cursor.getInt(DocumentsContract.Document.COLUMN_FLAGS) ?: 0
+                val isDirectory = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
+                val isVirtual = flags and DocumentsContract.Document.FLAG_VIRTUAL_DOCUMENT != 0
+                size = when {
+                    reportedSize == null -> 0
+                    reportedSize > 0 || isDirectory || isVirtual -> reportedSize
+                    else -> try {
+                        // Some drives report 0 for a file that already has data. Opening it
+                        // returns the real length. Rename used to be the only way to refresh it.
+                        DocumentResolver.getOpenedSize(path) ?: 0
+                    } catch (e: ResolverException) {
+                        e.printStackTrace()
+                        0
+                    }
+                }
             }
         } catch (e: ResolverException) {
             throw e.toFileSystemException(path.toString())
