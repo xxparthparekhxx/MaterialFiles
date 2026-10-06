@@ -167,6 +167,8 @@ class FileListAdapter(
         rebuildFilePositionMap()
     }
 
+    fun getFilePosition(path: Path): Int = filePositionMap[path] ?: RecyclerView.NO_POSITION
+
     private fun rebuildFilePositionMap() {
         filePositionMap.clear()
         for (index in 0..<itemCount) {

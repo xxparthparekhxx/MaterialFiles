@@ -194,6 +194,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private lateinit var layoutManager: GridLayoutManager
 
+    private var lastPath: Path? = null
+    private var pendingHighlightPath: Path? = null
+
     private var userRequestedRefresh = false
 
     private val fileJobProgressCards = mutableMapOf<Int, FileJobProgressCardBinding>()
@@ -693,6 +696,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun onCurrentPathChanged(path: Path) {
+        // When going up to an ancestor, remember the child we came from so it can be highlighted.
+        val previousPath = lastPath
+        lastPath = path
+        pendingHighlightPath = if (previousPath != null && previousPath != path &&
+            previousPath.fileSystem == path.fileSystem && previousPath.startsWith(path)
+        ) {
+            var child: Path = previousPath
+            while (child.parent != path) {
+                child = child.parent ?: break
+            }
+            child
+        } else {
+            null
+        }
         binding.speedDialView.isVisible = !path.fileSystem.isReadOnly
         updateOverlayToolbar()
         updateBottomToolbar()
@@ -848,6 +865,30 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         if (stateful is Success) {
             viewModel.pendingState?.let { layoutManager.onRestoreInstanceState(it) }
+            highlightPendingPath()
+        }
+    }
+
+    private fun highlightPendingPath() {
+        val path = pendingHighlightPath ?: return
+        val position = adapter.getFilePosition(path)
+        if (position == RecyclerView.NO_POSITION) {
+            return
+        }
+        pendingHighlightPath = null
+        val recyclerView = binding.recyclerView
+        val flash = {
+            recyclerView.findViewHolderForAdapterPosition(position)?.itemView?.let { view ->
+                view.isPressed = true
+                view.postDelayed({ view.isPressed = false }, 400)
+            }
+            Unit
+        }
+        if (recyclerView.findViewHolderForAdapterPosition(position) != null) {
+            flash()
+        } else {
+            layoutManager.scrollToPosition(position)
+            recyclerView.post { flash() }
         }
     }
 
