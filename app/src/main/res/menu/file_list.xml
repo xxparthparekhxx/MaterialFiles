@@ -33,6 +33,9 @@
                     android:id="@+id/action_view_list"
                     android:title="@string/file_list_action_view_list" />
                 <item
+                    android:id="@+id/action_view_compact_list"
+                    android:title="@string/file_list_action_view_compact_list" />
+                <item
                     android:id="@+id/action_view_grid"
                     android:title="@string/file_list_action_view_grid" />
             </group>

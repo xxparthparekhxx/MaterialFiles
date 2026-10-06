@@ -29,6 +29,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.progressindicator.BaseProgressIndicator
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
@@ -89,6 +90,7 @@ import me.zhanghai.android.files.navigation.BookmarkDirectories
 import me.zhanghai.android.files.navigation.BookmarkDirectory
 import me.zhanghai.android.files.navigation.NavigationFragment
 import me.zhanghai.android.files.navigation.NavigationRootMapLiveData
+import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
 import me.zhanghai.android.files.provider.archive.createArchiveRootPath
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.provider.linux.isLinuxPath
@@ -206,6 +208,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         val query = viewModel.searchViewQuery
         if (query.isEmpty()) {
+            viewModel.stopSearching()
             return@DebouncedRunnable
         }
         viewModel.search(query)
@@ -225,6 +228,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Binding.inflate(inflater, container, false)
             .also { binding = it }
             .root
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        adapter.dismissActivePopupMenu()
+    }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -338,6 +347,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         addOnBackPressedCallback(SpeedDialViewOnBackPressedCallback(binding.speedDialView))
         binding.drawerLayout?.let {
             addOnBackPressedCallback(DrawerLayoutOnBackPressedCallback(it))
+            it.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+                override fun onDrawerOpened(drawerView: View) {
+                    NavigationStorageRefreshLiveData.notifyChanged()
+                }
+            })
         }
 
         if (!viewModel.hasTrail) {
@@ -425,6 +439,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         viewModel.selectedFilesLiveData.observe(viewLifecycleOwner) { onSelectedFilesChanged(it) }
         viewModel.pasteStateLiveData.observe(viewLifecycleOwner) { onPasteStateChanged(it) }
         Settings.FILE_NAME_ELLIPSIZE.observe(viewLifecycleOwner) { onFileNameEllipsizeChanged(it) }
+        Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         FileJobProgresses.liveData.observe(viewLifecycleOwner) { onFileJobProgressChanged(it) }
         binding.fileJobProgressLayout.addOnLayoutChangeListener { sheet, _, _, _, _, _, _, _, _ ->
@@ -432,6 +447,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         Settings.FILE_LIST_SHOW_HIDDEN_FILES.observe(viewLifecycleOwner) {
             onShowHiddenFilesChanged(it)
+        }
+        Settings.FILE_LIST_LOCK_HEADER.observe(viewLifecycleOwner) {
+            updateToolbarScrollFlags()
+        }
+        updateToolbarScrollFlags()
+        Settings.FILE_LIST_LOADING_INDICATOR.observe(viewLifecycleOwner) {
+            if (!it) {
+                binding.progress.fadeToVisibilityUnsafe(false)
+            }
         }
     }
 
@@ -476,7 +500,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String): Boolean {
                 debouncedSearchRunnable.cancel()
-                viewModel.search(query)
+                if (query.isEmpty()) {
+                    viewModel.stopSearching()
+                } else {
+                    viewModel.search(query)
+                }
                 return true
             }
 
@@ -485,7 +513,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     return false
                 }
                 viewModel.searchViewQuery = query
-                debouncedSearchRunnable()
+                if (query.isEmpty()) {
+                    debouncedSearchRunnable.cancel()
+                    viewModel.stopSearching()
+                } else {
+                    debouncedSearchRunnable()
+                }
                 return false
             }
         })
@@ -521,6 +554,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             R.id.action_view_list -> {
                 viewModel.viewType = FileViewType.LIST
+                true
+            }
+            R.id.action_view_compact_list -> {
+                viewModel.viewType = FileViewType.COMPACT_LIST
                 true
             }
             R.id.action_view_grid -> {
@@ -643,6 +680,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun onCurrentPathChanged(path: Path) {
+        binding.speedDialView.isVisible = !path.fileSystem.isReadOnly
         updateOverlayToolbar()
         updateBottomToolbar()
     }
@@ -766,17 +804,22 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             else -> binding.toolbar.subtitle = getSubtitle(files!!)
         }
         binding.swipeRefreshLayout.isRefreshing = showUserRefresh && (hasFiles || isSearching)
-        binding.progress.fadeToVisibilityUnsafe(stateful is Loading && !(hasFiles || isSearching))
+        binding.progress.fadeToVisibilityUnsafe(
+            Settings.FILE_LIST_LOADING_INDICATOR.valueCompat && stateful is Loading && !(hasFiles || isSearching)
+        )
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
-        if (throwable != null && !isSearching && throwable.isMissingDirectory() &&
-            viewModel.dropMissingCurrentPath()
-        ) {
-            return
+        if (throwable != null && !isSearching && throwable.isMissingDirectory()) {
+            if (viewModel.dropMissingCurrentPath()) {
+                showToast(getString(R.string.file_list_error_directory_not_found))
+                return
+            }
+            // Couldn't navigate away (e.g. already at trail root): fall through and show a
+            // friendly message instead of the raw exception below.
         }
         if (throwable != null) {
             throwable.printStackTrace()
-            val error = throwable.toString()
+            val error = throwable.toUserFriendlyMessage()
             if (hasFiles) {
                 showToast(error)
             } else {
@@ -828,17 +871,33 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateViewSortMenuItems()
     }
 
+    private fun updateToolbarScrollFlags() {
+        val layoutParams =
+            (binding.toolbar.parent as View).layoutParams as? AppBarLayout.LayoutParams ?: return
+        if (Settings.FILE_LIST_LOCK_HEADER.valueCompat) {
+            layoutParams.scrollFlags = 0
+            binding.appBarLayout.setExpanded(true)
+        } else {
+            layoutParams.scrollFlags = AppBarLayout.LayoutParams.SCROLL_FLAG_SCROLL or
+                AppBarLayout.LayoutParams.SCROLL_FLAG_ENTER_ALWAYS
+        }
+    }
+
     private fun updateSpanCount() {
         layoutManager.spanCount = when (viewModel.viewType) {
-            FileViewType.LIST -> 1
+            FileViewType.LIST, FileViewType.COMPACT_LIST -> 1
             FileViewType.GRID -> {
-                var widthDp = resources.configuration.screenWidthDp
-                val persistentDrawerLayout = binding.persistentDrawerLayout
-                if (persistentDrawerLayout != null &&
-                    persistentDrawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    widthDp -= getDimensionDp(R.dimen.navigation_max_width).roundToInt()
-                }
-                (widthDp / 180).coerceAtLeast(2)
+                Settings.FILE_LIST_GRID_SPAN_COUNT.valueCompat.toIntOrNull()
+                    ?.takeIf { it >= 2 }
+                    ?: run {
+                        var widthDp = resources.configuration.screenWidthDp
+                        val persistentDrawerLayout = binding.persistentDrawerLayout
+                        if (persistentDrawerLayout != null &&
+                            persistentDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+                            widthDp -= getDimensionDp(R.dimen.navigation_max_width).roundToInt()
+                        }
+                        (widthDp / 180).coerceAtLeast(2)
+                    }
             }
         }
     }
@@ -864,6 +923,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val viewType = viewModel.viewType
         val checkedViewTypeItem = when (viewType) {
             FileViewType.LIST -> menuBinding.viewListItem
+            FileViewType.COMPACT_LIST -> menuBinding.viewCompactListItem
             FileViewType.GRID -> menuBinding.viewGridItem
         }
         checkedViewTypeItem.isChecked = true
@@ -1126,6 +1186,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 shareFiles(viewModel.selectedFiles)
                 true
             }
+            R.id.action_copy_path -> {
+                copyPaths(viewModel.selectedFiles)
+                true
+            }
             R.id.action_select_all -> {
                 selectAllFiles()
                 true
@@ -1196,6 +1260,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun shareFiles(files: FileItemSet) {
         shareFiles(files.map { it.path }, files.map { it.mimeType })
+        viewModel.selectFiles(files, false)
+    }
+
+    private fun copyPaths(files: FileItemSet) {
+        val paths = files.map { it.path.toUserFriendlyString() }.joinToString("\n")
+        clipboardManager.copyText(paths, requireContext())
         viewModel.selectFiles(files, false)
     }
 
@@ -1369,14 +1439,23 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun selectFile(file: FileItem, selected: Boolean) {
+        if (!isAdded) {
+            return
+        }
         viewModel.selectFile(file, selected)
     }
 
     override fun selectFiles(files: FileItemSet, selected: Boolean) {
+        if (!isAdded) {
+            return
+        }
         viewModel.selectFiles(files, selected)
     }
 
     override fun openFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         val pickOptions = viewModel.pickOptions
         if (pickOptions != null) {
             if (file.attributes.isDirectory) {
@@ -1414,6 +1493,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun installApk(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         val path = file.path
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             if (!path.isArchivePath) path.fileProviderUri else null
@@ -1429,10 +1511,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun viewApk(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         navigateTo(file.listablePath)
     }
 
     override fun openFileWith(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         openFileWithIntent(file, true)
     }
 
@@ -1492,18 +1580,30 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun cutFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         cutFiles(fileItemSetOf(file))
     }
 
     override fun copyFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         copyFiles(fileItemSetOf(file))
     }
 
     override fun confirmDeleteFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         confirmDeleteFiles(fileItemSetOf(file))
     }
 
     override fun showRenameFileDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         RenameFileDialogFragment.show(file, this)
     }
 
@@ -1518,19 +1618,31 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun renameFile(file: FileItem, newName: String) {
+        if (!isAdded) {
+            return
+        }
         FileJobService.rename(file.path, newName, requireContext())
         viewModel.selectFile(file, false)
     }
 
     override fun extractFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         copyFile(file.createDummyArchiveRoot())
     }
 
     override fun showCreateArchiveDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         showCreateArchiveDialog(fileItemSetOf(file))
     }
 
     override fun shareFile(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         shareFile(file.path, file.mimeType)
     }
 
@@ -1546,10 +1658,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun copyPath(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         copyPath(file.path)
     }
 
     override fun addBookmark(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         addBookmark(file.path)
     }
 
@@ -1563,6 +1681,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun createShortcut(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         createShortcut(file.path, file.mimeType)
     }
 
@@ -1600,6 +1721,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun showPropertiesDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
         FilePropertiesDialogFragment.show(file, this)
     }
 
@@ -1608,6 +1732,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun createFile(name: String) {
+        if (currentPath.fileSystem.isReadOnly) {
+            showToast(getString(R.string.file_list_create_error_read_only))
+            return
+        }
         val path = currentPath.resolve(name)
         FileJobService.create(path, false, requireContext())
     }
@@ -1617,6 +1745,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun createDirectory(name: String) {
+        if (currentPath.fileSystem.isReadOnly) {
+            showToast(getString(R.string.file_list_create_error_read_only))
+            return
+        }
         val path = currentPath.resolve(name)
         FileJobService.create(path, true, requireContext())
     }
@@ -1731,7 +1863,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun ensureNotificationPermission() {
-        if (viewModel.isNotificationPermissionRequested) {
+        if (viewModel.isNotificationPermissionRequested || Settings.NOTIFICATION_PERMISSION_DISMISSED.valueCompat) {
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1754,7 +1886,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (shouldRequest) {
             requestNotificationPermission()
         } else {
-            viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(true)
         }
     }
 
@@ -1767,6 +1899,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private fun onRequestNotificationPermissionResult(isGranted: Boolean) {
         if (isGranted) {
             viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(false)
         } else if (shouldShowRequestPermissionRationale(
             android.Manifest.permission.POST_NOTIFICATIONS
         )) {
@@ -1783,7 +1916,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (shouldRequest) {
             requestNotificationPermissionInSettings()
         } else {
-            viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(true)
         }
     }
 
@@ -1796,6 +1929,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private fun onRequestNotificationPermissionInSettingsResult(isGranted: Boolean) {
         if (isGranted) {
             viewModel.isNotificationPermissionRequested = false
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(false)
+        } else {
+            Settings.NOTIFICATION_PERMISSION_DISMISSED.putValue(true)
         }
     }
 
@@ -1893,11 +2029,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         return false
     }
 
+    private fun Throwable.toUserFriendlyMessage(): String =
+        when {
+            isMissingDirectory() -> getString(R.string.file_list_error_directory_not_found)
+            else -> localizedMessage?.takeIfNotEmpty() ?: toString()
+        }
+
     private class MenuBinding private constructor(
         val menu: Menu,
         val searchItem: MenuItem,
         val viewSortItem: MenuItem,
         val viewListItem: MenuItem,
+        val viewCompactListItem: MenuItem,
         val viewGridItem: MenuItem,
         val sortByNameItem: MenuItem,
         val sortByTypeItem: MenuItem,
@@ -1914,7 +2057,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 inflater.inflate(R.menu.file_list, menu)
                 return MenuBinding(
                     menu, menu.findItem(R.id.action_search), menu.findItem(R.id.action_view_sort),
-                    menu.findItem(R.id.action_view_list), menu.findItem(R.id.action_view_grid),
+                    menu.findItem(R.id.action_view_list), menu.findItem(R.id.action_view_compact_list),
+                    menu.findItem(R.id.action_view_grid),
                     menu.findItem(R.id.action_sort_by_name),
                     menu.findItem(R.id.action_sort_by_type),
                     menu.findItem(R.id.action_sort_by_size),

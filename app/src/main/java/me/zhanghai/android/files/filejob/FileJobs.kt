@@ -1036,10 +1036,15 @@ private fun FileJob.create(path: Path, createDirectory: Boolean) {
             }
         } catch (e: InterruptedIOException) {
             throw e
-        } catch (e: IOException) {
-            e.printStackTrace()
-            if (e is UserActionRequiredException) {
-                val result = showUserAction(e)
+        } catch (e: Exception) {
+            val ioException = when (e) {
+                is IOException -> e
+                is UnsupportedOperationException -> ReadOnlyFileSystemException(path.toString())
+                else -> throw e
+            }
+            ioException.printStackTrace()
+            if (ioException is UserActionRequiredException) {
+                val result = showUserAction(ioException)
                 if (result) {
                     retry = true
                     continue
@@ -1048,9 +1053,9 @@ private fun FileJob.create(path: Path, createDirectory: Boolean) {
             val result = showErrorDialog(
                 getString(R.string.file_job_create_error_title),
                 getString(
-                    R.string.file_job_create_error_message_format, getFileName(path), e.toString()
+                    R.string.file_job_create_error_message_format, getFileName(path), ioException.toString()
                 ),
-                getReadOnlyFileStore(path, e),
+                getReadOnlyFileStore(path, ioException),
                 false,
                 getString(R.string.retry),
                 getString(android.R.string.cancel),

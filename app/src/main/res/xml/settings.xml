@@ -46,6 +46,22 @@
             android:title="@string/settings_file_list_animation_title"
             android:defaultValue="@bool/pref_default_value_file_list_animation" />
 
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_lock_header"
+            android:title="@string/settings_file_list_lock_header_title"
+            android:defaultValue="@bool/pref_default_value_file_list_lock_header" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_loading_indicator"
+            android:title="@string/settings_file_list_loading_indicator_title"
+            android:defaultValue="@bool/pref_default_value_file_list_loading_indicator" />
+
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_binary_file_size_unit"
+            android:title="@string/settings_binary_file_size_unit_title"
+            android:summary="@string/settings_binary_file_size_unit_summary"
+            android:defaultValue="@bool/pref_default_value_binary_file_size_unit" />
+
         <rikka.preference.SimpleMenuPreference
             android:key="@string/pref_key_file_name_ellipsize"
             android:title="@string/settings_file_name_ellipsize_title"
@@ -60,6 +76,14 @@
             app:isPreferenceVisible="@bool/pref_visible_default_apps">
             <intent android:action="android.settings.MANAGE_DEFAULT_APPS_SETTINGS" />
         </Preference>
+
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_file_list_grid_span_count"
+            android:title="@string/settings_file_list_grid_span_count_title"
+            android:defaultValue="@string/pref_default_value_file_list_grid_span_count"
+            android:entries="@array/settings_file_list_grid_span_count_entries"
+            android:entryValues="@array/pref_entry_values_file_list_grid_span_count"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/settings_behavior_title">
@@ -104,10 +128,16 @@
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_show_pdf_thumbnail"
+            android:title="@string/settings_show_pdf_thumbnail_title"
+            android:defaultValue="@bool/pref_default_value_show_pdf_thumbnail" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_show_pdf_thumbnail_pre_28"
             android:title="@string/settings_show_pdf_thumbnail_pre_28_title"
             android:defaultValue="@bool/pref_default_value_show_pdf_thumbnail_pre_28"
             android:summary="@string/settings_show_pdf_thumbnail_pre_28_summary"
+            app:dependency="@string/pref_key_show_pdf_thumbnail"
             app:isPreferenceVisible="@bool/pref_visible_show_pdf_thumbnail_pre_28" />
 
         <SwitchPreferenceCompat
