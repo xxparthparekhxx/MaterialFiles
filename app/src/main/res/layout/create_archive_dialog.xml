@@ -66,6 +66,57 @@
                     android:visibility="@integer/create_archive_type_seven_z_visibility" />
             </me.zhanghai.android.files.filelist.CreateArchiveTypeRadioGroup>
 
+            <RadioGroup
+                android:id="@+id/compressionGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:paddingStart="@dimen/dialog_padding_minus_6dp"
+                android:paddingEnd="@dimen/dialog_padding"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/compressionStoreRadio"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/dense_single_line_list_item_height"
+                    android:layout_weight="1"
+                    android:text="@string/file_create_archive_compression_store"
+                    android:textAlignment="viewStart"
+                    android:textAppearance="?textAppearanceListItem" />
+
+                <RadioButton
+                    android:id="@+id/compressionFastRadio"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/dense_single_line_list_item_height"
+                    android:layout_weight="1"
+                    android:text="@string/file_create_archive_compression_fast"
+                    android:textAlignment="viewStart"
+                    android:textAppearance="?textAppearanceListItem" />
+
+                <RadioButton
+                    android:id="@+id/compressionNormalRadio"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/dense_single_line_list_item_height"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:text="@string/file_create_archive_compression_normal"
+                    android:textAlignment="viewStart"
+                    android:textAppearance="?textAppearanceListItem" />
+
+                <RadioButton
+                    android:id="@+id/compressionMaximumRadio"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/dense_single_line_list_item_height"
+                    android:layout_weight="1"
+                    android:text="@string/file_create_archive_compression_maximum"
+                    android:textAlignment="viewStart"
+                    android:textAppearance="?textAppearanceListItem" />
+            </RadioGroup>
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/passwordLayout"
                 android:layout_width="match_parent"

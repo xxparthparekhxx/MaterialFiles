@@ -25,9 +25,10 @@ class ArchiveWriter @Throws(IOException::class) constructor(
     channel: SeekableByteChannel,
     format: Int,
     filter: Int,
-    password: String?
+    password: String?,
+    compressionLevel: Int
 ) : Closeable {
-    private val archive = WriteArchive(channel, format, filter, password)
+    private val archive = WriteArchive(channel, format, filter, password, compressionLevel)
 
     @Throws(IOException::class)
     fun write(file: Path, entryName: Path, intervalMillis: Long, listener: ((Long) -> Unit)?) {
