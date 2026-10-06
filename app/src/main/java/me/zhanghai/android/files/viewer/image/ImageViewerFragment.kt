@@ -7,6 +7,7 @@ package me.zhanghai.android.files.viewer.image
 
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -27,6 +28,7 @@ import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.ImageViewerFragmentBinding
 import me.zhanghai.android.files.file.fileProviderUri
+import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.provider.common.delete
 import me.zhanghai.android.files.ui.DepthPageTransformer
 import me.zhanghai.android.files.util.ParcelableArgs
@@ -99,15 +101,22 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
         systemUiHelper = SystemUiHelper(
             activity, SystemUiHelper.LEVEL_IMMERSIVE, SystemUiHelper.FLAG_IMMERSIVE_STICKY
         ) { visible: Boolean ->
+            if (isInMultiWindowMode) {
+                return@SystemUiHelper
+            }
             if (isAppBarVisible != visible) {
                 isAppBarVisible = visible
                 animateAppBar(visible)
             }
         }
         if (isAppBarVisible) {
-            systemUiHelper.show()
+            if (!isInMultiWindowMode) {
+                systemUiHelper.show()
+            }
         } else {
-            systemUiHelper.hide()
+            if (!isInMultiWindowMode) {
+                systemUiHelper.hide()
+            }
             binding.appBarLayout.alpha = 0f
             binding.appBarLayout.doOnPreDraw {
                 binding.appBarLayout.translationY =
@@ -196,6 +205,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
                 showToast(error.toString())
                 return@launch
             }
+            RemovedPaths.notifyRemoved(path)
             removeDeletedPath(path)
         }
     }
@@ -248,13 +258,30 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
             return
         }
         isAppBarVisible = visible
-        if (visible) {
-            systemUiHelper.show()
-        } else {
-            systemUiHelper.hide()
+        if (!isInMultiWindowMode) {
+            if (visible) {
+                systemUiHelper.show()
+            } else {
+                systemUiHelper.hide()
+            }
         }
         animateAppBar(visible)
     }
+
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode)
+
+        if (!isInMultiWindowMode) {
+            if (isAppBarVisible) {
+                systemUiHelper.show()
+            } else {
+                systemUiHelper.hide()
+            }
+        }
+    }
+
+    private val isInMultiWindowMode: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity?.isInMultiWindowMode == true
 
     private fun animateAppBar(visible: Boolean) {
         val translationY = if (visible) {

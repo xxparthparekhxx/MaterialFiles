@@ -79,6 +79,23 @@ class PathObserver(private val path: Path, @MainThread private val onChange: () 
         }
     }
 
+    fun reobserve() {
+        AsyncTask.THREAD_POOL_EXECUTOR.execute {
+            val observableToClose = synchronized(lock) {
+                if (closed) {
+                    return@execute
+                }
+                val observable = pathObservable
+                pathObservable = null
+                isObserving = false
+                isUnsupported = false
+                observable
+            }
+            observableToClose?.closeSafe()
+            observe()
+        }
+    }
+
     override fun close() {
         AsyncTask.THREAD_POOL_EXECUTOR.execute {
             val observableToClose = synchronized(lock) {
