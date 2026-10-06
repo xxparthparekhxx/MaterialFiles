@@ -260,6 +260,11 @@ object Settings {
             R.bool.pref_default_value_open_with_built_in_viewers
         )
 
+    val HIGHLIGHT_DELETE: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_highlight_delete, R.bool.pref_default_value_highlight_delete
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
