@@ -6,6 +6,7 @@
 package me.zhanghai.android.files.filejob
 
 import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
+import me.zhanghai.android.files.util.findCauseByClass
 import me.zhanghai.android.files.util.showToast
 import java.io.IOException
 import java.io.InterruptedIOException
@@ -27,7 +28,10 @@ abstract class FileJob {
             e.printStackTrace()
         } catch (e: Exception) {
             e.printStackTrace()
-            service.showToast(e.toString())
+            // An SMB listing interrupted by a reload is not a failed transfer.
+            if (e.findCauseByClass<InterruptedException>() == null) {
+                service.showToast(e.toString())
+            }
         } finally {
             service.notificationManager.cancel(id)
             FileJobProgresses.remove(id)
