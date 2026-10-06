@@ -106,6 +106,10 @@
             android:title="@string/settings_block_screenshots_title"
             android:summary="@string/settings_block_screenshots_summary"
             android:defaultValue="@bool/pref_default_value_block_screenshots" />
+            android:key="@string/pref_key_copy_preserve_modification_time"
+            android:title="@string/settings_copy_preserve_modification_time_title"
+            android:summary="@string/settings_copy_preserve_modification_time_summary"
+            android:defaultValue="@bool/pref_default_value_copy_preserve_modification_time" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
