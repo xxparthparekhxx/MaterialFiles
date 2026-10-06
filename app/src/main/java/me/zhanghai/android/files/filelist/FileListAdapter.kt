@@ -24,6 +24,7 @@ import me.zhanghai.android.files.coil.AppIconPackageName
 import me.zhanghai.android.files.compat.foregroundCompat
 import me.zhanghai.android.files.compat.getDrawableCompat
 import me.zhanghai.android.files.compat.isSingleLineCompat
+import me.zhanghai.android.files.databinding.FileItemCompactListBinding
 import me.zhanghai.android.files.databinding.FileItemGridBinding
 import me.zhanghai.android.files.databinding.FileItemListBinding
 import me.zhanghai.android.files.file.FileItem
@@ -177,6 +178,8 @@ class FileListAdapter(
         val holder = when (viewType) {
             FileViewType.LIST -> ViewHolder(FileItemListBinding.inflate(inflater, parent, false))
             FileViewType.GRID -> ViewHolder(FileItemGridBinding.inflate(inflater, parent, false))
+            FileViewType.COMPACT_LIST ->
+                ViewHolder(FileItemCompactListBinding.inflate(inflater, parent, false))
         }
         return holder.apply {
             itemLayout.apply {
@@ -432,6 +435,22 @@ class FileListAdapter(
         val menuButton: ImageButton
     ) : RecyclerView.ViewHolder(root) {
         constructor(binding: FileItemListBinding) : this(
+            binding.root,
+            binding.itemLayout,
+            binding.iconLayout,
+            binding.iconImage,
+            null,
+            null,
+            null,
+            binding.thumbnailImage,
+            binding.appIconBadgeImage,
+            binding.badgeImage,
+            binding.nameText,
+            binding.descriptionText,
+            binding.menuButton
+        )
+
+        constructor(binding: FileItemCompactListBinding) : this(
             binding.root,
             binding.itemLayout,
             binding.iconLayout,

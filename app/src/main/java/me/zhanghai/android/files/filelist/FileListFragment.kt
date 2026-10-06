@@ -528,6 +528,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 viewModel.viewType = FileViewType.LIST
                 true
             }
+            R.id.action_view_compact_list -> {
+                viewModel.viewType = FileViewType.COMPACT_LIST
+                true
+            }
             R.id.action_view_grid -> {
                 viewModel.viewType = FileViewType.GRID
                 true
@@ -837,7 +841,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun updateSpanCount() {
         layoutManager.spanCount = when (viewModel.viewType) {
-            FileViewType.LIST -> 1
+            FileViewType.LIST, FileViewType.COMPACT_LIST -> 1
             FileViewType.GRID -> {
                 var widthDp = resources.configuration.screenWidthDp
                 val persistentDrawerLayout = binding.persistentDrawerLayout
@@ -871,6 +875,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val viewType = viewModel.viewType
         val checkedViewTypeItem = when (viewType) {
             FileViewType.LIST -> menuBinding.viewListItem
+            FileViewType.COMPACT_LIST -> menuBinding.viewCompactListItem
             FileViewType.GRID -> menuBinding.viewGridItem
         }
         checkedViewTypeItem.isChecked = true
@@ -1915,6 +1920,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val searchItem: MenuItem,
         val viewSortItem: MenuItem,
         val viewListItem: MenuItem,
+        val viewCompactListItem: MenuItem,
         val viewGridItem: MenuItem,
         val sortByNameItem: MenuItem,
         val sortByTypeItem: MenuItem,
@@ -1931,7 +1937,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 inflater.inflate(R.menu.file_list, menu)
                 return MenuBinding(
                     menu, menu.findItem(R.id.action_search), menu.findItem(R.id.action_view_sort),
-                    menu.findItem(R.id.action_view_list), menu.findItem(R.id.action_view_grid),
+                    menu.findItem(R.id.action_view_list), menu.findItem(R.id.action_view_compact_list),
+                    menu.findItem(R.id.action_view_grid),
                     menu.findItem(R.id.action_sort_by_name),
                     menu.findItem(R.id.action_sort_by_type),
                     menu.findItem(R.id.action_sort_by_size),

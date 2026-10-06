@@ -291,6 +291,7 @@
     <string name="file_list_path_error_invalid">Invalid path</string>
     <string name="file_list_action_view_sort">View and sort</string>
     <string name="file_list_action_view_list">List</string>
+    <string name="file_list_action_view_compact_list">Compact list</string>
     <string name="file_list_action_view_grid">Grid</string>
     <string name="file_list_action_sort_by_name">Name</string>
     <string name="file_list_action_sort_by_type">Type</string>
