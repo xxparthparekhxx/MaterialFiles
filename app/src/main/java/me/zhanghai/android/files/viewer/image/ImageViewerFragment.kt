@@ -27,6 +27,7 @@ import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.ImageViewerFragmentBinding
 import me.zhanghai.android.files.file.fileProviderUri
+import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.provider.common.delete
 import me.zhanghai.android.files.ui.DepthPageTransformer
 import me.zhanghai.android.files.util.ParcelableArgs
@@ -192,6 +193,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener {
                 showToast(error.toString())
                 return@launch
             }
+            RemovedPaths.notifyRemoved(path)
             removeDeletedPath(path)
         }
     }
