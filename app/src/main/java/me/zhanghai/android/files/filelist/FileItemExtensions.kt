@@ -60,6 +60,9 @@ val FileItem.listablePath: Path
 // @see PathAttributesFetcher.fetch
 val FileItem.supportsThumbnail: Boolean
     get() {
+        if (!Settings.SHOW_THUMBNAILS.valueCompat) {
+            return false
+        }
         if (path.isDocumentPath && attributes.documentSupportsThumbnail) {
             return true
         }

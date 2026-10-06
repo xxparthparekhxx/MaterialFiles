@@ -863,6 +863,8 @@
     <string name="settings_ftp_server_tile_confirm_start_summary">Ask before starting the FTP server from its quick settings tile</string>
     <string name="settings_storage_reveal_saved_password_title">Allow revealing saved passwords</string>
     <string name="settings_storage_reveal_saved_password_summary">Allow showing the saved password when editing a server</string>
+    <string name="settings_show_thumbnails_title">Show thumbnails</string>
+    <string name="settings_show_thumbnails_summary">Turning this off makes large folders load faster on slow devices</string>
     <string name="settings_show_pdf_thumbnail_title">Show thumbnail for PDF documents</string>
     <string name="settings_show_pdf_thumbnail_pre_28_title">Show thumbnail for PDF documents on older Android versions</string>
     <string name="settings_show_pdf_thumbnail_pre_28_summary">Might make the app unstable on older versions of Android</string>
