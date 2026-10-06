@@ -17,12 +17,14 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.hierynomus.smbj.auth.AuthenticationContext
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.EditSmbServerFragmentBinding
 import me.zhanghai.android.files.provider.smb.client.Authority
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.UnfilteredArrayAdapter
 import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.ParcelableArgs
@@ -35,6 +37,7 @@ import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.setResult
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.takeIfNotEmpty
+import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import java.net.URI
 
@@ -121,6 +124,10 @@ class EditSmbServerFragment : Fragment() {
             } else {
                 saveOrAdd()
             }
+        }
+
+        if (args.server != null && !Settings.STORAGE_REVEAL_SAVED_PASSWORD.valueCompat) {
+            binding.passwordLayout.endIconMode = TextInputLayout.END_ICON_NONE
         }
 
         if (savedInstanceState == null) {
