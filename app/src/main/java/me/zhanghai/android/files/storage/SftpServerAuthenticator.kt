@@ -68,8 +68,17 @@ object SftpServerAuthenticator : Authenticator {
         synchronized(pendingSocksProxies) { pendingSocksProxies[authority] = proxy }
     }
 
-    fun peekPendingSocksProxy(authority: Authority): SocksProxy? =
-        synchronized(pendingSocksProxies) { pendingSocksProxies[authority] }
+    fun hasPendingSocksProxy(authority: Authority): Boolean =
+        synchronized(pendingSocksProxies) { authority in pendingSocksProxies }
+
+    fun takePendingSocksProxy(authority: Authority): SocksProxy? {
+        synchronized(pendingSocksProxies) {
+            if (authority !in pendingSocksProxies) {
+                return null
+            }
+            return pendingSocksProxies.remove(authority)
+        }
+    }
 
     fun clearPendingSocksProxy(authority: Authority) {
         synchronized(pendingSocksProxies) { pendingSocksProxies -= authority }

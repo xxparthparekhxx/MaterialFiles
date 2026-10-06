@@ -300,10 +300,11 @@ class EditSftpServerFragment : Fragment() {
             }
             is ActionState.Success -> {
                 val server = state.argument
-                val socksProxy = SftpServerAuthenticator.peekPendingSocksProxy(server.authority)
-                SftpServerAuthenticator.clearPendingSocksProxy(server.authority)
+                if (SftpServerAuthenticator.hasPendingSocksProxy(server.authority)) {
+                    val socksProxy = SftpServerAuthenticator.takePendingSocksProxy(server.authority)
+                    SftpServerAuthenticator.saveSocksProxy(server.id, socksProxy)
+                }
                 SftpServerAuthenticator.removeTransientPassword(server.authority)
-                SftpServerAuthenticator.saveSocksProxy(server.id, socksProxy)
                 Storages.addOrReplace(server)
                 finish()
             }
