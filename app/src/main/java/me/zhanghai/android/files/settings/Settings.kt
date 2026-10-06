@@ -323,6 +323,12 @@ object Settings {
             R.string.pref_key_file_list_dividers, R.bool.pref_default_value_file_list_dividers
         )
 
+    val FILE_LIST_SHOW_DIRECTORY_ITEM_COUNT: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_show_directory_item_count,
+            R.bool.pref_default_value_file_list_show_directory_item_count
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
