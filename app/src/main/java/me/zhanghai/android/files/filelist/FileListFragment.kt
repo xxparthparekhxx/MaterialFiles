@@ -29,6 +29,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.progressindicator.BaseProgressIndicator
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContract
@@ -447,6 +448,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_SHOW_HIDDEN_FILES.observe(viewLifecycleOwner) {
             onShowHiddenFilesChanged(it)
         }
+        Settings.FILE_LIST_LOCK_HEADER.observe(viewLifecycleOwner) {
+            updateToolbarScrollFlags()
+        }
+        updateToolbarScrollFlags()
         Settings.FILE_LIST_LOADING_INDICATOR.observe(viewLifecycleOwner) {
             if (!it) {
                 binding.progress.fadeToVisibilityUnsafe(false)
@@ -864,6 +869,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateSpanCount()
         adapter.viewType = viewType
         updateViewSortMenuItems()
+    }
+
+    private fun updateToolbarScrollFlags() {
+        val layoutParams =
+            (binding.toolbar.parent as View).layoutParams as? AppBarLayout.LayoutParams ?: return
+        if (Settings.FILE_LIST_LOCK_HEADER.valueCompat) {
+            layoutParams.scrollFlags = 0
+            binding.appBarLayout.setExpanded(true)
+        } else {
+            layoutParams.scrollFlags = AppBarLayout.LayoutParams.SCROLL_FLAG_SCROLL or
+                AppBarLayout.LayoutParams.SCROLL_FLAG_ENTER_ALWAYS
+        }
     }
 
     private fun updateSpanCount() {
