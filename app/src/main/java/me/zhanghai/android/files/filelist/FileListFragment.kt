@@ -75,6 +75,7 @@ import me.zhanghai.android.files.databinding.FileListFragmentIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentSpeedDialIncludeBinding
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
+import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.file.asMimeTypeOrNull
 import me.zhanghai.android.files.file.extension
 import me.zhanghai.android.files.file.fileProviderUri
@@ -1107,7 +1108,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             menu.findItem(R.id.action_create).isVisible = !isOpen
             menu.findItem(R.id.action_select_all).isVisible = pickOptions.allowMultiple
         } else {
-            overlayActionMode.title = getString(R.string.file_list_select_title_format, files.size)
+            overlayActionMode.title = getSelectTitle(files)
             overlayActionMode.setMenuResource(R.menu.file_list_select)
             val menu = overlayActionMode.menu
             val isAnyFileReadOnly = files.any { it.path.fileSystem.isReadOnly }
@@ -1150,6 +1151,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 }
             })
         }
+    }
+
+    private fun getSelectTitle(files: FileItemSet): String {
+        // Directory sizes are not meaningful here, so only show the total size when there are
+        // none selected.
+        if (files.any { it.attributesNoFollowLinks.isDirectory }) {
+            return getString(R.string.file_list_select_title_format, files.size)
+        }
+        val totalSize = files.sumOf { it.attributes.size() }
+        return getString(
+            R.string.file_list_select_title_size_format, files.size,
+            totalSize.asFileSize().formatHumanReadable(requireContext())
+        )
     }
 
     private fun onOverlayActionModeMenuItemClicked(item: MenuItem): Boolean =
