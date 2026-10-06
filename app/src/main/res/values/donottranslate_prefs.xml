@@ -177,6 +177,8 @@
     <bool name="pref_default_value_block_screenshots">false</bool>
     <string name="pref_key_copy_preserve_modification_time">key_copy_preserve_modification_time</string>
     <bool name="pref_default_value_copy_preserve_modification_time">false</bool>
+    <string name="pref_key_file_list_show_permissions">key_file_list_show_permissions</string>
+    <bool name="pref_default_value_file_list_show_permissions">false</bool>
 
     <string name="pref_key_binary_file_size_unit">key_binary_file_size_unit</string>
     <bool name="pref_default_value_binary_file_size_unit">false</bool>
