@@ -6,6 +6,7 @@
 package me.zhanghai.android.files.viewer.image
 
 import android.graphics.BitmapFactory
+import android.graphics.PointF
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -18,6 +19,7 @@ import coil.size.Size
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.DefaultOnImageEventListener
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.OnStateChangedListener
 import java8.nio.file.Path
 import java8.nio.file.attribute.BasicFileAttributes
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +43,8 @@ import kotlin.math.max
 
 class ImageViewerAdapter(
     private val lifecycleOwner: LifecycleOwner,
-    private val listener: (View) -> Unit
+    private val listener: (View) -> Unit,
+    private val zoomListener: (zoomed: Boolean) -> Unit = {}
 ) : SimpleAdapter<Path, ImageViewerAdapter.ViewHolder>() {
     override val hasStableIds: Boolean
         get() = true
@@ -65,6 +68,7 @@ class ImageViewerAdapter(
         val binding = holder.binding
         binding.image.dispose()
         binding.largeImage.recycle()
+        zoomListener(false)
     }
 
     private fun loadImage(binding: ImageViewerItemBinding, path: Path) {
@@ -116,6 +120,15 @@ class ImageViewerAdapter(
             binding.largeImage.apply {
                 setDoubleTapZoomDuration(300)
                 orientation = SubsamplingScaleImageView.ORIENTATION_USE_EXIF
+                // Keep ViewPager2 from stealing drags while zoomed in; PhotoView above handles
+                // this itself, but SubsamplingScaleImageView doesn't.
+                setOnStateChangedListener(object : OnStateChangedListener {
+                    override fun onScaleChanged(newScale: Float, origin: Int) {
+                        zoomListener(newScale > minScale)
+                    }
+
+                    override fun onCenterChanged(newCenter: PointF, origin: Int) {}
+                })
                 // Otherwise OnImageEventListener.onReady() is never called.
                 isVisible = true
                 alpha = 0f
