@@ -57,6 +57,12 @@
             android:defaultValue="@bool/pref_default_value_file_list_loading_indicator" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_open_files_in_new_task"
+            android:title="@string/settings_open_files_in_new_task_title"
+            android:summary="@string/settings_open_files_in_new_task_summary"
+            android:defaultValue="@bool/pref_default_value_open_files_in_new_task" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_binary_file_size_unit"
             android:title="@string/settings_binary_file_size_unit_title"
             android:summary="@string/settings_binary_file_size_unit_summary"
