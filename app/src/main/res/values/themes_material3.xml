@@ -41,6 +41,7 @@
         <item name="minTouchTargetSize">0dp</item>
 
         <item name="colorAppBarSurface">?colorSurface</item>
+        <item name="colorNavigationSurface">?colorSurfaceContainerLow</item>
     </style>
     <style name="Theme.MaterialFiles.Material3" parent="Base.Theme.MaterialFiles.Material3" />
 
@@ -57,6 +58,7 @@
         <item name="android:windowDisablePreview">true</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="windowNoTitle">true</item>
+        <item name="colorNavigationSurface">@color/dark_50_percent</item>
     </style>
     <style name="Theme.MaterialFiles.Material3.Translucent" parent="Base.Theme.MaterialFiles.Material3.Translucent" />
 
@@ -96,6 +98,7 @@
         <item name="minTouchTargetSize">0dp</item>
 
         <item name="colorAppBarSurface">@color/dark_50_percent</item>
+        <item name="colorNavigationSurface">@color/dark_50_percent</item>
     </style>
     <style name="Theme.MaterialFiles.Material3.Immersive" parent="Base.Theme.MaterialFiles.Material3.Immersive" />
 
