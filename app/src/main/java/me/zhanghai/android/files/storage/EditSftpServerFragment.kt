@@ -152,6 +152,8 @@ class EditSftpServerFragment : Fragment() {
                     is PasswordAuthentication -> {
                         authenticationType = AuthenticationType.PASSWORD
                         binding.passwordEdit.setText(authentication.password)
+                        binding.savePasswordCheck.isChecked =
+                            authentication.password.isNotEmpty()
                     }
                     is PublicKeyAuthentication -> {
                         authenticationType = AuthenticationType.PUBLIC_KEY
@@ -196,6 +198,7 @@ class EditSftpServerFragment : Fragment() {
 
     private fun onAuthenticationTypeChanged(authenticationType: AuthenticationType) {
         binding.passwordLayout.isVisible = authenticationType == AuthenticationType.PASSWORD
+        binding.savePasswordCheck.isVisible = authenticationType == AuthenticationType.PASSWORD
         binding.publicKeyAuthenticationLayout.isVisible =
             authenticationType == AuthenticationType.PUBLIC_KEY
     }
@@ -237,6 +240,7 @@ class EditSftpServerFragment : Fragment() {
 
     private fun saveOrAdd() {
         val server = getServerOrSetError() ?: return
+        SftpServerAuthenticator.removeTransientPassword(server.authority)
         Storages.addOrReplace(server)
         finish()
     }
@@ -259,6 +263,7 @@ class EditSftpServerFragment : Fragment() {
                 binding.removeOrAddButton.isEnabled = !isConnecting
             }
             is ActionState.Success -> {
+                SftpServerAuthenticator.removeTransientPassword(state.argument.authority)
                 Storages.addOrReplace(state.argument)
                 finish()
             }
@@ -313,8 +318,13 @@ class EditSftpServerFragment : Fragment() {
         }
         val authentication = when (authenticationType) {
             AuthenticationType.PASSWORD -> {
-                val password = binding.passwordEdit.text.toString()
-                PasswordAuthentication(password)
+                if (binding.savePasswordCheck.isChecked) {
+                    val password = binding.passwordEdit.text.toString()
+                    PasswordAuthentication(password)
+                } else {
+                    // Don't persist the password; it will be asked for on each connection.
+                    PasswordAuthentication("")
+                }
             }
             AuthenticationType.PUBLIC_KEY -> {
                 val privateKey = binding.privateKeyEdit.text.toString().takeIfNotEmpty()

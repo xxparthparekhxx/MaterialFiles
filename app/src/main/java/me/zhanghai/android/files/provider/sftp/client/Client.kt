@@ -237,6 +237,10 @@ object Client {
             }
             val authentication = authenticator.getAuthentication(authority)
                 ?: throw ClientException("No authentication found for $authority")
+            if (authentication is PasswordAuthentication && authentication.password.isEmpty()) {
+                // The server was saved without a password; ask for it instead of failing.
+                throw SshPasswordRequiredException(authority)
+            }
             val sshClient = SSHClient().apply { addHostKeyVerifier(PromiscuousVerifier()) }
             try {
                 sshClient.connect(authority.host, authority.port)
