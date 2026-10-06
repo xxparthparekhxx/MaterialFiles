@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  ~ Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
+  ~ All Rights Reserved.
+  -->
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/action_show_in_folder"
+        android:title="@string/recent_files_show_in_folder" />
+
+    <item
+        android:id="@+id/action_remove"
+        android:title="@string/recent_files_remove" />
+</menu>
