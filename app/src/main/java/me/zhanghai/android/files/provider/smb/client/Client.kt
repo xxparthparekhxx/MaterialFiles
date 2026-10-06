@@ -21,6 +21,7 @@ import com.hierynomus.mssmb2.SMB2ShareAccess
 import com.hierynomus.mssmb2.SMBApiException
 import com.hierynomus.mssmb2.messages.SMB2ChangeNotifyResponse
 import com.hierynomus.protocol.commons.EnumWithValue
+import com.hierynomus.protocol.transport.TransportException
 import com.hierynomus.smbj.ProgressListener
 import com.hierynomus.smbj.SMBClient
 import com.hierynomus.smbj.SmbConfig
@@ -316,10 +317,46 @@ object Client {
         try {
             diskEntry.close()
         } catch (e: SMBRuntimeException) {
-            throw ClientException(e)
+            // Samba often closes the connection after honoring delete-on-close, so the file is
+            // already gone when close() fails. Reporting that error makes every choice in the
+            // dialog look like it deleted the file, and the dead session stays cached.
+            if (!e.deleteAlreadyDone() && share.fileStillExists(sharePath.path)) {
+                throw ClientException(e)
+            }
+            if (e.brokeConnection()) {
+                forgetSession(path.authority)
+            }
         }
         directoryFileInformationCache -= path
     }
+
+    private fun SMBRuntimeException.deleteAlreadyDone(): Boolean {
+        val status = (this as? SMBApiException)?.status
+        return status == NtStatus.STATUS_DELETE_PENDING ||
+            status == NtStatus.STATUS_OBJECT_NAME_NOT_FOUND ||
+            status == NtStatus.STATUS_OBJECT_PATH_NOT_FOUND ||
+            status == NtStatus.STATUS_NO_SUCH_FILE ||
+            status == NtStatus.STATUS_FILE_CLOSED
+    }
+
+    private fun SMBRuntimeException.brokeConnection(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            if (current is TransportException || current is IOException) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
+    }
+
+    private fun DiskShare.fileStillExists(path: String): Boolean =
+        try {
+            fileExists(path)
+        } catch (e: SMBRuntimeException) {
+            // The share died with the delete. A retry cannot see the file either.
+            false
+        }
 
     // @see https://gitlab.com/samba-team/devel/samba/-/blob/master/source3/libsmb/clisymlink.c
     //      cli_readlink_send
@@ -619,6 +656,15 @@ object Client {
             directory.watchAsync(completionFilter, false)
         } catch (e: SMBRuntimeException) {
             throw ClientException(e)
+        }
+    }
+
+    private fun forgetSession(authority: Authority) {
+        synchronized(sessions) {
+            val session = sessions.remove(authority) ?: return
+            val connection = session.connection
+            session.closeSafe()
+            connection.closeSafe()
         }
     }
 
