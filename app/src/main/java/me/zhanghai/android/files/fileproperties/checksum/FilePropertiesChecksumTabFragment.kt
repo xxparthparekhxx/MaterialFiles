@@ -37,8 +37,20 @@ class FilePropertiesChecksumTabFragment : FilePropertiesTabFragment() {
 
     private fun onChecksumInfoChanged(stateful: Stateful<ChecksumInfo>) {
         bindView(stateful) { checksumInfo ->
-            checksumInfo.checksums.forEach { addItemView(it.key.nameRes, it.value) }
-            addCompareEdit(checksumInfo)
+            ChecksumInfo.Algorithm.entries.forEach { algorithm ->
+                val checksum = checksumInfo.checksums[algorithm]
+                if (checksum != null) {
+                    addItemView(algorithm.nameRes, checksum)
+                } else {
+                    addItemView(
+                        algorithm.nameRes,
+                        getString(R.string.file_properties_checksum_tap_to_calculate)
+                    ) { viewModel.calculate(algorithm) }
+                }
+            }
+            if (checksumInfo.checksums.isNotEmpty()) {
+                addCompareEdit(checksumInfo)
+            }
         }
     }
 
