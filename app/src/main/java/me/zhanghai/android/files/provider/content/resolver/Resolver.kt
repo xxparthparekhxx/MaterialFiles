@@ -14,7 +14,9 @@ import me.zhanghai.android.files.app.contentResolver
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.util.closeSafe
 import me.zhanghai.android.files.util.takeIfNotEmpty
+import java.io.FileDescriptor
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -97,7 +99,13 @@ object Resolver {
     fun openOutputStream(uri: Uri, mode: String): OutputStream {
         val descriptor = openAssetFileDescriptor(uri, mode)
         return try {
-            descriptor.createOutputStream()
+            if (descriptor.length > 0) {
+                descriptor.createOutputStream()
+            } else {
+                // A new document often reports length 0. The asset stream then accepts no bytes,
+                // so a copy onto a USB device stays empty.
+                UnlimitedAssetOutputStream(descriptor)
+            }
         } catch (e: IOException) {
             descriptor.closeSafe()
             throw ResolverException(e)
@@ -127,4 +135,46 @@ object Resolver {
         } catch (e: Exception) {
             throw ResolverException(e)
         } ?: throw ResolverException("ContentResolver.query() with $uri returned null")
+}
+
+private class UnlimitedAssetOutputStream(
+    private val descriptor: AssetFileDescriptor
+) : OutputStream() {
+    private val stream = NonClosingFileOutputStream(descriptor.parcelFileDescriptor.fileDescriptor)
+    private var closed = false
+
+    @Throws(IOException::class)
+    override fun write(b: Int) {
+        stream.write(b)
+    }
+
+    @Throws(IOException::class)
+    override fun write(b: ByteArray, off: Int, len: Int) {
+        stream.write(b, off, len)
+    }
+
+    @Throws(IOException::class)
+    override fun flush() {
+        stream.flush()
+    }
+
+    @Throws(IOException::class)
+    override fun close() {
+        if (closed) {
+            return
+        }
+        closed = true
+        try {
+            stream.flush()
+        } finally {
+            descriptor.close()
+        }
+    }
+}
+
+private class NonClosingFileOutputStream(fd: FileDescriptor) : FileOutputStream(fd) {
+    @Throws(IOException::class)
+    override fun close() {
+        flush()
+    }
 }
