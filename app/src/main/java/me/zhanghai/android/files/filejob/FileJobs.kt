@@ -10,6 +10,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.annotation.AnyRes
 import androidx.annotation.PluralsRes
@@ -379,10 +380,21 @@ private fun FileJob.postTransferSizeNotification(
     val transferredSizeString = transferredSize.asFileSize().formatHumanReadable(service)
     val speed = transferInfo.sampleSpeed()
     val readableSpeed = if (speed > 0L) speed.asFileSize().formatHumanReadable(service) else null
-    val speedString = readableSpeed?.let {
-        getString(R.string.file_job_transfer_speed_format, it)
+    val etaText = if (speed > 0L) {
+        transferInfo.estimateRemainingMillis(speed)?.let { remainingMillis ->
+            getString(
+                R.string.file_job_transfer_eta_format,
+                DateUtils.formatElapsedTime(remainingMillis / 1000)
+            )
+        }
+    } else {
+        null
     }
-    val speedText = readableSpeed?.let { stackedSpeedText(it) } ?: speedString
+    val speedString = readableSpeed?.let {
+        getString(R.string.file_job_transfer_speed_format, it) +
+            (etaText?.let { eta -> " · $eta" } ?: "")
+    }
+    val speedText = readableSpeed?.let { stackedSpeedText(it, etaText) } ?: speedString
     val (max, progress) = scaledProgress(size, transferredSize)
     val currentFileSize = transferInfo.currentFileSize
     val currentFileTransferredSize = transferInfo.currentFileTransferredSize
@@ -449,17 +461,21 @@ private fun FileJob.postTransferSizeNotification(
     )
 }
 
-private fun FileJob.stackedSpeedText(readable: String): String {
+private fun FileJob.stackedSpeedText(readable: String, etaText: String?): String {
     val unitStart = readable.indexOfFirst { it.isLetter() }
     if (unitStart <= 0) {
-        return getString(R.string.file_job_transfer_speed_format, readable)
+        return getString(R.string.file_job_transfer_speed_format, readable) +
+            (etaText?.let { " · $it" } ?: "")
     }
     val number = readable.substring(0, unitStart).trim()
     val unit = readable.substring(unitStart).trim()
     if (number.isEmpty() || unit.isEmpty()) {
-        return getString(R.string.file_job_transfer_speed_format, readable)
+        return getString(R.string.file_job_transfer_speed_format, readable) +
+            (etaText?.let { " · $it" } ?: "")
     }
-    return "$number\n${getString(R.string.file_job_transfer_speed_format, unit)}"
+    val unitLine = getString(R.string.file_job_transfer_speed_format, unit) +
+        (etaText?.let { " · $it" } ?: "")
+    return "$number\n$unitLine"
 }
 
 private fun scaledProgress(total: Long, transferred: Long): Pair<Int, Int> {
@@ -595,6 +611,17 @@ private class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
         speedSampleTimeMillis = now
         speedSampleTransferredSize = transferredSize
         return speedBytesPerSecond
+    }
+
+    fun estimateRemainingMillis(speedBytesPerSecond: Long): Long? {
+        if (speedBytesPerSecond <= 0L || size <= 0L) {
+            return null
+        }
+        val remainingBytes = (size - transferredSize).coerceAtLeast(0L)
+        if (remainingBytes <= 0L) {
+            return null
+        }
+        return remainingBytes * 1000 / speedBytesPerSecond
     }
 
     fun shouldPostNotification(): Boolean {
