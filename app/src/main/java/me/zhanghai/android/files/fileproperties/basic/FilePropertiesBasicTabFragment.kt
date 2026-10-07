@@ -28,18 +28,26 @@ import me.zhanghai.android.files.filelist.name
 import me.zhanghai.android.files.filelist.toUserFriendlyString
 import me.zhanghai.android.files.fileproperties.FilePropertiesFileViewModel
 import me.zhanghai.android.files.fileproperties.FilePropertiesTabFragment
+import me.zhanghai.android.files.fileproperties.SetLastModifiedTimeDialogFragment
 import me.zhanghai.android.files.provider.archive.ArchiveFileAttributes
 import me.zhanghai.android.files.provider.archive.archiveFile
 import me.zhanghai.android.files.provider.archive.isArchivePath
+import me.zhanghai.android.files.provider.common.setLastModifiedTime
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.getQuantityString
+import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.viewModels
 import java.io.IOException
+import java.time.Instant
+import java8.nio.file.attribute.FileTime
 
-class FilePropertiesBasicTabFragment : FilePropertiesTabFragment() {
+class FilePropertiesBasicTabFragment : FilePropertiesTabFragment(),
+    SetLastModifiedTimeDialogFragment.Listener {
     private val viewModel by viewModels<FilePropertiesFileViewModel>({ requireParentFragment() })
 
     private var contentJob: Job? = null
+
+    private var setLastModifiedTarget: FileItem? = null
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -91,7 +99,35 @@ class FilePropertiesBasicTabFragment : FilePropertiesTabFragment() {
                 addItemView(R.string.file_properties_basic_size, getSizeText(file))
             }
             val lastModificationTime = file.attributes.lastModifiedTime().toInstant().formatLong()
-            addItemView(R.string.file_properties_basic_last_modification_time, lastModificationTime)
+            if (path.isArchivePath) {
+                addItemView(R.string.file_properties_basic_last_modification_time, lastModificationTime)
+            } else {
+                addItemView(
+                    R.string.file_properties_basic_last_modification_time, lastModificationTime
+                ) {
+                    setLastModifiedTarget = file
+                    SetLastModifiedTimeDialogFragment.show(
+                        this@FilePropertiesBasicTabFragment,
+                        file.attributes.lastModifiedTime().toInstant()
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onTimeSet(instant: Instant) {
+        val file = setLastModifiedTarget ?: return
+        contentJob?.cancel()
+        contentJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    file.path.setLastModifiedTime(FileTime.fromMillis(instant.toEpochMilli()))
+                }
+                refresh()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                showToast(R.string.file_properties_basic_set_last_modified_time_failed)
+            }
         }
     }
 

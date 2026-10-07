@@ -412,6 +412,8 @@
         <item quantity="other">%1$,d items, totaling %2$s</item>
     </plurals>
     <string name="file_properties_basic_last_modification_time">Last Modified</string>
+    <string name="file_properties_basic_set_last_modified_time_title">Set last modified time</string>
+    <string name="file_properties_basic_set_last_modified_time_failed">The last modified time could not be changed</string>
     <string name="file_properties_basic_parent_directory">Parent Folder</string>
     <string name="file_properties_basic_archive_file">Archive File</string>
     <string name="file_properties_basic_archive_entry">Archive Entry</string>
