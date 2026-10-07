@@ -2401,7 +2401,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun createShortcut(path: Path, mimeType: MimeType) {
-        val context = requireContext()
+        val context = context ?: return
         if (mimeType.isImage && path.isLinuxPath) {
             // Use a small thumbnail of the image as the icon, decoded off the main thread.
             AsyncTask.THREAD_POOL_EXECUTOR.execute {
@@ -2439,38 +2439,47 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
 
     private fun createShortcut(path: Path, mimeType: MimeType, thumbnail: Bitmap?) {
-        val context = requireContext()
-        val isDirectory = mimeType == MimeType.DIRECTORY
-        val label = path.name.ifEmpty { path.toString() }
-        val shortcutInfo = ShortcutInfoCompat.Builder(context, path.toString())
-            .setShortLabel(label)
-            .setLongLabel(label)
-            .setIntent(
-                if (isDirectory) {
-                    // The launcher resolves this again. Without a type and the default category
-                    // it does not match the folder activity, so the shortcut has no name and
-                    // does not open.
-                    FileListActivity.createViewIntent(path)
-                        .addCategory(Intent.CATEGORY_DEFAULT)
-                        .setType("vnd.android.document/directory")
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                } else {
-                    OpenFileActivity.createIntent(path, mimeType)
-                }
-            )
-            .setIcon(
-                if (thumbnail != null) {
-                    IconCompat.createWithBitmap(thumbnail)
-                } else if (isDirectory) {
-                    IconCompat.createWithResource(context, R.mipmap.directory_shortcut_icon)
-                } else {
-                    createFileShortcutIcon(context, mimeType.iconRes)
-                }
-            )
-            .build()
-        ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            showToast(R.string.shortcut_created)
+        val context = context ?: return
+        if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
+            showToast(R.string.shortcut_not_supported)
+            return
+        }
+        try {
+            val isDirectory = mimeType == MimeType.DIRECTORY
+            val label = path.name.ifEmpty { path.toString() }
+            val shortcutInfo = ShortcutInfoCompat.Builder(context, path.toString())
+                .setShortLabel(label)
+                .setLongLabel(label)
+                .setIntent(
+                    if (isDirectory) {
+                        // The launcher resolves this again. Without a type and the default category
+                        // it does not match the folder activity, so the shortcut has no name and
+                        // does not open.
+                        FileListActivity.createViewIntent(path)
+                            .addCategory(Intent.CATEGORY_DEFAULT)
+                            .setType("vnd.android.document/directory")
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    } else {
+                        OpenFileActivity.createIntent(path, mimeType)
+                    }
+                )
+                .setIcon(
+                    if (thumbnail != null) {
+                        IconCompat.createWithBitmap(thumbnail)
+                    } else if (isDirectory) {
+                        IconCompat.createWithResource(context, R.mipmap.directory_shortcut_icon)
+                    } else {
+                        createFileShortcutIcon(context, mimeType.iconRes)
+                    }
+                )
+                .build()
+            val successful = ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O && successful) {
+                showToast(R.string.shortcut_created)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showToast(e.toString())
         }
     }
 
