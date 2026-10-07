@@ -9,6 +9,7 @@
 
     <attr name="colorAppBarSurface" format="color" />
     <attr name="colorNavigationSurface" format="color" />
+    <attr name="colorActionModeSurface" format="color" />
 
     <declare-styleable name="AspectRatioFrameLayout">
         <attr name="aspectRatio" format="float" />

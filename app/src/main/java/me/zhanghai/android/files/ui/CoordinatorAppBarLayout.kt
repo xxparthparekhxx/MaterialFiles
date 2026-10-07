@@ -15,9 +15,28 @@ import android.view.View
 import androidx.annotation.AttrRes
 import androidx.core.graphics.ColorUtils
 import com.google.android.material.shape.MaterialShapeDrawable
+import me.zhanghai.android.files.R
 import me.zhanghai.android.files.util.activity
+import me.zhanghai.android.files.util.getColorByAttr
 
 class CoordinatorAppBarLayout : FitsSystemWindowsAppBarLayout {
+    private val colorActionModeSurface by lazy {
+        context.getColorByAttr(R.attr.colorActionModeSurface)
+    }
+    private val colorAppBarSurface by lazy {
+        context.getColorByAttr(R.attr.colorAppBarSurface)
+    }
+
+    private var lastLiftedBackgroundColor: Int? = null
+
+    var isActionMode: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                updateBackgroundColor()
+            }
+        }
+
     private val syncBackgroundColorViews = mutableListOf<View>()
 
     private var offset = 0
@@ -45,7 +64,10 @@ class CoordinatorAppBarLayout : FitsSystemWindowsAppBarLayout {
         }
 
         addLiftOnScrollListener { _, backgroundColor ->
-            onBackgroundColorChanged(backgroundColor)
+            lastLiftedBackgroundColor = backgroundColor
+            if (!isActionMode) {
+                onBackgroundColorChanged(backgroundColor)
+            }
         }
 
         addOnOffsetChangedListener { _, offset ->
@@ -68,7 +90,22 @@ class CoordinatorAppBarLayout : FitsSystemWindowsAppBarLayout {
         syncBackgroundColorViews += view
     }
 
+    private fun updateBackgroundColor() {
+        val targetColor = if (isActionMode) {
+            colorActionModeSurface
+        } else {
+            lastLiftedBackgroundColor ?: colorAppBarSurface
+        }
+        (background as? MaterialShapeDrawable)?.fillColor = ColorStateList.valueOf(targetColor)
+        syncBackgroundColorViews.forEach {
+            (it.background as? MaterialShapeDrawable)?.fillColor =
+                ColorStateList.valueOf(targetColor)
+        }
+    }
+
     private fun onBackgroundColorChanged(backgroundColor: Int) {
+        (background as? MaterialShapeDrawable)?.fillColor =
+            ColorStateList.valueOf(backgroundColor)
         syncBackgroundColorViews.forEach {
             (it.background as? MaterialShapeDrawable)?.fillColor =
                 ColorStateList.valueOf(backgroundColor)
