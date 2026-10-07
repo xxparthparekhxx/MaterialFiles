@@ -358,6 +358,12 @@ object Settings {
             R.bool.pref_default_value_file_list_standard_directory_icons
         )
 
+    val FILE_LIST_INDICATE_LAST_OPENED_ITEM: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_indicate_last_opened_item,
+            R.bool.pref_default_value_file_list_indicate_last_opened_item
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,

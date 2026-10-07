@@ -230,6 +230,37 @@ class FileListAdapter(
             notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
         }
 
+    var indicateLastOpenedItem: Boolean =
+        Settings.FILE_LIST_INDICATE_LAST_OPENED_ITEM.valueCompat
+        set(value) {
+            if (field == value) {
+                return
+            }
+            field = value
+            notifyItemRangeChanged(0, itemCount, PAYLOAD_STATE_CHANGED)
+        }
+
+    var lastActivatedPath: Path? = null
+        set(value) {
+            if (field == value) {
+                return
+            }
+            val oldPath = field
+            field = value
+            if (oldPath != null) {
+                val oldPosition = getFilePosition(oldPath)
+                if (oldPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(oldPosition, PAYLOAD_STATE_CHANGED)
+                }
+            }
+            if (value != null) {
+                val newPosition = getFilePosition(value)
+                if (newPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(newPosition, PAYLOAD_STATE_CHANGED)
+                }
+            }
+        }
+
     fun replaceSelectedFiles(files: FileItemSet) {
         val changedFiles = fileItemSetOf()
         val iterator = selectedFiles.iterator()
@@ -327,6 +358,9 @@ class FileListAdapter(
         val sortedList = list.sortedWith(createComparator())
         super.replace(sortedList, clear)
         rebuildFilePositionMap()
+        if (lastActivatedPath != null && lastActivatedPath !in filePositionMap) {
+            lastActivatedPath = null
+        }
     }
 
     fun getFilePosition(path: Path): Int = filePositionMap[path] ?: RecyclerView.NO_POSITION
@@ -384,6 +418,14 @@ class FileListAdapter(
             menuButton.setOnClickListener {
                 activePopupMenu?.dismiss()
                 activePopupMenu = popupMenu
+                val position = bindingAdapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val file = getItem(position)
+                    if (indicateLastOpenedItem) {
+                        lastActivatedPath = file.path
+                        listener.onFileActivated(file)
+                    }
+                }
                 popupMenu.show()
             }
         }
@@ -418,6 +460,8 @@ class FileListAdapter(
             isDirectory && !hasPickOptions && !isReadOnly && hasPaste
         val checked = file in selectedFiles
         holder.itemLayout.isChecked = checked
+        holder.itemLayout.isActivated =
+            indicateLastOpenedItem && !checked && file.path == lastActivatedPath
         holder.nameText.setTextSize(
             TypedValue.COMPLEX_UNIT_PX, holder.nameTextBaseSize * fontScale
         )
@@ -874,6 +918,7 @@ class FileListAdapter(
         fun createShortcut(file: FileItem)
         fun hideFile(file: FileItem)
         fun showPropertiesDialog(file: FileItem)
+        fun onFileActivated(file: FileItem)
     }
 }
 

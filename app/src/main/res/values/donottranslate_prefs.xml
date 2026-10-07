@@ -137,6 +137,8 @@
     <bool name="pref_default_value_file_list_show_directory_item_count">false</bool>
     <string name="pref_key_file_list_standard_directory_icons">key_file_list_standard_directory_icons</string>
     <bool name="pref_default_value_file_list_standard_directory_icons">true</bool>
+    <string name="pref_key_file_list_indicate_last_opened_item">key_file_list_indicate_last_opened_item</string>
+    <bool name="pref_default_value_file_list_indicate_last_opened_item">true</bool>
     <string name="pref_key_file_name_ellipsize">key_file_name_ellipsize</string>
     <string name="pref_default_value_file_name_ellipsize">1</string>
     <string-array name="pref_entry_values_file_name_ellipsize">
