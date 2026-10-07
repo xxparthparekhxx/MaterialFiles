@@ -10,6 +10,7 @@ import me.zhanghai.android.files.provider.common.LocalWatchService
 import me.zhanghai.android.files.provider.common.NotifyEntryModifiedSeekableByteChannel
 import me.zhanghai.android.files.util.closeSafe
 import net.schmizz.sshj.SSHClient
+import me.zhanghai.android.files.storage.SftpServerAuthenticator
 import net.schmizz.sshj.sftp.FileAttributes
 import net.schmizz.sshj.sftp.FileMode
 import net.schmizz.sshj.sftp.OpenMode
@@ -19,6 +20,7 @@ import net.schmizz.sshj.sftp.SFTPClient
 import net.schmizz.sshj.sftp.SFTPException
 import net.schmizz.sshj.transport.TransportException
 import net.schmizz.sshj.userauth.UserAuthException
+import com.hierynomus.sshj.common.KeyDecryptionFailedException
 import java.io.IOException
 import java.util.Collections
 import java.util.WeakHashMap
@@ -256,6 +258,11 @@ object Client {
                 // The server was saved without a password; ask for it instead of failing.
                 throw SshPasswordRequiredException(authority)
             }
+            if (authentication is PublicKeyAuthentication && authentication.privateKeyPassword.isNullOrEmpty()) {
+                if (PublicKeyAuthentication.validate(authentication.privateKey, null) is KeyDecryptionFailedException) {
+                    throw SshPasswordRequiredException(authority)
+                }
+            }
             SecurityProviderHelper.init()
             val hostKeyVerifier = SftpKnownHosts.Verifier()
             val socksProxy = authenticator.getSocksProxy(authority)
@@ -284,9 +291,14 @@ object Client {
                 sshClient.auth(authority.username, authentication.toAuthMethod())
             } catch (e: UserAuthException) {
                 sshClient.closeSafe()
+                (authenticator as? SftpServerAuthenticator)?.removeTransientPassword(authority)
                 throw ClientException(e)
             } catch (e: TransportException) {
                 sshClient.closeSafe()
+                throw ClientException(e)
+            } catch (e: KeyDecryptionFailedException) {
+                sshClient.closeSafe()
+                (authenticator as? SftpServerAuthenticator)?.removeTransientPassword(authority)
                 throw ClientException(e)
             }
             client = sshClient.newSFTPClient()
