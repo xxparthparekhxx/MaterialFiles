@@ -6,18 +6,25 @@
 package me.zhanghai.android.files.filelist
 
 import android.app.Dialog
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java8.nio.file.Path
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
+import me.zhanghai.android.files.databinding.OpenFileAsDialogItemBinding
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.asMimeType
 import me.zhanghai.android.files.file.fileProviderUri
+import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.util.ParcelableArgs
 import me.zhanghai.android.files.util.ParcelableParceler
 import me.zhanghai.android.files.util.args
@@ -30,14 +37,13 @@ import me.zhanghai.android.files.util.withChooser
 class OpenFileAsDialogFragment : AppCompatDialogFragment() {
     private val args by args<Args>()
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-        MaterialAlertDialogBuilder(requireContext(), theme)
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val adapter = FileTypeAdapter(requireContext(), FILE_TYPES)
+        return MaterialAlertDialogBuilder(requireContext(), theme)
             .setTitle(getString(R.string.file_open_as_title_format, args.path.name))
-            .apply {
-                val items = FILE_TYPES.map { getString(it.first) }.toTypedArray<CharSequence>()
-                setItems(items) { _, which -> openAs(FILE_TYPES[which].second) }
-            }
+            .setAdapter(adapter) { _, which -> openAs(FILE_TYPES[which].second) }
             .create()
+    }
 
     private fun openAs(mimeType: MimeType) {
         val intent = args.path.fileProviderUri.createViewIntent(mimeType)
@@ -52,6 +58,21 @@ class OpenFileAsDialogFragment : AppCompatDialogFragment() {
         super.onCancel(dialog)
 
         finish()
+    }
+
+    private class FileTypeAdapter(
+        context: Context,
+        items: List<Pair<Int, MimeType>>
+    ) : ArrayAdapter<Pair<Int, MimeType>>(context, 0, items) {
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = convertView ?: LayoutInflater.from(context)
+                .inflate(R.layout.open_file_as_dialog_item, parent, false)
+            val binding = OpenFileAsDialogItemBinding.bind(view)
+            val item = getItem(position)!!
+            binding.iconImage.setImageResource(item.second.iconRes)
+            binding.titleText.setText(item.first)
+            return view
+        }
     }
 
     companion object {
