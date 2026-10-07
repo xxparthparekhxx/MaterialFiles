@@ -18,6 +18,7 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.about.AboutActivity
 import me.zhanghai.android.files.file.JavaFile
 import me.zhanghai.android.files.file.asFileSize
+import me.zhanghai.android.files.filelist.HomeActivity
 import me.zhanghai.android.files.filelist.RecentFilesActivity
 import me.zhanghai.android.files.ftpserver.FtpServerActivity
 import me.zhanghai.android.files.provider.root.RootAvailability
@@ -36,6 +37,10 @@ import me.zhanghai.android.files.util.valueCompat
 val navigationItems: List<NavigationItem?>
     get() =
         mutableListOf<NavigationItem?>().apply {
+            add(IntentMenuItem(
+                R.drawable.home_icon_white_24dp, R.string.navigation_home,
+                HomeActivity::class.createIntent()
+            ))
             // SD cards live in the storage list so they can be reordered with the other storages.
             Storages.ensureExternalVolumes()
             addAll(storageItems)
@@ -130,10 +135,10 @@ private class IntentStorageItem(
     }
 }
 
-private val Storage.isShownInNavigation: Boolean
+internal val Storage.isShownInNavigation: Boolean
     get() = this !is ExternalStorageVolume || isCurrentlyMounted
 
-private fun getStorageSubtitle(linuxPath: String, context: Context): String? {
+internal fun getStorageSubtitle(linuxPath: String, context: Context): String? {
     var totalSpace = JavaFile.getTotalSpace(linuxPath)
     val freeSpace: Long
     when {

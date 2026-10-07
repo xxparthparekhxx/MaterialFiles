@@ -292,6 +292,12 @@
             android:theme="@style/Theme.MaterialFiles" />
 
         <activity
+            android:name="me.zhanghai.android.files.filelist.HomeActivity"
+            android:label="@string/home_title"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.MaterialFiles" />
+
+        <activity
             android:name="me.zhanghai.android.files.filelist.RecentFilesActivity"
             android:label="@string/recent_files_title"
             android:launchMode="singleTop"
