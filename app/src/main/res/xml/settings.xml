@@ -50,6 +50,8 @@
             android:key="@string/pref_key_file_list_drawer_swipe"
             android:title="@string/settings_file_list_drawer_swipe_title"
             android:defaultValue="@bool/pref_default_value_file_list_drawer_swipe" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_errors_in_dialog"
             android:title="@string/settings_errors_in_dialog_title"
             android:summary="@string/settings_errors_in_dialog_summary"
@@ -66,66 +68,102 @@
             android:defaultValue="@bool/pref_default_value_file_list_loading_indicator" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_show_item_count"
+            android:title="@string/settings_file_list_show_item_count_title"
+            android:summary="@string/settings_file_list_show_item_count_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_show_item_count" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_open_files_in_new_task"
             android:title="@string/settings_open_files_in_new_task_title"
             android:summary="@string/settings_open_files_in_new_task_summary"
             android:defaultValue="@bool/pref_default_value_open_files_in_new_task" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_iso_date_format"
             android:title="@string/settings_iso_date_format_title"
             android:summary="@string/settings_iso_date_format_summary"
             android:defaultValue="@bool/pref_default_value_iso_date_format" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_hidden_first"
             android:title="@string/settings_file_list_hidden_first_title"
             android:summary="@string/settings_file_list_hidden_first_summary"
             android:defaultValue="@bool/pref_default_value_file_list_hidden_first" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_auto_calculate_checksums"
             android:title="@string/settings_auto_calculate_checksums_title"
             android:summary="@string/settings_auto_calculate_checksums_summary"
             android:defaultValue="@bool/pref_default_value_auto_calculate_checksums" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_fit_thumbnails"
             android:title="@string/settings_file_list_fit_thumbnails_title"
             android:summary="@string/settings_file_list_fit_thumbnails_summary"
             android:defaultValue="@bool/pref_default_value_file_list_fit_thumbnails" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_back_exits"
             android:title="@string/settings_file_list_back_exits_title"
             android:summary="@string/settings_file_list_back_exits_summary"
             android:defaultValue="@bool/pref_default_value_file_list_back_exits" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_copy_path_shell_escape"
             android:title="@string/settings_copy_path_shell_escape_title"
             android:summary="@string/settings_copy_path_shell_escape_summary"
             android:defaultValue="@bool/pref_default_value_copy_path_shell_escape" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_open_with_built_in_viewers"
             android:title="@string/settings_open_with_built_in_viewers_title"
             android:summary="@string/settings_open_with_built_in_viewers_summary"
             android:defaultValue="@bool/pref_default_value_open_with_built_in_viewers" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_highlight_delete"
             android:title="@string/settings_highlight_delete_title"
             android:summary="@string/settings_highlight_delete_summary"
             android:defaultValue="@bool/pref_default_value_highlight_delete" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_block_screenshots"
             android:title="@string/settings_block_screenshots_title"
             android:summary="@string/settings_block_screenshots_summary"
             android:defaultValue="@bool/pref_default_value_block_screenshots" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_copy_preserve_modification_time"
             android:title="@string/settings_copy_preserve_modification_time_title"
             android:summary="@string/settings_copy_preserve_modification_time_summary"
             android:defaultValue="@bool/pref_default_value_copy_preserve_modification_time" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_show_permissions"
             android:title="@string/settings_file_list_show_permissions_title"
             android:summary="@string/settings_file_list_show_permissions_summary"
             android:defaultValue="@bool/pref_default_value_file_list_show_permissions" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_full_date_time"
             android:title="@string/settings_full_date_time_title"
             android:summary="@string/settings_full_date_time_summary"
             android:defaultValue="@bool/pref_default_value_full_date_time" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_hide_add_button"
             android:title="@string/settings_file_list_hide_add_button_title"
             android:summary="@string/settings_file_list_hide_add_button_summary"
             android:defaultValue="@bool/pref_default_value_file_list_hide_add_button" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_dividers"
             android:title="@string/settings_file_list_dividers_title"
             android:summary="@string/settings_file_list_dividers_summary"
             android:defaultValue="@bool/pref_default_value_file_list_dividers" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_show_directory_item_count"
             android:title="@string/settings_file_list_show_directory_item_count_title"
             android:summary="@string/settings_file_list_show_directory_item_count_summary"

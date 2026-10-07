@@ -131,6 +131,8 @@
         <item>115</item>
         <item>130</item>
     </string-array>
+    <string name="pref_key_file_list_show_item_count">key_file_list_show_item_count</string>
+    <bool name="pref_default_value_file_list_show_item_count">false</bool>
     <string name="pref_key_file_list_show_directory_item_count">key_file_list_show_directory_item_count</string>
     <bool name="pref_default_value_file_list_show_directory_item_count">false</bool>
     <string name="pref_key_file_name_ellipsize">key_file_name_ellipsize</string>

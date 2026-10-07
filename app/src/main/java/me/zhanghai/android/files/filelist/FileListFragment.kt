@@ -607,6 +607,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_HIDDEN_PATHS.observe(viewLifecycleOwner) {
             updateAdapterFileList()
         }
+        Settings.FILE_LIST_SHOW_ITEM_COUNT.observe(viewLifecycleOwner) {
+            val stateful = viewModel.fileListStateful
+            val files = stateful.value
+            if (files != null && stateful !is Failure) {
+                binding.toolbar.subtitle = getSubtitle(files)
+            }
+        }
         Settings.FILE_LIST_SHOW_DIRECTORY_ITEM_COUNT.observe(viewLifecycleOwner) {
             adapter.invalidateDirectoryItemCounts()
         }
@@ -1118,7 +1125,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         } else {
             null
         }
-        return when {
+        val breakdownText = when {
             !directoryCountText.isNullOrEmpty() && !fileCountText.isNullOrEmpty() ->
                 (directoryCountText + getString(R.string.file_list_subtitle_separator)
                     + fileCountText)
@@ -1126,6 +1133,17 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             !fileCountText.isNullOrEmpty() -> fileCountText
             else -> getString(R.string.empty)
         }
+        if (Settings.FILE_LIST_SHOW_ITEM_COUNT.valueCompat) {
+            val itemCountText = getQuantityString(
+                R.plurals.file_list_subtitle_item_count_format, files.size, files.size
+            )
+            return if (files.isNotEmpty()) {
+                itemCountText + getString(R.string.file_list_subtitle_separator) + breakdownText
+            } else {
+                breakdownText
+            }
+        }
+        return breakdownText
     }
 
     private fun onViewTypeChanged(viewType: FileViewType) {
