@@ -937,6 +937,8 @@
         <item quantity="one">%1$,d item</item>
         <item quantity="other">%1$,d items</item>
     </plurals>
+    <string name="settings_file_list_standard_directory_icons_title">Standard folder icons</string>
+    <string name="settings_file_list_standard_directory_icons_summary">Show dedicated icons for standard folders like Downloads, Pictures, and Music</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
     <string name="settings_file_list_font_size_title">File list text size</string>

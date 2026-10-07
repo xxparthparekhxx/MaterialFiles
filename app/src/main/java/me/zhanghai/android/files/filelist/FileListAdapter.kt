@@ -12,13 +12,16 @@ import android.os.AsyncTask
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
+import android.content.res.ColorStateList
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.DrawableRes
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -457,9 +460,21 @@ class FileListAdapter(
         }
         holder.iconLayout.setOnClickListener { selectFile(file) }
         val attributes = file.attributes
-        val iconRes = file.mimeType.iconRes
+        val standardDirectoryIconRes = if (attributes.isDirectory &&
+            Settings.FILE_LIST_STANDARD_DIRECTORY_ICONS.valueCompat
+        ) {
+            getStandardDirectoryIconRes(file.name)
+        } else {
+            null
+        }
+        val iconRes = standardDirectoryIconRes ?: file.mimeType.iconRes
         holder.iconImage.apply {
             isVisible = true
+            imageTintList = if (standardDirectoryIconRes != null) {
+                ColorStateList.valueOf(ContextCompat.getColor(context, R.color.file_icon_grey))
+            } else {
+                null
+            }
             setImageResource(iconRes)
         }
         bindThumbnails(holder, file)
@@ -903,3 +918,19 @@ private fun TextView.applyNameEllipsize(mode: FileNameEllipsize) {
         }
     }
 }
+
+@DrawableRes
+private fun getStandardDirectoryIconRes(name: String): Int? =
+    when (name.lowercase(Locale.ROOT)) {
+        "alarms" -> R.drawable.alarm_icon_white_24dp
+        "dcim", "camera" -> R.drawable.camera_icon_white_24dp
+        "documents", "document" -> R.drawable.document_icon_white_24dp
+        "download", "downloads" -> R.drawable.download_icon_white_24dp
+        "movies", "movie", "videos", "video" -> R.drawable.video_icon_white_24dp
+        "music" -> R.drawable.audio_icon_white_24dp
+        "notifications", "notification" -> R.drawable.notification_icon_white_24dp
+        "pictures", "picture", "photos", "photo" -> R.drawable.image_icon_white_24dp
+        "podcasts", "podcast" -> R.drawable.podcast_icon_white_24dp
+        "ringtones", "ringtone" -> R.drawable.ringtone_icon_white_24dp
+        else -> null
+    }
