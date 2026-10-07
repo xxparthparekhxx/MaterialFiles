@@ -95,6 +95,8 @@ object AndroidFileTypeDetector : FileTypeDetector() {
             matchAscii(0, "ID3") ||
                 (match(0, 0xFF.toByte()) && header.size > 1 &&
                     header[1].toInt() and 0xE0 == 0xE0) -> "audio/mpeg".asMimeType()
+            match(0, 0x00, 0x00, 0x00, 0x0C) && matchAscii(4, "JXL ") -> "image/jxl".asMimeType()
+            matchAscii(4, "ftyp") && matchAscii(8, "jxl ") -> "image/jxl".asMimeType()
             matchAscii(4, "ftyp") -> "video/mp4".asMimeType()
             else -> null
         }
