@@ -146,6 +146,8 @@ class FileListViewModel : ViewModel() {
 
     var promptedUserAction: UserActionRequiredException? = null
 
+    var lastActivatedPath: Path? = null
+
     fun reload() {
         val path = currentPath
         if (path.isArchivePath) {

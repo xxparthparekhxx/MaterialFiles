@@ -43,7 +43,14 @@ object CheckableItemBackground {
                 setColor(primaryColor.asColor().withModulatedAlpha(0.12f).value)
                 setStroke(2 * context.dpToDimensionPixelOffset(insetDp), Color.TRANSPARENT)
             }
+            val activatedDrawable = GradientDrawable().apply {
+                cornerRadius = context.dpToDimension(cornerSizeDp)
+                val primaryColor = context.getColorByAttr(androidx.appcompat.R.attr.colorPrimary)
+                setColor(primaryColor.asColor().withModulatedAlpha(0.08f).value)
+                setStroke(2 * context.dpToDimensionPixelOffset(insetDp), Color.TRANSPARENT)
+            }
             addState(intArrayOf(android.R.attr.state_checked), checkedDrawable)
+            addState(intArrayOf(android.R.attr.state_activated), activatedDrawable)
             addState(intArrayOf(), ColorDrawable(Color.TRANSPARENT))
         }
 }

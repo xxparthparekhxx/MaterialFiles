@@ -620,6 +620,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_STANDARD_DIRECTORY_ICONS.observe(viewLifecycleOwner) {
             updateAdapterFileList()
         }
+        adapter.lastActivatedPath = viewModel.lastActivatedPath
+        Settings.FILE_LIST_INDICATE_LAST_OPENED_ITEM.observe(viewLifecycleOwner) {
+            adapter.indicateLastOpenedItem = it
+        }
         Settings.FILE_LIST_LOCK_HEADER.observe(viewLifecycleOwner) {
             updateToolbarScrollFlags()
         }
@@ -880,6 +884,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             child
         } else {
             null
+        }
+        if (pendingHighlightPath != null) {
+            viewModel.lastActivatedPath = pendingHighlightPath
+            adapter.lastActivatedPath = pendingHighlightPath
+        } else if (viewModel.lastActivatedPath?.parent != path && viewModel.lastActivatedPath != path) {
+            viewModel.lastActivatedPath = null
+            adapter.lastActivatedPath = null
         }
         if (viewModel.pickOptions == null && path.isLinuxPath &&
             Settings.FILE_LIST_REMEMBER_LAST_DIRECTORY.valueCompat) {
@@ -1926,6 +1937,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             return
         }
+        if (adapter.indicateLastOpenedItem && !file.isListable) {
+            viewModel.lastActivatedPath = file.path
+            adapter.lastActivatedPath = file.path
+        }
         if (file.mimeType.isApk) {
             RecentFiles.add(file)
             openApk(file)
@@ -1983,6 +1998,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun openFileWithIntent(file: FileItem, withChooser: Boolean) {
+        if (adapter.indicateLastOpenedItem) {
+            viewModel.lastActivatedPath = file.path
+            adapter.lastActivatedPath = file.path
+        }
         RecentFiles.add(file)
         val path = file.path
         val mimeType = file.mimeType
@@ -2393,6 +2412,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         FilePropertiesDialogFragment.show(file, this)
+    }
+
+    override fun onFileActivated(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        viewModel.lastActivatedPath = file.path
     }
 
     private fun toggleFtpServer() {
