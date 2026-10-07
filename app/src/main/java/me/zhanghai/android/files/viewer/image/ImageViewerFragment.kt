@@ -31,7 +31,10 @@ import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.loadFileItem
 import me.zhanghai.android.files.fileproperties.FilePropertiesDialogFragment
+import me.zhanghai.android.files.filelist.NavigateToPathDialogFragment
 import me.zhanghai.android.files.filelist.RenameFileDialogFragment
+import me.zhanghai.android.files.provider.common.copyTo
+import me.zhanghai.android.files.provider.common.exists
 import me.zhanghai.android.files.provider.common.moveTo
 import me.zhanghai.android.files.filejob.RemovedPaths
 import me.zhanghai.android.files.provider.common.delete
@@ -54,7 +57,7 @@ import me.zhanghai.android.files.util.withChooser
 import me.zhanghai.android.systemuihelper.SystemUiHelper
 
 class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
-    RenameFileDialogFragment.Listener {
+    RenameFileDialogFragment.Listener, NavigateToPathDialogFragment.Listener {
     private val args by args<Args>()
 
     private var pathListId = 0
@@ -202,6 +205,14 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
                 showProperties()
                 true
             }
+            R.id.action_copy -> {
+                copyFile()
+                true
+            }
+            R.id.action_move -> {
+                showMoveDialog()
+                true
+            }
             R.id.action_rename -> {
                 showRenameDialog()
                 true
@@ -267,6 +278,77 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
                 return@launch
             }
             RenameFileDialogFragment.show(fileItem, this@ImageViewerFragment)
+        }
+    }
+
+    private fun copyFile() {
+        val path = currentPath
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (target, error) = withContext(Dispatchers.IO) {
+                try {
+                    val name = path.fileName.toString()
+                    val dot = name.lastIndexOf('.')
+                    val stem = if (dot in 1 until name.length - 1) name.substring(0, dot) else name
+                    val ext = if (dot in 1 until name.length - 1) name.substring(dot) else ""
+                    var target: Path? = null
+                    var i = 0
+                    while (target == null || target.exists()) {
+                        val suffix = if (i == 0) "" else "${i + 1}"
+                        target = path.parent.resolve("$stem copy$suffix$ext")
+                        i++
+                    }
+                    path.copyTo(target!!)
+                    target to null
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null to e
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (target == null) {
+                showToast(error.toString())
+                return@launch
+            }
+            paths.add(target)
+            adapter.replace(paths)
+            binding.viewPager.setCurrentItem(paths.lastIndex, true)
+            updateTitle()
+        }
+    }
+
+    private fun showMoveDialog() {
+        NavigateToPathDialogFragment.show(currentPath, this)
+    }
+
+    override fun navigateTo(path: Path) {
+        val file = currentPath
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (target, error) = withContext(Dispatchers.IO) {
+                try {
+                    val target = path.resolve(file.fileName)
+                    file.moveTo(target)
+                    target to null
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null to e
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (target == null) {
+                showToast(error.toString())
+                return@launch
+            }
+            RemovedPaths.notifyRemoved(file)
+            val index = paths.indexOf(file)
+            if (index != -1) {
+                paths[index] = target
+                adapter.replace(paths)
+                updateTitle()
+            }
         }
     }
 

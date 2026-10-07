@@ -30,6 +30,7 @@
     <string name="paste">Paste</string>
     <string name="refresh">Refresh</string>
     <string name="reload">Reload</string>
+    <string name="move">Move</string>
     <string name="remove">Remove</string>
     <string name="rename">Rename</string>
     <string name="file_rename_multiple_title">Rename selected items</string>
