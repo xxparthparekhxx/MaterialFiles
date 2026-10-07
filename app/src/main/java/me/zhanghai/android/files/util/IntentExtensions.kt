@@ -158,21 +158,30 @@ fun Collection<Uri>.createSendStreamIntent(mimeTypes: Collection<MimeType>): Int
     // The context parameter here is only used for passing calling activity information and starting
     // chooser activity, neither of which we care about.
     val type = mimeTypes.intentType
-    val uri = singleOrNull()
+    val uris = toList()
+    val uri = uris.singleOrNull()
     return ShareCompat.IntentBuilder(application)
         .setType(type)
-        .apply { forEach { addStream(it) } }
+        .apply { uris.forEach { addStream(it) } }
         .intent
         // FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET is unnecessarily added by ShareCompat.IntentBuilder.
         .apply {
             @Suppress("DEPRECATION")
             removeFlagsCompat(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             if (uri != null && type.startsWith("text/")) {
                 // A text type otherwise arrives with the type and without the file.
                 setDataAndType(uri, type)
                 putExtra(Intent.EXTRA_STREAM, uri)
-                clipData = ClipData(null, arrayOf(type), ClipData.Item(uri))
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            if (uris.isNotEmpty()) {
+                val clipItems = uris.map { ClipData.Item(it) }
+                val newClipData = ClipData(null, arrayOf(type), clipItems.first()).apply {
+                    for (i in 1 until clipItems.size) {
+                        addItem(clipItems[i])
+                    }
+                }
+                clipData = newClipData
             }
         }
 }
