@@ -16,6 +16,7 @@ import me.zhanghai.android.files.provider.ftp.FtpFileSystemProvider
 import me.zhanghai.android.files.provider.ftp.FtpesFileSystemProvider
 import me.zhanghai.android.files.provider.ftp.FtpsFileSystemProvider
 import me.zhanghai.android.files.provider.linux.LinuxFileSystemProvider
+import me.zhanghai.android.files.provider.merged.MergedFileSystemProvider
 import me.zhanghai.android.files.provider.root.isRunningAsRoot
 import me.zhanghai.android.files.provider.sftp.SftpFileSystemProvider
 import me.zhanghai.android.files.provider.smb.SmbFileSystemProvider
@@ -36,6 +37,7 @@ object FileSystemProviders {
     fun install() {
         FileSystemProvider.installDefaultProvider(LinuxFileSystemProvider)
         FileSystemProvider.installProvider(ArchiveFileSystemProvider)
+        FileSystemProvider.installProvider(MergedFileSystemProvider)
         if (!isRunningAsRoot) {
             FileSystemProvider.installProvider(ContentFileSystemProvider)
             FileSystemProvider.installProvider(DocumentFileSystemProvider)

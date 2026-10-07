@@ -302,7 +302,14 @@ internal fun getExternalStorageDirectory(relativePath: String): String =
 
 private val bookmarkDirectoryItems: List<NavigationItem>
     @Size(min = 0)
-    get() = Settings.BOOKMARK_DIRECTORIES.valueCompat.map { BookmarkDirectoryItem(it) }
+    get() =
+        Settings.BOOKMARK_DIRECTORIES.valueCompat.map { bookmarkDirectory ->
+            if (bookmarkDirectory.paths.size > 1) {
+                MergedBookmarkDirectoryItem(bookmarkDirectory)
+            } else {
+                BookmarkDirectoryItem(bookmarkDirectory)
+            }
+        }
 
 private class BookmarkDirectoryItem(
     private val bookmarkDirectory: BookmarkDirectory
@@ -316,6 +323,35 @@ private class BookmarkDirectoryItem(
     override val iconRes: Int = R.drawable.directory_icon_white_24dp
 
     override fun getTitle(context: Context): String = bookmarkDirectory.name
+
+    override fun onLongClick(listener: Listener): Boolean {
+        listener.launchIntent(
+            EditBookmarkDirectoryDialogActivity::class.createIntent()
+                .putArgs(EditBookmarkDirectoryDialogFragment.Args(bookmarkDirectory))
+        )
+        return true
+    }
+}
+
+/**
+ * A bookmark that merges multiple directories into a single read-only directory. Since the merged
+ * directory has no parent of its own, the item is a navigation root so the merged directory shows
+ * as the top crumb, named after the bookmark.
+ */
+private class MergedBookmarkDirectoryItem(
+    private val bookmarkDirectory: BookmarkDirectory
+) : PathItem(bookmarkDirectory.path), NavigationRoot {
+    // We cannot simply use super.getId() because different bookmark directories may have
+    // the same path.
+    override val id: Long
+        get() = bookmarkDirectory.id
+
+    @DrawableRes
+    override val iconRes: Int = R.drawable.directory_icon_white_24dp
+
+    override fun getTitle(context: Context): String = bookmarkDirectory.name
+
+    override fun getName(context: Context): String = getTitle(context)
 
     override fun onLongClick(listener: Listener): Boolean {
         listener.launchIntent(

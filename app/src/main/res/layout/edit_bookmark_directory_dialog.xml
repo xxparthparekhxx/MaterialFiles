@@ -7,6 +7,7 @@
 
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingTop="@dimen/abc_dialog_title_divider_material">
@@ -42,17 +43,21 @@
                 </com.google.android.material.textfield.TextInputEditText>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <me.zhanghai.android.files.ui.ReadOnlyTextInputLayout
+            <LinearLayout
+                android:id="@+id/pathLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="@string/navigation_edit_bookmark_directory_path">
+                android:orientation="vertical" />
 
-                <me.zhanghai.android.files.ui.ReadOnlyTextInputEditText
-                    android:id="@+id/pathText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-            </me.zhanghai.android.files.ui.ReadOnlyTextInputLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/addPathButton"
+                style="?materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/navigation_edit_bookmark_directory_add_directory"
+                app:icon="@drawable/add_icon_white_24dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </FrameLayout>

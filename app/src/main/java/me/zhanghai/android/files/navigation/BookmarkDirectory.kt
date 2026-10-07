@@ -10,7 +10,8 @@ import java8.nio.file.Path
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.filelist.name
-import me.zhanghai.android.files.util.ParcelableParceler
+import me.zhanghai.android.files.provider.merged.MergedFileSystemProvider
+import me.zhanghai.android.files.util.ParcelableListParceler
 import me.zhanghai.android.files.util.takeIfNotEmpty
 import java.util.Random
 
@@ -20,14 +21,25 @@ import java.util.Random
 data class BookmarkDirectory internal constructor(
     val id: Long,
     val customName: String?,
-    val path: @WriteWith<ParcelableParceler> Path
+    val paths: @WriteWith<ParcelableListParceler> List<Path>
 ) : Parcelable {
     // We cannot simply use path.hashCode() as ID because different bookmark directories may have
     // the same path.
-    constructor(customName: String?, path: Path) : this(Random().nextLong(), customName, path)
+    constructor(customName: String?, path: Path) : this(Random().nextLong(), customName, listOf(path))
+
+    /**
+     * The directory to browse for this bookmark. A single directory is browsed directly, and
+     * multiple directories are merged into a single read-only directory.
+     */
+    val path: Path
+        get() = if (paths.size == 1) {
+            paths[0]
+        } else {
+            MergedFileSystemProvider.getOrNewFileSystem(paths).rootDirectory
+        }
 
     val defaultName: String
-        get() = path.name
+        get() = paths.first().name
 
     val name: String
         get() = customName?.takeIfNotEmpty() ?: defaultName

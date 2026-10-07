@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder
+import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.foregroundCompat
 import me.zhanghai.android.files.compat.isTransformedTouchPointInViewCompat
 import me.zhanghai.android.files.databinding.BookmarkDirectoryItemBinding
@@ -38,7 +39,14 @@ class BookmarkDirectoryListAdapter(
         binding.root.foregroundCompat!!.mutate().setVisible(!holder.dragState.isActive, false)
         binding.root.setOnClickListener { listener.editBookmarkDirectory(bookmarkDirectory) }
         binding.nameText.text = bookmarkDirectory.name
-        binding.pathText.text = bookmarkDirectory.path.toUserFriendlyString()
+        val paths = bookmarkDirectory.paths
+        binding.pathText.text = if (paths.size > 1) {
+            binding.root.context.resources.getQuantityString(
+                R.plurals.navigation_bookmark_directory_paths_count, paths.size, paths.size
+            )
+        } else {
+            paths.first().toUserFriendlyString()
+        }
     }
 
     override fun onCheckCanStartDrag(holder: ViewHolder, position: Int, x: Int, y: Int): Boolean =

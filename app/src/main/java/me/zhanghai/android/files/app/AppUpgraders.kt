@@ -12,6 +12,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.annotation.StringRes
 import androidx.core.content.edit
+import java8.nio.file.Path
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.PreferenceManagerCompat
 import me.zhanghai.android.files.compat.getDescriptionCompat
@@ -610,6 +611,45 @@ private fun migrateDocumentManagerShortcutSetting1_7_2() {
             e.printStackTrace()
             null
         }
+    defaultSharedPreferences.edit { putString(key, newBytes?.toBase64()?.value) }
+}
+
+internal fun upgradeAppTo1_7_5() {
+    migrateBookmarkDirectoriesSetting1_7_5()
+}
+
+/**
+ * Bookmark directories used to hold a single path, but now hold a list of paths so that a
+ * bookmark can merge multiple directories into a single view.
+ */
+private fun migrateBookmarkDirectoriesSetting1_7_5() {
+    val key = application.getString(R.string.pref_key_bookmark_directories)
+    val oldBytes = defaultSharedPreferences.getString(key, null)?.asBase64()?.toByteArray()
+        ?: return
+    val newBytes = try {
+        Parcel.obtain().use { newParcel ->
+            Parcel.obtain().use { oldParcel ->
+                oldParcel.unmarshall(oldBytes, 0, oldBytes.size)
+                oldParcel.setDataPosition(0)
+                newParcel.writeInt(oldParcel.readInt())
+                val size = oldParcel.readInt()
+                newParcel.writeInt(size)
+                repeat(size) {
+                    newParcel.writeInt(oldParcel.readInt())
+                    newParcel.writeString(oldParcel.readString())
+                    newParcel.writeLong(oldParcel.readLong())
+                    newParcel.writeString(oldParcel.readString())
+                    val path = oldParcel.readParcelable<Parcelable>() as Path
+                    @Suppress("UNCHECKED_CAST")
+                    newParcel.writeParcelableListCompat(listOf(path) as List<Parcelable?>, 0)
+                }
+            }
+            newParcel.marshall()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
     defaultSharedPreferences.edit { putString(key, newBytes?.toBase64()?.value) }
 }
 

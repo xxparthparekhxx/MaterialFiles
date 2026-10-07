@@ -8,6 +8,7 @@ package me.zhanghai.android.files.navigation
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -16,10 +17,12 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.EditBookmarkDirectoryDialogBinding
+import me.zhanghai.android.files.databinding.EditBookmarkDirectoryPathRowBinding
 import me.zhanghai.android.files.filelist.FileListActivity
 import me.zhanghai.android.files.filelist.toUserFriendlyString
+import me.zhanghai.android.files.provider.common.isSameFile
 import me.zhanghai.android.files.util.ParcelableArgs
-import me.zhanghai.android.files.util.ParcelableParceler
+import me.zhanghai.android.files.util.ParcelableListParceler
 import me.zhanghai.android.files.util.ParcelableState
 import me.zhanghai.android.files.util.args
 import me.zhanghai.android.files.util.finish
@@ -28,6 +31,7 @@ import me.zhanghai.android.files.util.launchSafe
 import me.zhanghai.android.files.util.layoutInflater
 import me.zhanghai.android.files.util.putState
 import me.zhanghai.android.files.util.setTextWithSelection
+import java.io.IOException
 
 class EditBookmarkDirectoryDialogFragment : AppCompatDialogFragment() {
     private val openPathLauncher =
@@ -35,14 +39,18 @@ class EditBookmarkDirectoryDialogFragment : AppCompatDialogFragment() {
 
     private val args by args<Args>()
 
-    private lateinit var path: Path
+    private lateinit var paths: MutableList<Path>
+
+    // The index of the path being edited, or null when adding a new path.
+    private var editingPathIndex: Int? = null
 
     private lateinit var binding: EditBookmarkDirectoryDialogBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        path = savedInstanceState?.getState<State>()?.path ?: args.bookmarkDirectory.path
+        paths = (savedInstanceState?.getState<State>()?.paths ?: args.bookmarkDirectory.paths)
+            .toMutableList()
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
@@ -55,8 +63,8 @@ class EditBookmarkDirectoryDialogFragment : AppCompatDialogFragment() {
                 if (savedInstanceState == null) {
                     binding.nameEdit.setTextWithSelection(bookmarkDirectory.name)
                 }
-                updatePathText()
-                binding.pathText.setOnClickListener { onEditPath() }
+                updatePaths()
+                binding.addPathButton.setOnClickListener { onAddPath() }
                 setView(binding.root)
             }
             .setPositiveButton(android.R.string.ok) { _, _ -> save() }
@@ -70,27 +78,64 @@ class EditBookmarkDirectoryDialogFragment : AppCompatDialogFragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putState(State(path))
+        outState.putState(State(paths.toList()))
     }
 
-    private fun onEditPath() {
-        openPathLauncher.launchSafe(path, this)
+    private fun onAddPath() {
+        editingPathIndex = null
+        openPathLauncher.launchSafe(null, this)
+    }
+
+    private fun onEditPath(index: Int) {
+        editingPathIndex = index
+        openPathLauncher.launchSafe(paths[index], this)
     }
 
     private fun onOpenPathResult(result: Path?) {
         result ?: return
-        path = result
-        updatePathText()
+        val index = editingPathIndex
+        editingPathIndex = null
+        if (index == null) {
+            // Avoid merging the same directory twice.
+            if (paths.none { isSamePath(it, result) }) {
+                paths.add(result)
+            }
+        } else {
+            paths[index] = result
+        }
+        updatePaths()
     }
 
-    private fun updatePathText() {
-        binding.pathText.setText(path.toUserFriendlyString())
+    private fun onRemovePath(index: Int) {
+        paths.removeAt(index)
+        updatePaths()
+    }
+
+    private fun isSamePath(path: Path, other: Path): Boolean = try {
+        path.isSameFile(other)
+    } catch (e: IOException) {
+        false
+    }
+
+    private fun updatePaths() {
+        binding.pathLayout.removeAllViews()
+        val showRemoveButton = paths.size > 1
+        for (index in paths.indices) {
+            val row = EditBookmarkDirectoryPathRowBinding.inflate(
+                requireContext().layoutInflater, binding.pathLayout, false
+            )
+            row.pathText.text = paths[index].toUserFriendlyString()
+            row.root.setOnClickListener { onEditPath(index) }
+            row.pathRemoveButton.visibility = if (showRemoveButton) View.VISIBLE else View.GONE
+            row.pathRemoveButton.setOnClickListener { onRemovePath(index) }
+            binding.pathLayout.addView(row.root)
+        }
     }
 
     private fun save() {
         val customName = binding.nameEdit.text.toString()
             .takeIf { it.isNotEmpty() && it != binding.nameLayout.placeholderText }
-        val bookmarkDirectory = args.bookmarkDirectory.copy(customName = customName, path = path)
+        val bookmarkDirectory = args.bookmarkDirectory.copy(customName = customName, paths = paths)
         BookmarkDirectories.replace(bookmarkDirectory)
         finish()
     }
@@ -110,5 +155,5 @@ class EditBookmarkDirectoryDialogFragment : AppCompatDialogFragment() {
     class Args(val bookmarkDirectory: BookmarkDirectory) : ParcelableArgs
 
     @Parcelize
-    private class State(var path: @WriteWith<ParcelableParceler> Path) : ParcelableState
+    private class State(val paths: @WriteWith<ParcelableListParceler> List<Path>) : ParcelableState
 }
