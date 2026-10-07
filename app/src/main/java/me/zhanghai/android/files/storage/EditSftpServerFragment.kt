@@ -25,6 +25,7 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.EditSftpServerFragmentBinding
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.filelist.FileListActivity
+import me.zhanghai.android.files.provider.common.UserActionRequiredException
 import me.zhanghai.android.files.provider.sftp.client.Authority
 import me.zhanghai.android.files.provider.sftp.client.Client
 import me.zhanghai.android.files.provider.sftp.client.PasswordAuthentication
@@ -37,6 +38,7 @@ import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.ParcelableArgs
 import me.zhanghai.android.files.util.args
 import me.zhanghai.android.files.util.fadeToVisibilityUnsafe
+import me.zhanghai.android.files.util.findCauseByClass
 import me.zhanghai.android.files.util.finish
 import me.zhanghai.android.files.util.getTextArray
 import me.zhanghai.android.files.util.hideTextInputLayoutErrorOnTextChange
@@ -47,6 +49,9 @@ import me.zhanghai.android.files.util.takeIfNotEmpty
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import java.net.URI
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 class EditSftpServerFragment : Fragment() {
     private val openPrivateKeyFileLauncher = registerForActivityResult(
@@ -152,6 +157,7 @@ class EditSftpServerFragment : Fragment() {
 
         if (args.server != null && !Settings.STORAGE_REVEAL_SAVED_PASSWORD.valueCompat) {
             binding.passwordLayout.endIconMode = TextInputLayout.END_ICON_NONE
+            binding.privateKeyPasswordLayout.endIconMode = TextInputLayout.END_ICON_NONE
         }
 
         if (savedInstanceState == null) {
@@ -311,8 +317,29 @@ class EditSftpServerFragment : Fragment() {
             is ActionState.Error -> {
                 SftpServerAuthenticator.clearPendingSocksProxy(state.argument.authority)
                 val throwable = state.throwable
-                throwable.printStackTrace()
-                showToast(throwable.toString())
+                val userActionException = throwable.findCauseByClass<UserActionRequiredException>()
+                if (userActionException != null) {
+                    val userAction = userActionException.getUserAction(
+                        object : Continuation<Boolean> {
+                            override val context: CoroutineContext
+                                get() = EmptyCoroutineContext
+
+                            override fun resumeWith(result: Result<Boolean>) {
+                                val postedView = view ?: return
+                                postedView.post {
+                                    if (result.getOrDefault(false)) {
+                                        connectAndAdd()
+                                    }
+                                }
+                            }
+                        },
+                        requireContext()
+                    )
+                    startActivity(userAction.intent)
+                } else {
+                    throwable.printStackTrace()
+                    showToast(throwable.toString())
+                }
                 viewModel.finishConnecting()
             }
         }
@@ -386,11 +413,13 @@ class EditSftpServerFragment : Fragment() {
                     if (exception != null) {
                         exception.printStackTrace()
                         if (exception is KeyDecryptionFailedException) {
-                            binding.privateKeyPasswordLayout.error = getString(
-                                R.string.storage_edit_sftp_server_private_key_password_error_invalid
-                            )
-                            if (errorEdit == null) {
-                                errorEdit = binding.privateKeyPasswordEdit
+                            if (privateKeyPassword != null) {
+                                binding.privateKeyPasswordLayout.error = getString(
+                                    R.string.storage_edit_sftp_server_private_key_password_error_invalid
+                                )
+                                if (errorEdit == null) {
+                                    errorEdit = binding.privateKeyPasswordEdit
+                                }
                             }
                         } else {
                             binding.privateKeyLayout.error = getString(

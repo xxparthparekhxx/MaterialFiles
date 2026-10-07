@@ -9,6 +9,7 @@ import me.zhanghai.android.files.provider.sftp.client.Authentication
 import me.zhanghai.android.files.provider.sftp.client.Authenticator
 import me.zhanghai.android.files.provider.sftp.client.Authority
 import me.zhanghai.android.files.provider.sftp.client.PasswordAuthentication
+import me.zhanghai.android.files.provider.sftp.client.PublicKeyAuthentication
 import me.zhanghai.android.files.provider.sftp.client.SocksProxy
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.valueCompat
@@ -21,10 +22,20 @@ object SftpServerAuthenticator : Authenticator {
     private val pendingSocksProxies = mutableMapOf<Authority, SocksProxy?>()
 
     override fun getAuthentication(authority: Authority): Authentication? {
-        synchronized(transientPasswords) {
-            transientPasswords[authority]?.let { return it }
+        val server = findServer(authority)
+        val transientPassword = synchronized(transientPasswords) {
+            transientPasswords[authority]
         }
-        return findServer(authority)?.authentication
+        if (server != null && transientPassword != null) {
+            return when (val auth = server.authentication) {
+                is PasswordAuthentication -> transientPassword
+                is PublicKeyAuthentication -> PublicKeyAuthentication(auth.privateKey, transientPassword.password)
+            }
+        }
+        if (transientPassword != null) {
+            return transientPassword
+        }
+        return server?.authentication
     }
 
     override fun getSocksProxy(authority: Authority): SocksProxy? {
