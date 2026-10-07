@@ -610,6 +610,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.FILE_LIST_SHOW_DIRECTORY_ITEM_COUNT.observe(viewLifecycleOwner) {
             adapter.invalidateDirectoryItemCounts()
         }
+        Settings.FILE_LIST_HIDE_EMPTY_DIRECTORIES.observe(viewLifecycleOwner) {
+            viewModel.reload()
+        }
         Settings.FILE_LIST_LOCK_HEADER.observe(viewLifecycleOwner) {
             updateToolbarScrollFlags()
         }

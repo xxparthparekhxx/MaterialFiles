@@ -927,6 +927,8 @@
     <string name="settings_file_list_dividers_summary">Draw a thin line between items in the list and compact list views</string>
     <string name="settings_file_list_show_directory_item_count_title">Show item count for folders</string>
     <string name="settings_file_list_show_directory_item_count_summary">Count the files and folders directly inside each folder. Large folders can take a while.</string>
+    <string name="settings_file_list_hide_empty_directories_title">Hide empty folders</string>
+    <string name="settings_file_list_hide_empty_directories_summary">Don\'t show folders that have no visible files or folders inside them</string>
     <plurals name="file_list_directory_item_count_format">
         <item quantity="one">%1$,d item</item>
         <item quantity="other">%1$,d items</item>
