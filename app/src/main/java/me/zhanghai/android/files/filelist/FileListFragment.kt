@@ -1532,6 +1532,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             binding.appBarLayout.addOnOffsetChangedListener(
                 AppBarLayoutExpandHackListener(binding.recyclerView)
             )
+            binding.appBarLayout.isActionMode = true
             overlayActionMode.start(object : ToolbarActionMode.Callback {
                 override fun onToolbarActionModeMenuItemClicked(
                     toolbarActionMode: ToolbarActionMode,
@@ -1539,6 +1540,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 ): Boolean = onOverlayActionModeMenuItemClicked(item)
 
                 override fun onToolbarActionModeFinished(toolbarActionMode: ToolbarActionMode) {
+                    binding.appBarLayout.isActionMode = false
                     onOverlayActionModeFinished()
                 }
             })
