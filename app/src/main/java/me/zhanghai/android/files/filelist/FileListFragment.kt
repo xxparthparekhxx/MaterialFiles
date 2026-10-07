@@ -87,7 +87,9 @@ import me.zhanghai.android.files.provider.document.DocumentListingMessage
 import me.zhanghai.android.files.coil.ThumbnailGeneration
 import me.zhanghai.android.files.app.clipboardManager
 import me.zhanghai.android.files.compat.checkSelfPermissionCompat
+import me.zhanghai.android.files.compat.getColorCompat
 import me.zhanghai.android.files.compat.setGroupDividerEnabledCompat
+import me.zhanghai.android.files.colorpicker.ColorSwatchView
 import me.zhanghai.android.files.databinding.FileJobProgressCardBinding
 import me.zhanghai.android.files.databinding.FileListFragmentAppBarIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentBinding
@@ -95,6 +97,7 @@ import me.zhanghai.android.files.databinding.FileListFragmentBottomBarIncludeBin
 import me.zhanghai.android.files.databinding.FileListFragmentContentIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentSpeedDialIncludeBinding
+import me.zhanghai.android.files.file.FileColorStore
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.asFileSize
@@ -157,6 +160,7 @@ import me.zhanghai.android.files.util.createInstallPackageIntent
 import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.createManageAppAllFilesAccessPermissionIntent
 import me.zhanghai.android.files.util.createSendStreamIntent
+import me.zhanghai.android.files.util.getColorByAttr
 import me.zhanghai.android.files.util.createViewIntent
 import me.zhanghai.android.files.util.externalStorageRootPath
 import me.zhanghai.android.files.util.extraPath
@@ -2275,6 +2279,62 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         hiddenPaths += file.path.toUri().toString()
         Settings.FILE_LIST_HIDDEN_PATHS.putValue(hiddenPaths)
         showToast(R.string.file_hide_success)
+    }
+
+    override fun showFileColorDialog(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        val context = requireContext()
+        val density = context.resources.displayMetrics.density
+        val padding = (24 * density).toInt()
+        val noneText = TextView(context).apply {
+            text = getString(R.string.file_color_none)
+            textSize = 16f
+            setTextColor(context.getColorByAttr(android.R.attr.textColorPrimary))
+            setPadding(0, (4 * density).toInt(), 0, (16 * density).toInt())
+        }
+        val swatches = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        val swatchSize = (48 * density).toInt()
+        val gap = (12 * density).toInt()
+        val swatchKeys = mutableListOf<Pair<ColorSwatchView, String>>()
+        for ((key, colorRes) in FileColorStore.COLORS) {
+            val swatch = ColorSwatchView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(swatchSize, swatchSize).apply {
+                    marginEnd = gap
+                }
+                setColor(context.getColorCompat(colorRes))
+            }
+            swatches.addView(swatch)
+            swatchKeys += swatch to key
+        }
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding / 3, padding, 0)
+        }
+        container.addView(noneText)
+        container.addView(swatches)
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.file_item_action_file_color)
+            .setView(container)
+            .show()
+        for ((swatch, key) in swatchKeys) {
+            swatch.setOnClickListener {
+                setFileColor(file, key)
+                dialog.dismiss()
+            }
+        }
+        noneText.setOnClickListener {
+            setFileColor(file, null)
+            dialog.dismiss()
+        }
+    }
+
+    private fun setFileColor(file: FileItem, color: String?) {
+        FileColorStore.setColor(file.path, color)
+        adapter.notifyDataSetChanged()
     }
 
     override fun toggleDotHidden(file: FileItem) {
