@@ -208,10 +208,14 @@ class FileProvider : ContentProvider() {
         // the directory MIME type instead of falling through to octet-stream, which foreign
         // apps cannot use.
         return try {
-            if (path.isDirectory()) {
-                DocumentsContract.Document.MIME_TYPE_DIR
-            } else {
-                MimeType.guessFromPath(path.toString()).value
+            StrictMode::class.withoutPenaltyDeathOnNetwork {
+                runBlocking(Dispatchers.IO) {
+                    if (path.isDirectory()) {
+                        DocumentsContract.Document.MIME_TYPE_DIR
+                    } else {
+                        MimeType.guessFromPath(path.toString()).value
+                    }
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
