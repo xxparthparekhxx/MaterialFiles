@@ -352,6 +352,12 @@ object Settings {
             R.bool.pref_default_value_file_list_show_directory_item_count
         )
 
+    val FILE_LIST_STANDARD_DIRECTORY_ICONS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_standard_directory_icons,
+            R.bool.pref_default_value_file_list_standard_directory_icons
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
