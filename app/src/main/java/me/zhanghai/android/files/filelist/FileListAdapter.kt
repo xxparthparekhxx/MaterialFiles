@@ -434,6 +434,12 @@ class FileListAdapter(
     override fun onViewRecycled(holder: ViewHolder) {
         super.onViewRecycled(holder)
 
+        holder.marqueeRunnable?.let {
+            holder.nameText.removeCallbacks(it)
+            holder.marqueeRunnable = null
+        }
+        holder.nameText.isSelected = false
+
         if (activePopupMenu === holder.popupMenu) {
             holder.popupMenu.dismiss()
             activePopupMenu = null
@@ -469,7 +475,7 @@ class FileListAdapter(
             TypedValue.COMPLEX_UNIT_PX, holder.descriptionTextBaseSize * fontScale
         )
         if (viewType != FileViewType.GRID) {
-            holder.nameText.applyNameEllipsize(nameEllipsize)
+            holder.nameText.applyNameEllipsize(nameEllipsize, holder)
         }
         applyListDensity(holder)
         bindDescription(holder, file, isDirectory)
@@ -857,6 +863,7 @@ class FileListAdapter(
         )
 
         lateinit var popupMenu: PopupMenu
+        var marqueeRunnable: Runnable? = null
     }
 
     private fun applyListDensity(holder: ViewHolder) {
@@ -946,8 +953,13 @@ private fun countDirectoryItems(path: Path, showHidden: Boolean): Int? =
     }
 
 private const val WRAPPED_FILE_NAME_MAX_LINES = 2
+private const val MARQUEE_DELAY_MILLIS = 1500L
 
-private fun TextView.applyNameEllipsize(mode: FileNameEllipsize) {
+private fun TextView.applyNameEllipsize(mode: FileNameEllipsize, holder: FileListAdapter.ViewHolder) {
+    holder.marqueeRunnable?.let {
+        removeCallbacks(it)
+        holder.marqueeRunnable = null
+    }
     when (mode) {
         FileNameEllipsize.WRAP -> {
             isSingleLine = false
@@ -956,10 +968,20 @@ private fun TextView.applyNameEllipsize(mode: FileNameEllipsize) {
             ellipsize = TextUtils.TruncateAt.MIDDLE
             isSelected = false
         }
+        FileNameEllipsize.MARQUEE -> {
+            isSingleLine = true
+            ellipsize = TextUtils.TruncateAt.MARQUEE
+            isSelected = false
+            val runnable = Runnable {
+                isSelected = true
+            }
+            holder.marqueeRunnable = runnable
+            postDelayed(runnable, MARQUEE_DELAY_MILLIS)
+        }
         else -> {
             isSingleLine = true
             ellipsize = mode.toTruncateAt()
-            isSelected = mode == FileNameEllipsize.MARQUEE
+            isSelected = false
         }
     }
 }
