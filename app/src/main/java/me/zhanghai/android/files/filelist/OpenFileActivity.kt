@@ -16,9 +16,11 @@ import me.zhanghai.android.files.file.asMimeTypeOrNull
 import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.filejob.FileJobService
 import me.zhanghai.android.files.provider.archive.isArchivePath
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.createViewIntent
 import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.startActivitySafe
+import me.zhanghai.android.files.util.valueCompat
 
 class OpenFileActivity : AppActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +41,12 @@ class OpenFileActivity : AppActivity() {
         } else {
             val intent = path.fileProviderUri.createViewIntent(mimeType)
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                .apply { extraPath = path }
+                .apply {
+                    extraPath = path
+                    if (Settings.OPEN_FILES_IN_NEW_TASK.valueCompat) {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                }
             startActivitySafe(intent)
         }
     }
