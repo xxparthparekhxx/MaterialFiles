@@ -524,6 +524,13 @@ class FileListAdapter(
         menu.findItem(R.id.action_archive).isVisible = !isArchivePath
         menu.findItem(R.id.action_add_bookmark).isVisible = isDirectory
         menu.findItem(R.id.action_show_in_folder).isVisible = isSearching
+        menu.findItem(R.id.action_dot_hide).apply {
+            isVisible = isDirectory && !hasPickOptions && !isReadOnly
+            setTitle(
+                if (file.name.startsWith('.')) R.string.file_item_action_dot_show
+                else R.string.file_item_action_dot_hide
+            )
+        }
         holder.popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.action_open_with -> {
@@ -592,6 +599,10 @@ class FileListAdapter(
                 }
                 R.id.action_hide -> {
                     listener.hideFile(file)
+                    true
+                }
+                R.id.action_dot_hide -> {
+                    listener.toggleDotHidden(file)
                     true
                 }
                 R.id.action_properties -> {
@@ -858,6 +869,7 @@ class FileListAdapter(
         fun showInFolder(file: FileItem)
         fun createShortcut(file: FileItem)
         fun hideFile(file: FileItem)
+        fun toggleDotHidden(file: FileItem)
         fun showPropertiesDialog(file: FileItem)
     }
 }

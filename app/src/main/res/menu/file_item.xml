@@ -77,6 +77,10 @@
         android:title="@string/file_item_action_hide" />
 
     <item
+        android:id="@+id/action_dot_hide"
+        android:title="@string/file_item_action_dot_hide" />
+
+    <item
         android:id="@+id/action_properties"
         android:title="@string/file_item_action_properties" />
 </menu>

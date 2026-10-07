@@ -2277,6 +2277,23 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         showToast(R.string.file_hide_success)
     }
 
+    override fun toggleDotHidden(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        val path = file.path
+        if (path.parent == null) {
+            return
+        }
+        val newName = if (file.name.startsWith('.')) file.name.drop(1) else ".${file.name}"
+        if (newName.isEmpty() || hasFileWithName(newName)) {
+            showToast(R.string.file_name_error_already_exists)
+            return
+        }
+        FileJobService.rename(path, newName, requireContext())
+        viewModel.selectFile(file, false)
+    }
+
     private fun createShortcut() {
         createShortcut(currentPath, MimeType.DIRECTORY)
     }

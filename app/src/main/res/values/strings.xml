@@ -389,6 +389,8 @@
     <string name="file_item_action_create_shortcut" translatable="false">@string/file_list_action_create_shortcut</string>
     <string name="file_item_action_hide">Hide</string>
     <string name="file_hide_success">Hidden</string>
+    <string name="file_item_action_dot_hide">Hide with dot prefix</string>
+    <string name="file_item_action_dot_show">Remove dot prefix</string>
     <string name="settings_file_list_hidden_paths_title">Hidden files</string>
     <string name="settings_file_list_hidden_paths_summary">Files and folders hidden from the list</string>
     <string name="file_list_hidden_paths_empty">Nothing is hidden</string>
