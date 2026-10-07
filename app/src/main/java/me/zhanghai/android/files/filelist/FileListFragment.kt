@@ -64,17 +64,25 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.leinardi.android.speeddial.SpeedDialView
 import java8.nio.file.AccessDeniedException
+import java8.nio.file.FileVisitResult
+import java8.nio.file.Files
 import java8.nio.file.NoSuchFileException
 import java8.nio.file.NotDirectoryException
 import java8.nio.file.LinkOption
 import java8.nio.file.Path
 import java8.nio.file.Paths
+import java8.nio.file.SimpleFileVisitor
+import java8.nio.file.attribute.BasicFileAttributes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -98,8 +106,10 @@ import me.zhanghai.android.files.databinding.FileListFragmentSpeedDialIncludeBin
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.asFileSize
+import me.zhanghai.android.files.file.asMimeType
 import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.file.asMimeTypeOrNull
+import me.zhanghai.android.files.provider.common.AndroidFileTypeDetector
 import me.zhanghai.android.files.file.extension
 import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.isApk
@@ -2244,10 +2254,80 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun shareFiles(paths: List<Path>, mimeTypes: List<MimeType>) {
-        val uris = paths.map { it.fileProviderUri }
-        val intent = uris.createSendStreamIntent(mimeTypes)
-            .withChooser()
-        startActivitySafe(intent)
+        val pairs = paths.zip(mimeTypes)
+        if (pairs.none { it.second == MimeType.DIRECTORY }) {
+            val uris = paths.map { it.fileProviderUri }
+            val intent = uris.createSendStreamIntent(mimeTypes)
+                .withChooser()
+            startActivitySafe(intent)
+            return
+        }
+        lifecycleScope.launch {
+            var reachedLimit = false
+            val resolvedFiles = withContext(Dispatchers.IO) {
+                val result = mutableListOf<Pair<Path, MimeType>>()
+                for ((path, mimeType) in pairs) {
+                    val isDirectory = mimeType == MimeType.DIRECTORY || try {
+                        path.isDirectory()
+                    } catch (e: Exception) {
+                        false
+                    }
+                    if (isDirectory) {
+                        try {
+                            Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
+                                override fun visitFile(
+                                    file: Path,
+                                    attributes: BasicFileAttributes
+                                ): FileVisitResult {
+                                    if (result.size >= MAX_SHARE_FILE_COUNT) {
+                                        reachedLimit = true
+                                        return FileVisitResult.TERMINATE
+                                    }
+                                    if (attributes.isRegularFile) {
+                                        val fileMimeType = AndroidFileTypeDetector.getMimeType(
+                                            file, attributes
+                                        ).asMimeType()
+                                        result.add(file to fileMimeType)
+                                    }
+                                    return FileVisitResult.CONTINUE
+                                }
+
+                                override fun visitFileFailed(
+                                    file: Path,
+                                    exception: java.io.IOException
+                                ): FileVisitResult {
+                                    exception.printStackTrace()
+                                    return FileVisitResult.CONTINUE
+                                }
+                            })
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    } else {
+                        if (result.size < MAX_SHARE_FILE_COUNT) {
+                            result.add(path to mimeType)
+                        } else {
+                            reachedLimit = true
+                        }
+                    }
+                }
+                result
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (resolvedFiles.isEmpty()) {
+                showToast(R.string.file_list_share_empty_directory_error)
+                return@launch
+            }
+            if (reachedLimit) {
+                showToast(getString(R.string.file_list_share_too_many_files_toast, MAX_SHARE_FILE_COUNT))
+            }
+            val uris = resolvedFiles.map { it.first.fileProviderUri }
+            val intent = uris.createSendStreamIntent(resolvedFiles.map { it.second })
+                .withChooser()
+            startActivitySafe(intent)
+        }
     }
 
     override fun copyPath(file: FileItem) {
@@ -2774,3 +2854,5 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
     }
 }
+
+private const val MAX_SHARE_FILE_COUNT = 500

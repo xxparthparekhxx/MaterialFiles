@@ -368,6 +368,8 @@
     <string name="file_list_empty">No files</string>
     <string name="file_list_action_create_file">File</string>
     <string name="file_list_action_create_directory">Folder</string>
+    <string name="file_list_share_empty_directory_error">Cannot share empty folder</string>
+    <string name="file_list_share_too_many_files_toast">Folder has too many files, sharing first %1$,d files</string>
 
     <string name="file_item_description_separator">\u0020\u0020\u0020\u0020</string>
     <string name="file_item_action_open_with">Open with</string>
