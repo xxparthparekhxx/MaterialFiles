@@ -2093,6 +2093,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                             if (component.packageName == requireContext().packageName) {
                                 maybeAddImageViewerActivityExtras(this, path, mimeType)
                             }
+                            if (Settings.OPEN_FILES_IN_NEW_TASK.valueCompat) {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
                         }
                     )
                 }
