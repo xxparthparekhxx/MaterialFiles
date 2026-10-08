@@ -21,6 +21,13 @@ import me.zhanghai.android.files.storage.createOrLog
 import java.io.Serializable
 import java.net.URI
 
+const val ACTION_PICK_DIRECTORY_OI = "org.openintents.action.PICK_DIRECTORY"
+const val ACTION_PICK_DIRECTORY_ESTRONGS = "com.estrongs.action.PICK_DIRECTORY"
+const val EXTRA_TITLE_OI = "org.openintents.extra.TITLE"
+const val EXTRA_WRITEABLE_OI = "org.openintents.extra.WRITE_ABLE"
+const val EXTRA_DIR_PATH_OI = "org.openintents.extra.DIR_PATH"
+const val EXTRA_ABSOLUTE_PATH_OI = "org.openintents.extra.ABSOLUTE_PATH"
+
 private const val EXTRA_PATH_URI = "${BuildConfig.APPLICATION_ID}.extra.PATH_URI"
 
 var Intent.extraPath: Path?
@@ -30,9 +37,12 @@ var Intent.extraPath: Path?
         data?.toPathOrNull()?.let { return it }
         val extraInitialUri = getParcelableExtraSafe<Uri>(DocumentsContractCompat.EXTRA_INITIAL_URI)
         extraInitialUri?.toPathOrNull()?.let { return it }
-        val extraAbsolutePath = getStringExtra("org.openintents.extra.ABSOLUTE_PATH")
+        val extraAbsolutePath = getStringExtra(EXTRA_ABSOLUTE_PATH_OI)
             ?.takeIfNotEmpty()
         extraAbsolutePath?.let { return Paths.get(it) }
+        val extraDirPath = getStringExtra(EXTRA_DIR_PATH_OI)
+            ?.takeIfNotEmpty()
+        extraDirPath?.let { return Paths.get(it) }
         return null
     }
     set(value) {
@@ -42,15 +52,23 @@ var Intent.extraPath: Path?
         putExtra(EXTRA_PATH_URI, value?.toUri()?.toString())
     }
 
-private val DIRECTORY_MIME_TYPES = setOf(
+internal val DIRECTORY_MIME_TYPES = setOf(
     "inode/directory",
+    "inode/mount-point",
     "resource/folder",
+    "vnd.android.cursor.dir/*",
     "vnd.android.document/directory",
     "vnd.android.document/root"
 )
 
+fun Intent.isDirectoryPick(): Boolean {
+    val mimeType = type
+    return mimeType in DIRECTORY_MIME_TYPES ||
+        (mimeType != null && mimeType.startsWith("vnd.android.cursor.dir/"))
+}
+
 fun Intent.isDirectoryView(): Boolean =
-    externalStorageRootPath() != null || type in DIRECTORY_MIME_TYPES
+    externalStorageRootPath() != null || isDirectoryPick()
 
 /**
  * USB storage notifications open `content://…/root/<uuid>`. That is the volume, not a file to save.
