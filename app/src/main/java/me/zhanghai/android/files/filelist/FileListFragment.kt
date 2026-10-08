@@ -105,6 +105,7 @@ import me.zhanghai.android.files.databinding.FileListFragmentIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentSpeedDialIncludeBinding
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
+import me.zhanghai.android.files.file.isDirectoryType
 import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.file.asMimeType
 import me.zhanghai.android.files.file.iconRes
@@ -2260,7 +2261,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun shareFiles(paths: List<Path>, mimeTypes: List<MimeType>) {
         val pairs = paths.zip(mimeTypes)
-        if (pairs.none { it.second == MimeType.DIRECTORY }) {
+        if (pairs.none { it.second.isDirectoryType }) {
             val uris = paths.map { it.fileProviderUri }
             val intent = uris.createSendStreamIntent(mimeTypes)
                 .withChooser()
@@ -2272,7 +2273,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             val resolvedFiles = withContext(Dispatchers.IO) {
                 val result = mutableListOf<Pair<Path, MimeType>>()
                 for ((path, mimeType) in pairs) {
-                    val isDirectory = mimeType == MimeType.DIRECTORY || try {
+                    val isDirectory = mimeType.isDirectoryType || try {
                         path.isDirectory()
                     } catch (e: Exception) {
                         false
@@ -2448,7 +2449,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         try {
-            val isDirectory = mimeType == MimeType.DIRECTORY
+            val isDirectory = mimeType.isDirectoryType
             val label = path.name.ifEmpty { path.toString() }
             val shortcutInfo = ShortcutInfoCompat.Builder(context, path.toString())
                 .setShortLabel(label)

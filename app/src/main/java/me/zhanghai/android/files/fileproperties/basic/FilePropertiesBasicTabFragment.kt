@@ -31,6 +31,10 @@ import me.zhanghai.android.files.fileproperties.FilePropertiesTabFragment
 import me.zhanghai.android.files.provider.archive.ArchiveFileAttributes
 import me.zhanghai.android.files.provider.archive.archiveFile
 import me.zhanghai.android.files.provider.archive.isArchivePath
+import me.zhanghai.android.files.file.MimeType
+import me.zhanghai.android.files.provider.common.getFileStore
+import me.zhanghai.android.files.provider.linux.MountPoints
+import me.zhanghai.android.files.provider.linux.isMountPoint
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.getQuantityString
 import me.zhanghai.android.files.util.viewModels
@@ -76,6 +80,52 @@ class FilePropertiesBasicTabFragment : FilePropertiesTabFragment() {
             val symbolicLinkTarget = file.symbolicLinkTarget
             if (symbolicLinkTarget != null) {
                 addItemView(R.string.file_properties_basic_symbolic_link_target, symbolicLinkTarget)
+            }
+            val isMountPoint = file.mimeType == MimeType.MOUNT_POINT || path.isMountPoint(file.attributes)
+            if (isMountPoint) {
+                val mountEntry = MountPoints.getMountEntry(path) ?: MountPoints.findMountEntry(path)
+                if (mountEntry != null) {
+                    addItemView(
+                        R.string.file_properties_basic_mount_filesystem,
+                        mountEntry.mnt_type.toString()
+                    )
+                    addItemView(
+                        R.string.file_properties_basic_mount_device,
+                        mountEntry.mnt_fsname.toString()
+                    )
+                    addItemView(
+                        R.string.file_properties_basic_mount_options,
+                        mountEntry.mnt_opts.toString()
+                    )
+                }
+                val spaceTextView = addItemView(R.string.file_properties_basic_mount_space, "")
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val fileStore = withContext(Dispatchers.IO) {
+                        try {
+                            path.getFileStore()
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    if (fileStore != null && isAdded) {
+                        try {
+                            val totalSpace = fileStore.totalSpace
+                            val usableSpace = fileStore.usableSpace
+                            if (totalSpace > 0) {
+                                val context = requireContext()
+                                val freeStr = usableSpace.asFileSize().formatHumanReadable(context)
+                                val totalStr = totalSpace.asFileSize().formatHumanReadable(context)
+                                spaceTextView.text = getString(
+                                    R.string.file_properties_basic_mount_space_format,
+                                    freeStr,
+                                    totalStr
+                                )
+                            }
+                        } catch (e: Exception) {
+                            // ignore
+                        }
+                    }
+                }
             }
             if (file.attributes.isDirectory) {
                 val textView = addItemView(

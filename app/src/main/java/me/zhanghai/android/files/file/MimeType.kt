@@ -54,6 +54,7 @@ value class MimeType(val value: String) : Parcelable {
         val ANY = "*/*".asMimeType()
         val APK = "application/vnd.android.package-archive".asMimeType()
         val DIRECTORY = DocumentsContract.Document.MIME_TYPE_DIR.asMimeType()
+        val MOUNT_POINT = "inode/mount-point".asMimeType()
         val IMAGE_ANY = "image/*".asMimeType()
         val IMAGE_GIF = "image/gif".asMimeType()
         val IMAGE_SVG_XML = "image/svg+xml".asMimeType()
@@ -65,6 +66,10 @@ value class MimeType(val value: String) : Parcelable {
             "$type/$subtype${if (parameters != null) ";$parameters" else ""}".asMimeType()
     }
 }
+
+val MimeType.isDirectoryType: Boolean
+    get() = this == MimeType.DIRECTORY || this == MimeType.MOUNT_POINT
+
 
 fun String.asMimeTypeOrNull(): MimeType? = if (isValidMimeType) MimeType(this) else null
 

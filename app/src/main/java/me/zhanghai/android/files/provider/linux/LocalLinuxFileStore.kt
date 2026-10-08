@@ -271,7 +271,7 @@ internal class LocalLinuxFileStore : PosixFileStore, Parcelable {
         }
 
         @Throws(SyscallException::class)
-        private fun getMountEntries(): List<StructMntent> {
+        internal fun getMountEntries(): List<StructMntent> {
             val entries = mutableListOf<StructMntent>()
             val file = Syscall.setmntent(PATH_PROC_SELF_MOUNTS, MODE_R)
             try {

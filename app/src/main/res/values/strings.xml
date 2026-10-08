@@ -373,6 +373,7 @@
     <string name="file_list_share_too_many_files_toast">Folder has too many files, sharing first %1$,d files</string>
 
     <string name="file_item_description_separator">\u0020\u0020\u0020\u0020</string>
+    <string name="file_item_description_mount_point">Mount point</string>
     <string name="file_item_action_open_with">Open with</string>
     <string name="file_item_action_extract">Extract</string>
     <string name="file_item_action_test_archive">Test archive</string>
@@ -419,6 +420,11 @@
     <string name="file_properties_basic_archive_file">Archive File</string>
     <string name="file_properties_basic_archive_entry">Archive Entry</string>
     <string name="file_properties_basic_free_space">Free Space</string>
+    <string name="file_properties_basic_mount_filesystem">Filesystem</string>
+    <string name="file_properties_basic_mount_device">Mount device</string>
+    <string name="file_properties_basic_mount_options">Mount options</string>
+    <string name="file_properties_basic_mount_space">Filesystem space</string>
+    <string name="file_properties_basic_mount_space_format">%1$s free of %2$s</string>
     <string name="file_properties_permission">Permissions</string>
     <string name="file_properties_permission_owner">Owner</string>
     <string name="file_properties_permission_group">Group</string>

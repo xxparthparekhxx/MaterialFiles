@@ -14,6 +14,8 @@ import me.zhanghai.android.files.file.forSpecialPosixFileType
 import me.zhanghai.android.files.file.guessFromPath
 import java.io.IOException
 
+import me.zhanghai.android.files.provider.linux.MountPoints
+
 object AndroidFileTypeDetector : FileTypeDetector() {
     @Throws(IOException::class)
     override fun probeContentType(path: Path): String {
@@ -24,6 +26,9 @@ object AndroidFileTypeDetector : FileTypeDetector() {
     fun getMimeType(path: Path, attributes: BasicFileAttributes): String {
         MimeType.forSpecialPosixFileType(attributes.posixFileType)?.let { return it.value }
         if (attributes.isDirectory) {
+            if (MountPoints.isMountPoint(path, attributes)) {
+                return MimeType.MOUNT_POINT.value
+            }
             return MimeType.DIRECTORY.value
         }
         if (attributes is ContentProviderFileAttributes) {
