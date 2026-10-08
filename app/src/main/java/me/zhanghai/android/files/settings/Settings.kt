@@ -453,4 +453,9 @@ object Settings {
             R.string.pref_key_notification_permission_dismissed,
             R.bool.pref_default_value_notification_permission_dismissed
         )
+
+    val READ_ONLY_MODE: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_read_only_mode, R.bool.pref_default_value_read_only_mode
+        )
 }

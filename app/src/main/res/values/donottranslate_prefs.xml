@@ -218,4 +218,7 @@
 
     <string name="pref_key_binary_file_size_unit">key_binary_file_size_unit</string>
     <bool name="pref_default_value_binary_file_size_unit">false</bool>
+
+    <string name="pref_key_read_only_mode">key_read_only_mode</string>
+    <bool name="pref_default_value_read_only_mode">false</bool>
 </resources>

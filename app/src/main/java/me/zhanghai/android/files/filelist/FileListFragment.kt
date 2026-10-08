@@ -592,6 +592,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             adapter.fitThumbnails = it
         }
         Settings.FILE_LIST_HIDE_ADD_BUTTON.observe(viewLifecycleOwner) { updateAddButton() }
+        Settings.READ_ONLY_MODE.observe(viewLifecycleOwner) {
+            updateAddButton()
+            updateOverlayToolbar()
+            updateBottomToolbar()
+            adapter.notifyDataSetChanged()
+        }
         Settings.FILE_LIST_DIVIDERS.observe(viewLifecycleOwner) { updateDividers() }
         Settings.FILE_LIST_DENSITY.observe(viewLifecycleOwner) { adapter.listDensity = it }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
@@ -866,7 +872,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
      * current directory is writable.
      */
     private fun updateAddButton() {
-        val canCreate = !currentPath.fileSystem.isReadOnly
+        val canCreate =
+            !currentPath.fileSystem.isReadOnly && !Settings.READ_ONLY_MODE.valueCompat
         val hideAddButton = Settings.FILE_LIST_HIDE_ADD_BUTTON.valueCompat
         binding.speedDialView.isVisible = canCreate && !hideAddButton
         if (this::menuBinding.isInitialized) {
@@ -1496,7 +1503,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             overlayActionMode.setMenuResource(R.menu.file_list_select)
             val menu = overlayActionMode.menu
             showLabelsOnTablet(menu, R.id.action_cut, R.id.action_copy, R.id.action_delete)
-            val isAnyFileReadOnly = files.any { it.path.fileSystem.isReadOnly }
+            val isAnyFileReadOnly =
+                Settings.READ_ONLY_MODE.valueCompat || files.any { it.path.fileSystem.isReadOnly }
             menu.findItem(R.id.action_cut).isVisible = !isAnyFileReadOnly
             menu.findItem(R.id.action_select_range).isVisible = files.size >= 2
             val areAllFilesArchivePaths = files.all { it.path.isArchivePath }
@@ -1524,7 +1532,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 files.any { it.path.toString() in pinnedPaths }
             val areAllFilesArchiveFiles = files.all { it.isArchiveFile }
             menu.findItem(R.id.action_extract).isVisible = areAllFilesArchiveFiles
-            val isCurrentPathReadOnly = viewModel.currentPath.fileSystem.isReadOnly
+            val isCurrentPathReadOnly =
+                Settings.READ_ONLY_MODE.valueCompat || viewModel.currentPath.fileSystem.isReadOnly
             menu.findItem(R.id.action_archive).isVisible = !isCurrentPathReadOnly
         }
         if (!overlayActionMode.isActive) {
@@ -1560,6 +1569,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         )
     }
 
+    private fun isReadOnlyBlocked(): Boolean {
+        if (!Settings.READ_ONLY_MODE.valueCompat) {
+            return false
+        }
+        showToast(R.string.file_list_read_only_mode_blocked)
+        return true
+    }
+
     private fun onOverlayActionModeMenuItemClicked(item: MenuItem): Boolean =
         when (item.itemId) {
             R.id.action_open -> {
@@ -1567,10 +1584,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 true
             }
             R.id.action_create -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
                 confirmReplaceFile(viewModel.selectedFiles.single())
                 true
             }
             R.id.action_cut -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
                 cutFiles(viewModel.selectedFiles)
                 true
             }
@@ -1579,10 +1602,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 true
             }
             R.id.action_delete -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
                 confirmDeleteFiles(viewModel.selectedFiles)
                 true
             }
             R.id.action_rename -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
                 RenameFilesDialogFragment.show(viewModel.selectedFiles, this)
                 true
             }
@@ -1595,10 +1624,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 true
             }
             R.id.action_extract -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
                 extractFiles(viewModel.selectedFiles)
                 true
             }
             R.id.action_archive -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
                 showCreateArchiveDialog(viewModel.selectedFiles)
                 true
             }
@@ -1660,20 +1695,32 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun confirmDeleteFiles(files: FileItemSet) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         ConfirmDeleteFilesDialogFragment.show(files, this)
     }
 
     override fun deleteFiles(files: FileItemSet) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         FileJobService.delete(makePathListForJob(files), requireContext())
         viewModel.selectFiles(files, false)
     }
 
     private fun extractFiles(files: FileItemSet) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         copyFiles(files.mapTo(fileItemSetOf()) { it.createDummyArchiveRoot() })
         viewModel.selectFiles(files, false)
     }
 
     private fun showCreateArchiveDialog(files: FileItemSet) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         CreateArchiveDialogFragment.show(files, this)
     }
 
@@ -1685,6 +1732,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         password: String?,
         compressionLevel: Int
     ) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         val archiveFile = viewModel.currentPath.resolve(name)
         FileJobService.archive(
             makePathListForJob(files), archiveFile, format, filter, password, compressionLevel,
@@ -1795,7 +1845,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             )
             binding.bottomCreateFileNameEdit.isVisible = false
             bottomActionMode.setMenuResource(R.menu.file_list_paste)
-            val isCurrentPathReadOnly = viewModel.currentPath.fileSystem.isReadOnly
+            val isCurrentPathReadOnly =
+                Settings.READ_ONLY_MODE.valueCompat || viewModel.currentPath.fileSystem.isReadOnly
             val pasteItem = bottomActionMode.menu.findItem(R.id.action_paste)
             pasteItem.setTitle(
                 if (areAllFilesArchivePaths) {
@@ -1867,6 +1918,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 true
             }
             R.id.action_paste -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
                 pasteFiles(currentPath)
                 true
             }
@@ -1881,6 +1935,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun pasteFiles(targetDirectory: Path) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         val pasteState = viewModel.pasteState
         val sourceDirectory = pasteState.files.firstOrNull()?.path?.parent
         if (viewModel.pasteState.copy) {
@@ -2143,6 +2200,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (!isAdded) {
             return
         }
+        if (isReadOnlyBlocked()) {
+            return
+        }
         cutFiles(fileItemSetOf(file))
     }
 
@@ -2171,6 +2231,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (!isAdded) {
             return
         }
+        if (isReadOnlyBlocked()) {
+            return
+        }
         RenameFileDialogFragment.show(file, this)
     }
 
@@ -2188,12 +2251,18 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (!isAdded) {
             return
         }
+        if (isReadOnlyBlocked()) {
+            return
+        }
         FileJobService.rename(file.path, newName, requireContext())
         viewModel.selectFile(file, false)
     }
 
     override fun renameFiles(newNames: List<Pair<FileItem, String>>) {
         if (!isAdded) {
+            return
+        }
+        if (isReadOnlyBlocked()) {
             return
         }
         for ((file, newName) in newNames) {
@@ -2215,10 +2284,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (!isAdded) {
             return
         }
+        if (isReadOnlyBlocked()) {
+            return
+        }
         CreateLinkDialogFragment.show(file, this)
     }
 
     override fun createLink(target: FileItem, name: String) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         if (currentPath.fileSystem.isReadOnly) {
             showToast(getString(R.string.file_list_create_error_read_only))
             return
@@ -2228,6 +2303,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     override fun extractFile(file: FileItem) {
         if (!isAdded) {
+            return
+        }
+        if (isReadOnlyBlocked()) {
             return
         }
         copyFile(file.createDummyArchiveRoot())
@@ -2525,10 +2603,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun showCreateFileDialog() {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         CreateFileDialogFragment.show(this)
     }
 
     override fun createFile(name: String) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         if (currentPath.fileSystem.isReadOnly) {
             showToast(getString(R.string.file_list_create_error_read_only))
             return
@@ -2538,10 +2622,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun showCreateDirectoryDialog() {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         CreateDirectoryDialogFragment.show(this)
     }
 
     override fun createDirectory(name: String) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
         if (currentPath.fileSystem.isReadOnly) {
             showToast(getString(R.string.file_list_create_error_read_only))
             return
