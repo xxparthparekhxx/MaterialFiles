@@ -221,4 +221,7 @@
 
     <string name="pref_key_read_only_mode">key_read_only_mode</string>
     <bool name="pref_default_value_read_only_mode">false</bool>
+
+    <string name="pref_key_bottom_navigation_bar">key_bottom_navigation_bar</string>
+    <bool name="pref_default_value_bottom_navigation_bar">false</bool>
 </resources>

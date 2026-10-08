@@ -25,6 +25,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.text.TextUtils
+import android.view.Gravity
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -34,6 +35,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -161,6 +163,7 @@ import me.zhanghai.android.files.util.asFileName
 import me.zhanghai.android.files.util.asFileNameOrNull
 import me.zhanghai.android.files.util.checkSelfPermission
 import me.zhanghai.android.files.util.copyText
+import me.zhanghai.android.files.util.getColorByAttr
 import me.zhanghai.android.files.util.primaryText
 import me.zhanghai.android.files.util.create
 import me.zhanghai.android.files.util.createInstallPackageIntent
@@ -337,6 +340,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.appBarLayout.addOnOffsetChangedListener(appBarOffsetListener!!)
         binding.appBarLayout.syncBackgroundColorTo(binding.overlayToolbar)
         binding.breadcrumbLayout.setListener(this)
+        updateBreadcrumbPosition()
         if (!(activity.hasSw600Dp && activity.isOrientationLandscape)) {
             binding.swipeRefreshLayout.setProgressViewEndTarget(
                 true, binding.swipeRefreshLayout.progressViewEndOffset
@@ -600,6 +604,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             updateOverlayToolbar()
             updateBottomToolbar()
             adapter.notifyDataSetChanged()
+        }
+        Settings.BOTTOM_NAVIGATION_BAR.observe(viewLifecycleOwner) {
+            updateBreadcrumbPosition()
         }
         Settings.FILE_LIST_DIVIDERS.observe(viewLifecycleOwner) { updateDividers() }
         Settings.FILE_LIST_DENSITY.observe(viewLifecycleOwner) { adapter.listDensity = it }
@@ -887,6 +894,40 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
     }
 
+    /**
+     * Moves the folder path bar between the top app bar and the bottom of the content, so it
+     * stays within thumb reach on large screens when the bottom navigation bar is enabled.
+     */
+    private fun updateBreadcrumbPosition() {
+        val breadcrumb = binding.breadcrumbLayout
+        if (Settings.BOTTOM_NAVIGATION_BAR.valueCompat) {
+            if (breadcrumb.parent !== binding.contentLayout) {
+                (breadcrumb.parent as? ViewGroup)?.removeView(breadcrumb)
+                val layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.BOTTOM
+                )
+                binding.contentLayout.addView(breadcrumb, layoutParams)
+            }
+            breadcrumb.setBackgroundColor(
+                getColorByAttr(com.google.android.material.R.attr.colorSurface)
+            )
+            breadcrumb.elevation =
+                resources.getDimension(com.google.android.material.R.dimen.design_appbar_elevation)
+        } else {
+            if (breadcrumb.parent !== binding.appBarLayout) {
+                (breadcrumb.parent as? ViewGroup)?.removeView(breadcrumb)
+                val layoutParams = AppBarLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                binding.appBarLayout.addView(breadcrumb, layoutParams)
+            }
+            breadcrumb.background = null
+            breadcrumb.elevation = 0f
+        }
+        positionFabAboveFileJobs(binding.fileJobProgressLayout)
+    }
+
     private fun onCurrentPathChanged(path: Path) {
         // When going up to an ancestor, remember the child we came from so it can be highlighted.
         val previousPath = lastPath
@@ -972,6 +1013,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun positionFabAboveFileJobs(sheet: View) {
         val sheetHeight = if (sheet.isVisible) sheet.height else 0
+        val bottomBreadcrumbHeight =
+            if (Settings.BOTTOM_NAVIGATION_BAR.valueCompat) {
+                resources.getDimensionPixelSize(R.dimen.tab_layout_height)
+            } else {
+                0
+            }
         val fab = binding.speedDialView
         fab.translationY = 0f
         val params = fab.layoutParams as ViewGroup.MarginLayoutParams
@@ -979,7 +1026,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             fabBaseBottomMargin = params.bottomMargin
         }
         val gap = (8 * resources.displayMetrics.density).toInt()
-        val desiredMargin = fabBaseBottomMargin + sheetHeight + if (sheetHeight > 0) gap else 0
+        val desiredMargin =
+            fabBaseBottomMargin + sheetHeight + bottomBreadcrumbHeight +
+                if (sheetHeight > 0) gap else 0
         if (params.bottomMargin != desiredMargin) {
             params.bottomMargin = desiredMargin
             fab.layoutParams = params
@@ -990,7 +1039,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 resources.getDimensionPixelSize(R.dimen.list_bottom_padding_with_fab)
             )
         }
-        val desiredPadding = fileListBasePaddingBottom + sheetHeight
+        val desiredPadding = fileListBasePaddingBottom + sheetHeight + bottomBreadcrumbHeight
         if (recycler.paddingBottom != desiredPadding) {
             recycler.updatePadding(bottom = desiredPadding)
         }

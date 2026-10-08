@@ -949,6 +949,8 @@
     <string name="settings_read_only_mode_title">Read-only mode</string>
     <string name="settings_read_only_mode_summary">Block creating, deleting, renaming, moving and other file changes for safety</string>
     <string name="file_list_read_only_mode_blocked">Read-only mode is on. Turn it off in Settings to change files.</string>
+    <string name="settings_bottom_navigation_bar_title">Bottom navigation bar</string>
+    <string name="settings_bottom_navigation_bar_summary">Show the current folder path at the bottom of the screen instead of the top for easier reach on large screens</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
     <string-array name="settings_file_list_font_size_entries">
         <item>Smallest</item>
