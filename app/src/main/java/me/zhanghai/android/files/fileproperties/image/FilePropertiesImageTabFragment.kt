@@ -31,10 +31,14 @@ import me.zhanghai.android.files.util.isGeocoderPresent
 import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.userFriendlyString
 import me.zhanghai.android.files.util.viewModels
+import me.zhanghai.android.files.databinding.FilePropertiesImageRemoveExifItemBinding
+import me.zhanghai.android.files.util.layoutInflater
+import me.zhanghai.android.files.util.showToast
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-class FilePropertiesImageTabFragment : FilePropertiesTabFragment() {
+class FilePropertiesImageTabFragment : FilePropertiesTabFragment(),
+    ConfirmRemoveExifDialogFragment.Listener {
     private val args by args<Args>()
 
     private val viewModel by viewModels {
@@ -68,7 +72,7 @@ class FilePropertiesImageTabFragment : FilePropertiesTabFragment() {
                 }
             )
             val exifInfo = imageInfo.exifInfo
-            if (exifInfo != null) {
+            if (exifInfo != null && exifInfo.hasExifData) {
                 if (exifInfo.dateTimeOriginal != null) {
                     addItemView(
                         R.string.file_properties_media_date_time,
@@ -120,6 +124,9 @@ class FilePropertiesImageTabFragment : FilePropertiesTabFragment() {
                 if (equipment != null) {
                     addItemView(R.string.file_properties_image_equipment, equipment)
                 }
+                if (exifInfo.lensModel != null) {
+                    addItemView(R.string.file_properties_image_lens_model, exifInfo.lensModel)
+                }
                 if (exifInfo.fNumber != null) {
                     addItemView(
                         R.string.file_properties_image_f_number, getString(
@@ -127,16 +134,36 @@ class FilePropertiesImageTabFragment : FilePropertiesTabFragment() {
                         )
                     )
                 }
-                if (exifInfo.shutterSpeedValue != null) {
+                if (exifInfo.exposureTime != null) {
+                    addItemView(
+                        R.string.file_properties_image_exposure_time,
+                        formatExposureTime(exifInfo.exposureTime)
+                    )
+                } else if (exifInfo.shutterSpeedValue != null) {
                     addItemView(
                         R.string.file_properties_image_shutter_speed,
                         getShutterSpeedText(exifInfo.shutterSpeedValue)
+                    )
+                }
+                if (exifInfo.exposureBiasValue != null) {
+                    addItemView(
+                        R.string.file_properties_image_exposure_bias, getString(
+                            R.string.file_properties_image_exposure_bias_format, exifInfo.exposureBiasValue
+                        )
                     )
                 }
                 if (exifInfo.focalLength != null) {
                     addItemView(
                         R.string.file_properties_image_focal_length, getString(
                             R.string.file_properties_image_focal_length_format, exifInfo.focalLength
+                        )
+                    )
+                }
+                if (exifInfo.focalLengthIn35mm != null) {
+                    addItemView(
+                        R.string.file_properties_image_focal_length_in_35mm_film, getString(
+                            R.string.file_properties_image_focal_length_in_35mm_film_format,
+                            exifInfo.focalLengthIn35mm
                         )
                     )
                 }
@@ -147,6 +174,22 @@ class FilePropertiesImageTabFragment : FilePropertiesTabFragment() {
                             exifInfo.photographicSensitivity
                         )
                     )
+                }
+                if (exifInfo.flash != null) {
+                    val flashText = if ((exifInfo.flash and 1) != 0) {
+                        getString(R.string.file_properties_image_flash_fired)
+                    } else {
+                        getString(R.string.file_properties_image_flash_did_not_fire)
+                    }
+                    addItemView(R.string.file_properties_image_flash, flashText)
+                }
+                if (exifInfo.whiteBalance != null) {
+                    val wbText = if (exifInfo.whiteBalance == 1) {
+                        getString(R.string.file_properties_image_white_balance_manual)
+                    } else {
+                        getString(R.string.file_properties_image_white_balance_auto)
+                    }
+                    addItemView(R.string.file_properties_image_white_balance, wbText)
                 }
                 if (exifInfo.software != null) {
                     addItemView(R.string.file_properties_image_software, exifInfo.software)
@@ -160,6 +203,26 @@ class FilePropertiesImageTabFragment : FilePropertiesTabFragment() {
                 if (exifInfo.copyright != null) {
                     addItemView(R.string.file_properties_image_copyright, exifInfo.copyright)
                 }
+                if (exifInfo.allAttributes.isNotEmpty()) {
+                    addItemView(
+                        R.string.file_properties_image_all_exif_attributes,
+                        getString(
+                            R.string.file_properties_image_all_exif_count_format,
+                            exifInfo.allAttributes.size
+                        )
+                    ) {
+                        ExifAttributesDialogFragment.show(
+                            exifInfo.allAttributes,
+                            this@FilePropertiesImageTabFragment
+                        )
+                    }
+                }
+                addRemoveExifButton()
+            } else {
+                addItemView(
+                    R.string.file_properties_image,
+                    getString(R.string.file_properties_image_no_exif)
+                )
             }
         }
     }
@@ -190,6 +253,42 @@ class FilePropertiesImageTabFragment : FilePropertiesTabFragment() {
                 approximateDenominator
             )
         }
+
+    private fun formatExposureTime(seconds: Double): String =
+        if (seconds < 1.0 && seconds > 0.0) {
+            val denominator = (1.0 / seconds).roundToInt()
+            "1/$denominator s"
+        } else {
+            getString(R.string.file_properties_image_exposure_time_format, seconds)
+        }
+
+    private fun ViewBuilder.addRemoveExifButton() {
+        val binding = getScrapItemBinding(FilePropertiesImageRemoveExifItemBinding::class.java)
+            ?.also { addView(it) }
+            ?: FilePropertiesImageRemoveExifItemBinding.inflate(
+                linearLayout.context.layoutInflater, linearLayout, true
+            ).also { it.root.tag = it }
+        binding.removeExifButton.setOnClickListener {
+            ConfirmRemoveExifDialogFragment.show(args.path, this@FilePropertiesImageTabFragment)
+        }
+    }
+
+    override fun removeExif(path: Path) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = viewModel.removeExif()
+            if (!isAdded) return@launch
+            if (result.isSuccess) {
+                showToast(R.string.file_properties_image_remove_exif_success)
+            } else {
+                showToast(
+                    getString(
+                        R.string.file_properties_image_remove_exif_failed,
+                        result.exceptionOrNull()?.message
+                    )
+                )
+            }
+        }
+    }
 
     companion object {
         fun isAvailable(file: FileItem): Boolean = file.mimeType.isImage

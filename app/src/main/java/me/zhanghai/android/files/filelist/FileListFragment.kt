@@ -188,6 +188,8 @@ import me.zhanghai.android.files.util.viewModels
 import me.zhanghai.android.files.util.withChooser
 import me.zhanghai.android.files.viewer.image.ImageViewerActivity
 import java.io.File
+import me.zhanghai.android.files.fileproperties.image.ConfirmRemoveExifDialogFragment
+import me.zhanghai.android.files.fileproperties.image.ExifRemover
 
 class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.Listener,
     ConfirmReplaceFileDialogFragment.Listener, OpenApkDialogFragment.Listener,
@@ -200,7 +202,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     ShowRequestNotificationPermissionRationaleDialogFragment.Listener,
     ShowRequestNotificationPermissionInSettingsRationaleDialogFragment.Listener,
     ShowRequestStoragePermissionRationaleDialogFragment.Listener,
-    ShowRequestStoragePermissionInSettingsRationaleDialogFragment.Listener {
+    ShowRequestStoragePermissionInSettingsRationaleDialogFragment.Listener,
+    ConfirmRemoveExifDialogFragment.Listener {
     private val requestAllFilesAccessLauncher = registerForActivityResult(
         RequestAllFilesAccessContract(), this::onRequestAllFilesAccessResult
     )
@@ -2499,6 +2502,40 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         drawable.setBounds(inset, inset, inset + iconSize, inset + iconSize)
         drawable.draw(canvas)
         return IconCompat.createWithAdaptiveBitmap(bitmap)
+    }
+
+    override fun removeExif(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        ConfirmRemoveExifDialogFragment.show(file.path, this)
+    }
+
+    override fun removeExif(path: Path) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (success, error) = withContext(Dispatchers.IO) {
+                try {
+                    ExifRemover.removeExif(path)
+                    true to null
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    false to e
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (success) {
+                showToast(R.string.file_properties_image_remove_exif_success)
+            } else {
+                showToast(
+                    getString(
+                        R.string.file_properties_image_remove_exif_failed,
+                        error?.message
+                    )
+                )
+            }
+        }
     }
 
     override fun showPropertiesDialog(file: FileItem) {

@@ -476,6 +476,27 @@
     <string name="file_properties_image_description">Description</string>
     <string name="file_properties_image_artist">Creator</string>
     <string name="file_properties_image_copyright">Copyright</string>
+    <string name="file_properties_image_exposure_time">Exposure time</string>
+    <string name="file_properties_image_exposure_time_format" translatable="false">%1$s s</string>
+    <string name="file_properties_image_exposure_bias">Exposure compensation</string>
+    <string name="file_properties_image_exposure_bias_format" translatable="false">%1$+.1f EV</string>
+    <string name="file_properties_image_flash">Flash</string>
+    <string name="file_properties_image_flash_fired">Flash fired</string>
+    <string name="file_properties_image_flash_did_not_fire">Did not fire</string>
+    <string name="file_properties_image_white_balance">White balance</string>
+    <string name="file_properties_image_white_balance_auto">Auto</string>
+    <string name="file_properties_image_white_balance_manual">Manual</string>
+    <string name="file_properties_image_lens_model">Lens</string>
+    <string name="file_properties_image_focal_length_in_35mm_film">35mm focal length</string>
+    <string name="file_properties_image_focal_length_in_35mm_film_format">%1$d mm</string>
+    <string name="file_properties_image_all_exif_attributes">All EXIF tags</string>
+    <string name="file_properties_image_all_exif_count_format">%1$d tags</string>
+    <string name="file_properties_image_all_exif_dialog_title">EXIF tags</string>
+    <string name="file_properties_image_remove_exif">Remove EXIF data</string>
+    <string name="file_properties_image_remove_exif_confirm">Are you sure you want to remove all EXIF metadata from this image? Camera, location, and timestamp information will be deleted.</string>
+    <string name="file_properties_image_remove_exif_success">EXIF data removed</string>
+    <string name="file_properties_image_remove_exif_failed">Failed to remove EXIF data: %1$s</string>
+    <string name="file_properties_image_no_exif">No EXIF metadata</string>
     <string name="file_properties_audio">Audio</string>
     <string name="file_properties_media_title">Title</string>
     <string name="file_properties_audio_artist">Artist</string>

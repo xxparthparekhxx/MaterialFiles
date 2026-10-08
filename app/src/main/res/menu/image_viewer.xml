@@ -22,6 +22,12 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_remove_exif"
+        android:orderInCategory="100"
+        android:title="@string/file_properties_image_remove_exif"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_rename"
         android:orderInCategory="100"
         android:title="@string/rename"
