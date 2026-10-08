@@ -18,6 +18,7 @@
     <dimen name="navigation_header_height">192dp</dimen>
     <dimen name="navigation_item_horizontal_padding">32dp</dimen>
     <dimen name="list_bottom_padding_with_fab">104dp</dimen>
+    <dimen name="speed_dial_margin_bottom">24dp</dimen>
 
     <dimen name="file_list_toolbar_padding_start">16dp</dimen>
     <dimen name="file_list_toolbar_padding_end_no_overflow">22dp</dimen>
