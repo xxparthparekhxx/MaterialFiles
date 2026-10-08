@@ -136,6 +136,14 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                                     String(bytesState.data, encoding)
                                 }
                                 currentCoroutineContext().ensureActive()
+                                if (!isLineEndingChosen && text != detectedLineEndingText) {
+                                    detectedLineEndingText = text
+                                    val detected = withContext(Dispatchers.Default) {
+                                        detectLineEnding(text)
+                                    }
+                                    detectedLineEnding = detected
+                                    lineEnding.value = detected
+                                }
                                 _textState.value = DataState.Success(text)
                             } catch (e: CancellationException) {
                                 e.printStackTrace()
@@ -154,6 +162,22 @@ class TextEditorViewModel(file: Path) : ViewModel() {
 
     var draftText: String? = null
         private set
+
+    // Line ending handling
+    private var detectedLineEnding: LineEnding? = null
+    private var detectedLineEndingText: String? = null
+    private var isLineEndingChosen = false
+
+    /** Set the line ending explicitly, which turns off automatic detection. */
+    fun chooseLineEnding(lineEnding: LineEnding) {
+        isLineEndingChosen = true
+        this.lineEnding.value = lineEnding
+    }
+
+    val lineEnding = MutableStateFlow(LineEnding.LF)
+
+    private fun detectLineEnding(text: String): LineEnding =
+        LineEnding.detect(text)
 
     init {
         loadDraft(file)
@@ -204,7 +228,8 @@ class TextEditorViewModel(file: Path) : ViewModel() {
             check(_writeFileState.value.isReady)
             _writeFileState.value = ActionState.Running(path)
             val bytes = withContext(Dispatchers.Default) {
-                text.toString().toByteArray(encoding.value)
+                val convertedText = convertLineEndings(text.toString())
+                convertedText.toByteArray(encoding.value)
             }
             FileJobService.write(path, bytes, context) { successful ->
                 if (successful) {
@@ -222,6 +247,16 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                 }
             }
         }
+    }
+
+    private fun convertLineEndings(text: String): String {
+        val target = lineEnding.value
+        // First normalize all line endings to LF, then convert to the target
+        val normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+        if (target == LineEnding.LF) {
+            return normalized
+        }
+        return normalized.replace("\n", target.separator)
     }
 
     fun finishWritingFile() {
