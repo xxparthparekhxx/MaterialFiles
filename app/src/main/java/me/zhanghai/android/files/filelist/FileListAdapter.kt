@@ -459,7 +459,7 @@ class FileListAdapter(
         val menu = holder.popupMenu.menu
         val path = file.path
         val hasPickOptions = pickOptions != null
-        val isReadOnly = path.fileSystem.isReadOnly
+        val isReadOnly = path.fileSystem.isReadOnly || Settings.READ_ONLY_MODE.valueCompat
         menu.findItem(R.id.action_cut).isVisible = !hasPickOptions && !isReadOnly
         menu.findItem(R.id.action_copy).isVisible = !hasPickOptions
         menu.findItem(R.id.action_paste_into).isVisible =

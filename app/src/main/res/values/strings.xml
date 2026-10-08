@@ -946,6 +946,9 @@
     <string name="settings_file_list_indicate_last_opened_item_summary">Highlight the last opened file or visited folder in the list</string>
     <string name="settings_binary_file_size_unit_title">Binary file size units</string>
     <string name="settings_binary_file_size_unit_summary">Use binary units (KiB, MiB, GiB, 1024) instead of decimal units (KB, MB, GB, 1000)</string>
+    <string name="settings_read_only_mode_title">Read-only mode</string>
+    <string name="settings_read_only_mode_summary">Block creating, deleting, renaming, moving and other file changes for safety</string>
+    <string name="file_list_read_only_mode_blocked">Read-only mode is on. Turn it off in Settings to change files.</string>
     <string name="settings_file_list_font_size_title">File list text size</string>
     <string-array name="settings_file_list_font_size_entries">
         <item>Smallest</item>

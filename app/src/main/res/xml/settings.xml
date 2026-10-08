@@ -315,6 +315,12 @@
             android:summary="@string/settings_delete_archive_after_extract_summary"
             android:defaultValue="@bool/pref_default_value_delete_archive_after_extract" />
 
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_read_only_mode"
+            android:title="@string/settings_read_only_mode_title"
+            android:summary="@string/settings_read_only_mode_summary"
+            android:defaultValue="@bool/pref_default_value_read_only_mode" />
+
         <me.zhanghai.android.files.settings.CharsetPreference
             android:key="@string/pref_key_archive_file_name_encoding"
             android:title="@string/settings_archive_file_name_encoding_title"
