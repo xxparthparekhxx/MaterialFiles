@@ -42,7 +42,7 @@ abstract class FileJob {
             e.printStackTrace()
             // An SMB listing interrupted by a reload, or a canceled job, is not a failed transfer.
             if (!isCanceled && e.findCauseByClass<InterruptedException>() == null) {
-                service.showToast(e.toString())
+                service.showToast(e)
             }
         } finally {
             flushDeletedLinuxPaths()

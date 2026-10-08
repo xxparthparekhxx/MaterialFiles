@@ -93,6 +93,7 @@ import me.zhanghai.android.files.provider.common.toByteString
 import me.zhanghai.android.files.provider.common.toModeString
 import me.zhanghai.android.files.provider.linux.isLinuxPath
 import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.util.toUserFriendlyMessage
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.asFileName
 import me.zhanghai.android.files.util.createInstallPackageIntent
@@ -910,7 +911,7 @@ private fun FileJob.archive(
             getString(R.string.file_job_archive_error_title_format, getFileName(file)),
             getString(
                 R.string.file_job_archive_error_message_format, getFileName(archiveFile),
-                e.toString()
+                e.toUserFriendlyMessage(service)
             ),
             getReadOnlyFileStore(archiveFile, e),
             false,
@@ -1396,7 +1397,8 @@ private fun FileJob.delete(path: Path, transferInfo: TransferInfo?, actionAllInf
             val result = showErrorDialog(
                 getString(R.string.file_job_delete_error_title),
                 getString(
-                    R.string.file_job_delete_error_message_format, getFileName(path), e.toString()
+                    R.string.file_job_delete_error_message_format, getFileName(path),
+                    e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, e),
                 true,
@@ -1778,7 +1780,7 @@ private fun FileJob.copyOrMove(
                         R.string.file_job_copy_error_message_format,
                         R.string.file_job_extract_error_message_format,
                         R.string.file_job_move_error_message_format
-                    ), getFileName(targetParent), e.toString()
+                    ), getFileName(targetParent), e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(target, e),
                 true,
@@ -1940,7 +1942,7 @@ private fun FileJob.rename(path: Path, newPath: Path) {
                 getString(R.string.file_job_rename_error_title_format, getFileName(path)),
                 getString(
                     R.string.file_job_rename_error_message_format, getFileName(newPath),
-                    e.toString()
+                    e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, e),
                 false,
@@ -2040,7 +2042,7 @@ private fun FileJob.restoreSeLinuxContext(
                 getString(R.string.file_job_restore_selinux_context_error_title),
                 getString(
                     R.string.file_job_restore_selinux_context_error_message_format,
-                    getFileName(path), e.toString()
+                    getFileName(path), e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, e),
                 true,
@@ -2185,7 +2187,7 @@ private fun FileJob.setGroup(
                 getString(R.string.file_job_set_group_error_title_format, getFileName(path)),
                 getString(
                     R.string.file_job_set_group_error_message_format, getPrincipalName(group),
-                    e.toString()
+                    e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, e),
                 true,
@@ -2331,7 +2333,7 @@ private fun FileJob.setMode(
                 getString(R.string.file_job_set_mode_error_title_format, getFileName(path)),
                 getString(
                     R.string.file_job_set_mode_error_message_format, mode.toModeString(),
-                    e.toString()
+                    e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, e),
                 true,
@@ -2451,7 +2453,7 @@ private fun FileJob.setOwner(
                 getString(R.string.file_job_set_owner_error_title_format, getFileName(path)),
                 getString(
                     R.string.file_job_set_owner_error_message_format, getPrincipalName(owner),
-                    e.toString()
+                    e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, e),
                 true,
@@ -2581,7 +2583,7 @@ private fun FileJob.setSeLinuxContext(
                 ),
                 getString(
                     R.string.file_job_set_selinux_context_error_message_format, seLinuxContext,
-                    e.toString()
+                    e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, e),
                 true,
@@ -2653,7 +2655,12 @@ class TestArchiveFileJob(private val archiveRoot: Path) : FileJob() {
             throw e
         } catch (e: IOException) {
             e.printStackTrace()
-            service.showToast(service.getString(R.string.file_job_test_archive_failed_format, e))
+            service.showToast(
+                service.getString(
+                    R.string.file_job_test_archive_failed_format,
+                    e.toUserFriendlyMessage(service)
+                )
+            )
             return
         }
         service.showToast(
@@ -2715,7 +2722,8 @@ private fun FileJob.write(file: Path, content: ByteArray): Boolean {
             val result = showErrorDialog(
                 getString(R.string.file_job_write_error_title, getFileName(file)),
                 getString(
-                    R.string.file_job_write_error_message_format, getFileName(file), e.toString()
+                    R.string.file_job_write_error_message_format, getFileName(file),
+                    e.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(file, e),
                 false,

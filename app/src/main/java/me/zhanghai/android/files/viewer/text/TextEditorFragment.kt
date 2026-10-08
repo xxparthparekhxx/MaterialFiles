@@ -43,6 +43,7 @@ import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.showCharsetPickerDialog
 import me.zhanghai.android.files.util.showToast
+import me.zhanghai.android.files.util.toUserFriendlyMessage
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import java.nio.charset.Charset
@@ -362,7 +363,7 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                         throwable.size.asFileSize().formatHumanReadable(requireContext()),
                         throwable.maxSize.asFileSize().formatHumanReadable(requireContext())
                     )
-                    else -> throwable.localizedMessage ?: throwable.toString()
+                    else -> throwable.toUserFriendlyMessage(requireContext())
                 }
                 binding.textEdit.fadeOutUnsafe()
             }

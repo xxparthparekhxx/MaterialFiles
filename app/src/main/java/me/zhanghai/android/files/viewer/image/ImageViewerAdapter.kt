@@ -40,6 +40,7 @@ import me.zhanghai.android.files.util.fadeInUnsafe
 import me.zhanghai.android.files.util.fadeOutUnsafe
 import me.zhanghai.android.files.util.layoutInflater
 import me.zhanghai.android.files.util.shortAnimTime
+import me.zhanghai.android.files.util.toUserFriendlyMessage
 import kotlin.math.max
 
 class ImageViewerAdapter(
@@ -196,7 +197,7 @@ class ImageViewerAdapter(
 
     private fun showError(binding: ImageViewerItemBinding, throwable: Throwable) {
         binding.progress.fadeOutUnsafe()
-        binding.errorText.text = throwable.toString()
+        binding.errorText.text = throwable.toUserFriendlyMessage(binding.root.context)
         binding.errorText.fadeInUnsafe(true)
         binding.image.isVisible = false
         binding.largeImage.isVisible = false

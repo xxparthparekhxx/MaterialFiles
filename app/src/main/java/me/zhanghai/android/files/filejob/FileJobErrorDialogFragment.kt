@@ -101,7 +101,7 @@ class FileJobErrorDialogFragment : AppCompatDialogFragment() {
             is ActionState.Error -> {
                 val throwable = state.throwable
                 throwable.printStackTrace()
-                showToast(throwable.toString())
+                showToast(throwable)
                 viewModel.finishRemounting()
             }
         }

@@ -250,7 +250,7 @@ class EditSmbServerFragment : Fragment() {
             is ActionState.Error -> {
                 val throwable = state.throwable
                 throwable.printStackTrace()
-                showToast(throwable.toString())
+                showToast(throwable)
                 viewModel.finishConnecting()
             }
         }

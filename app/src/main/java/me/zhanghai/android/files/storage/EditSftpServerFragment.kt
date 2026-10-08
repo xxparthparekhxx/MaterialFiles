@@ -262,7 +262,7 @@ class EditSftpServerFragment : Fragment() {
             is ActionState.Error -> {
                 val throwable = state.throwable
                 throwable.printStackTrace()
-                showToast(throwable.toString())
+                showToast(throwable)
                 viewModel.finishReadingPrivateKeyFile()
             }
         }
@@ -338,7 +338,7 @@ class EditSftpServerFragment : Fragment() {
                     startActivity(userAction.intent)
                 } else {
                     throwable.printStackTrace()
-                    showToast(throwable.toString())
+                    showToast(throwable)
                 }
                 viewModel.finishConnecting()
             }

@@ -171,6 +171,10 @@ fun Fragment.showToast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
     requireContext().showToast(text, duration)
 }
 
+fun Fragment.showToast(throwable: Throwable, duration: Int = Toast.LENGTH_SHORT) {
+    requireContext().showToast(throwable, duration)
+}
+
 fun Fragment.startActivitySafe(intent: Intent, options: Bundle? = null) {
     try {
         startActivity(intent, options)

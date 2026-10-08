@@ -166,7 +166,7 @@ class StorageListFragment : Fragment(), StorageListAdapter.Listener {
                 return@launch
             }
             if (error != null) {
-                showToast(error.toString())
+                showToast(error)
             } else {
                 showToast(R.string.storage_list_export_success)
             }
@@ -190,7 +190,7 @@ class StorageListFragment : Fragment(), StorageListAdapter.Listener {
                 return@launch
             }
             val importResult = result.getOrElse {
-                showToast(it.toString())
+                showToast(it)
                 return@launch
             }
             for (storage in importResult.storages) {
