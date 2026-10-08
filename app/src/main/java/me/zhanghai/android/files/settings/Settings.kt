@@ -274,6 +274,12 @@ object Settings {
             R.string.pref_key_file_list_hidden_first, R.bool.pref_default_value_file_list_hidden_first
         )
 
+    val FILE_LIST_SEARCH_IN_SUBFOLDERS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_search_in_subfolders,
+            R.bool.pref_default_value_file_list_search_in_subfolders
+        )
+
     val AUTO_CALCULATE_CHECKSUMS: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_auto_calculate_checksums,
