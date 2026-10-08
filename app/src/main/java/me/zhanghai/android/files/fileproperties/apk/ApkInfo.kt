@@ -10,6 +10,6 @@ import android.content.pm.PackageInfo
 class ApkInfo(
     val packageInfo: PackageInfo,
     val label: String,
-    val signingCertificateDigests: List<String>,
-    val pastSigningCertificateDigests: List<String>
+    val signingCertificates: List<SigningCertificateInfo>,
+    val pastSigningCertificates: List<SigningCertificateInfo>
 )

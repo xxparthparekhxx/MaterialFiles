@@ -84,16 +84,16 @@ class FilePropertiesApkTabFragment : FilePropertiesTabFragment() {
             )
             addItemView(
                 R.string.file_properties_apk_signature_digests,
-                if (apkInfo.signingCertificateDigests.isNotEmpty()) {
-                    apkInfo.signingCertificateDigests.joinToString("\n")
+                if (apkInfo.signingCertificates.isNotEmpty()) {
+                    apkInfo.signingCertificates.joinToString("\n\n") { formatCertificate(it) }
                 } else {
                     getString(R.string.file_properties_apk_signature_digests_empty)
                 }
             )
-            if (apkInfo.pastSigningCertificateDigests.isNotEmpty()) {
+            if (apkInfo.pastSigningCertificates.isNotEmpty()) {
                 addItemView(
                     R.string.file_properties_apk_past_signature_digests,
-                    apkInfo.pastSigningCertificateDigests.joinToString("\n")
+                    apkInfo.pastSigningCertificates.joinToString("\n\n") { formatCertificate(it) }
                 )
             }
         }
@@ -107,6 +107,22 @@ class FilePropertiesApkTabFragment : FilePropertiesTabFragment() {
             names[sdkVersion.coerceIn(names.indices)],
             codeNames[sdkVersion.coerceIn(codeNames.indices)], sdkVersion
         )
+    }
+
+    private fun formatCertificate(info: SigningCertificateInfo): String {
+        val lines = mutableListOf<String>()
+        if (info.subject.isNotEmpty()) {
+            lines += getString(R.string.file_properties_apk_signature_subject_format, info.subject)
+        }
+        if (info.signatureAlgorithm.isNotEmpty()) {
+            lines += getString(
+                R.string.file_properties_apk_signature_algorithm_format, info.signatureAlgorithm
+            )
+        }
+        lines += getString(R.string.file_properties_apk_signature_md5_format, info.md5Digest)
+        lines += getString(R.string.file_properties_apk_signature_sha1_format, info.sha1Digest)
+        lines += getString(R.string.file_properties_apk_signature_sha256_format, info.sha256Digest)
+        return lines.joinToString("\n")
     }
 
     companion object {
