@@ -33,6 +33,8 @@ private val supportedArchiveMimeTypes = mutableListOf(
     "application/x-iso9660-image",
     "application/x-java-archive",
     "application/x-lha",
+    "application/x-lzip",
+    "application/x-lzip-compressed-tar",
     "application/x-lzma",
     "application/x-redhat-package-manager",
     "application/x-tar",

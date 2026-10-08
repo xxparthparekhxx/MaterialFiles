@@ -63,7 +63,7 @@ value class FileName(val value: String) {
         const val EXTENSION_SEPARATOR = '.'
 
         // https://github.com/GNOME/nautilus/blob/c73ad94a72f8e9a989b01858018de74182d17f0e/eel/eel-vfs-extensions.c#L124
-        private val DOUBLE_EXTENSIONS = listOf("bz", "bz2", "gz", "sit", "xz", "Z")
+        private val DOUBLE_EXTENSIONS = listOf("bz", "bz2", "gz", "lz", "sit", "xz", "Z")
     }
 }
 
