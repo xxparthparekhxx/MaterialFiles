@@ -171,6 +171,12 @@ import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.createManageAppAllFilesAccessPermissionIntent
 import me.zhanghai.android.files.util.createSendStreamIntent
 import me.zhanghai.android.files.util.createViewIntent
+import me.zhanghai.android.files.util.ACTION_PICK_DIRECTORY_ESTRONGS
+import me.zhanghai.android.files.util.ACTION_PICK_DIRECTORY_OI
+import me.zhanghai.android.files.util.EXTRA_ABSOLUTE_PATH_OI
+import me.zhanghai.android.files.util.EXTRA_DIR_PATH_OI
+import me.zhanghai.android.files.util.EXTRA_TITLE_OI
+import me.zhanghai.android.files.util.EXTRA_WRITEABLE_OI
 import me.zhanghai.android.files.util.externalStorageRootPath
 import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.extraPathList
@@ -178,6 +184,7 @@ import me.zhanghai.android.files.util.fadeToVisibilityUnsafe
 import me.zhanghai.android.files.util.getDimensionDp
 import me.zhanghai.android.files.util.getQuantityString
 import me.zhanghai.android.files.util.hasSw600Dp
+import me.zhanghai.android.files.util.isDirectoryPick
 import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isOrientationLandscape
 import me.zhanghai.android.files.util.putArgs
@@ -498,36 +505,77 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             when (val action = intent.action) {
                 Intent.ACTION_GET_CONTENT, Intent.ACTION_OPEN_DOCUMENT,
                 Intent.ACTION_CREATE_DOCUMENT -> {
-                    val mode = if (action == Intent.ACTION_CREATE_DOCUMENT) {
-                        PickOptions.Mode.CREATE_FILE
-                    } else {
-                        PickOptions.Mode.OPEN_FILE
-                    }
                     val mimeType = intent.type?.asMimeTypeOrNull() ?: MimeType.ANY
-                    val fileName = if (mode == PickOptions.Mode.CREATE_FILE) {
-                        intent.getStringExtra(Intent.EXTRA_TITLE)?.asFileNameOrNull()?.value
-                            ?: mimeType.extension?.let { "file.$it" } ?: "file"
+                    val isDirectoryPick = action == Intent.ACTION_GET_CONTENT &&
+                        (mimeType == MimeType.DIRECTORY || intent.isDirectoryPick())
+                    if (isDirectoryPick) {
+                        val localOnly = intent.getBooleanExtra(Intent.EXTRA_LOCAL_ONLY, false)
+                        val readOnly = if (intent.hasExtra(EXTRA_WRITEABLE_OI)) {
+                            !intent.getBooleanExtra(EXTRA_WRITEABLE_OI, true)
+                        } else {
+                            false
+                        }
+                        pickOptions = PickOptions(
+                            PickOptions.Mode.OPEN_DIRECTORY, null, readOnly, emptyList(), localOnly, false
+                        )
                     } else {
-                        null
+                        val mode = if (action == Intent.ACTION_CREATE_DOCUMENT) {
+                            PickOptions.Mode.CREATE_FILE
+                        } else {
+                            PickOptions.Mode.OPEN_FILE
+                        }
+                        val fileName = if (mode == PickOptions.Mode.CREATE_FILE) {
+                            intent.getStringExtra(Intent.EXTRA_TITLE)?.asFileNameOrNull()?.value
+                                ?: mimeType.extension?.let { "file.$it" } ?: "file"
+                        } else {
+                            null
+                        }
+                        val readOnly = action == Intent.ACTION_GET_CONTENT
+                        val extraMimeTypes = if (mode == PickOptions.Mode.OPEN_FILE) {
+                            intent.getStringArrayExtra(Intent.EXTRA_MIME_TYPES)
+                                ?.mapNotNull { it.asMimeTypeOrNull() }?.takeIfNotEmpty()
+                        } else {
+                            null
+                        }
+                        val mimeTypes = extraMimeTypes ?: listOf(mimeType)
+                        val localOnly = intent.getBooleanExtra(Intent.EXTRA_LOCAL_ONLY, false)
+                        val allowMultiple = mode != PickOptions.Mode.CREATE_FILE &&
+                            intent.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+                        pickOptions =
+                            PickOptions(mode, fileName, readOnly, mimeTypes, localOnly, allowMultiple)
                     }
-                    val readOnly = action == Intent.ACTION_GET_CONTENT
-                    val extraMimeTypes = if (mode == PickOptions.Mode.OPEN_FILE) {
-                        intent.getStringArrayExtra(Intent.EXTRA_MIME_TYPES)
-                            ?.mapNotNull { it.asMimeTypeOrNull() }?.takeIfNotEmpty()
-                    } else {
-                        null
-                    }
-                    val mimeTypes = extraMimeTypes ?: listOf(mimeType)
-                    val localOnly = intent.getBooleanExtra(Intent.EXTRA_LOCAL_ONLY, false)
-                    val allowMultiple = mode != PickOptions.Mode.CREATE_FILE &&
-                        intent.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
-                    pickOptions =
-                        PickOptions(mode, fileName, readOnly, mimeTypes, localOnly, allowMultiple)
                 }
-                Intent.ACTION_OPEN_DOCUMENT_TREE -> {
+                Intent.ACTION_PICK -> {
+                    val mimeType = intent.type?.asMimeTypeOrNull() ?: MimeType.ANY
+                    val isDirectoryPick = mimeType == MimeType.DIRECTORY || intent.isDirectoryPick()
                     val localOnly = intent.getBooleanExtra(Intent.EXTRA_LOCAL_ONLY, false)
+                    val readOnly = if (intent.hasExtra(EXTRA_WRITEABLE_OI)) {
+                        !intent.getBooleanExtra(EXTRA_WRITEABLE_OI, true)
+                    } else {
+                        false
+                    }
+                    if (isDirectoryPick) {
+                        pickOptions = PickOptions(
+                            PickOptions.Mode.OPEN_DIRECTORY, null, readOnly, emptyList(), localOnly, false
+                        )
+                    } else {
+                        val allowMultiple = intent.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+                        pickOptions = PickOptions(
+                            PickOptions.Mode.OPEN_FILE, null, readOnly, listOf(mimeType), localOnly, allowMultiple
+                        )
+                    }
+                }
+                Intent.ACTION_OPEN_DOCUMENT_TREE,
+                ACTION_PICK_DIRECTORY_OI,
+                ACTION_PICK_DIRECTORY_ESTRONGS -> {
+                    val localOnly = intent.getBooleanExtra(Intent.EXTRA_LOCAL_ONLY, false)
+                    val readOnly = if (intent.hasExtra(EXTRA_WRITEABLE_OI)) {
+                        !intent.getBooleanExtra(EXTRA_WRITEABLE_OI, true)
+                    } else {
+                        false
+                    }
                     pickOptions = PickOptions(
-                        PickOptions.Mode.OPEN_DIRECTORY, null, false, emptyList(), localOnly, false
+                        PickOptions.Mode.OPEN_DIRECTORY, null, readOnly, emptyList(), localOnly, false
                     )
                 }
                 ACTION_VIEW_DOWNLOADS ->
@@ -546,6 +594,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                             path.isDirectory(LinkOption.NOFOLLOW_LINKS) -> path
                             else -> path.parent ?: path
                         }
+                    }
+                }
+            }
+            if (path == null) {
+                path = intent.extraPath
+                if (path != null && pickOptions?.mode == PickOptions.Mode.OPEN_DIRECTORY) {
+                    path = try {
+                        if (path.isDirectory(LinkOption.NOFOLLOW_LINKS)) path else path.parent ?: path
+                    } catch (e: Exception) {
+                        path.parent ?: path
                     }
                 }
             }
@@ -1446,8 +1504,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val title = if (pickOptions == null) {
             getString(R.string.file_list_title)
         } else {
+            val customTitle = args.intent.getStringExtra(EXTRA_TITLE_OI)
+                ?: (if (pickOptions.mode == PickOptions.Mode.OPEN_DIRECTORY) args.intent.getStringExtra(Intent.EXTRA_TITLE) else null)
             val count = if (pickOptions.allowMultiple) Int.MAX_VALUE else 1
-            when (pickOptions.mode) {
+            customTitle ?: when (pickOptions.mode) {
                 PickOptions.Mode.OPEN_FILE ->
                     getQuantityString(R.plurals.file_list_title_open_file, count)
                 PickOptions.Mode.CREATE_FILE -> getString(R.string.file_list_title_create_file)
@@ -1485,11 +1545,21 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 val path = paths.single()
                 data = path.fileProviderUri
                 extraPath = path
+                if (pickOptions.mode == PickOptions.Mode.OPEN_DIRECTORY) {
+                    val pathString = path.toString()
+                    putExtra(EXTRA_DIR_PATH_OI, pathString)
+                    putExtra(EXTRA_ABSOLUTE_PATH_OI, pathString)
+                    putExtra("path", pathString)
+                }
             } else {
                 val mimeTypes = pickOptions.mimeTypes.map { it.value }
                 val items = paths.map { ClipData.Item(it.fileProviderUri) }
                 clipData = ClipData::class.create(null, mimeTypes, items)
                 extraPathList = paths.toList()
+                if (pickOptions.mode == PickOptions.Mode.OPEN_DIRECTORY) {
+                    val pathStrings = ArrayList(paths.map { it.toString() })
+                    putStringArrayListExtra("paths", pathStrings)
+                }
             }
             var flags =
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
