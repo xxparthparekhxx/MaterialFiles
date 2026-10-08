@@ -18,6 +18,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.doAfterTextChanged
@@ -264,6 +265,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 }
                 true
             }
+            R.id.action_line_ending -> {
+                showLineEndingPicker()
+                true
+            }
             R.id.action_monospace -> {
                 Settings.TEXT_EDITOR_MONOSPACE.putValue(!Settings.TEXT_EDITOR_MONOSPACE.valueCompat)
                 true
@@ -340,6 +345,19 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
 
     private fun onEncodingChanged(encoding: Charset) {
         // The encoding dialog reads the current value when opened.
+    }
+
+    private fun showLineEndingPicker() {
+        val entries = resources.getStringArray(R.array.text_editor_line_ending_entries)
+        val currentOrdinal = viewModel.lineEnding.value.ordinal
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.text_editor_line_ending)
+            .setSingleChoiceItems(entries, currentOrdinal) { dialog, which ->
+                viewModel.chooseLineEnding(LineEnding.values()[which])
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun onTextStateChanged(state: DataState<String>) {

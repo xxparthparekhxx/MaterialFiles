@@ -813,6 +813,12 @@
     <string name="text_editor_find_not_found">Not found</string>
     <string name="text_editor_monospace">Monospace font</string>
     <string name="text_editor_encoding">Encoding</string>
+    <string name="text_editor_line_ending">Line ending</string>
+    <string-array name="text_editor_line_ending_entries">
+        <item>LF (Unix)</item>
+        <item>CRLF (Windows)</item>
+        <item>CR (Classic Mac)</item>
+    </string-array>
     <string name="charset_picker_search_hint">Search</string>
     <string name="text_editor_undo">Undo</string>
     <string name="text_editor_redo">Redo</string>
