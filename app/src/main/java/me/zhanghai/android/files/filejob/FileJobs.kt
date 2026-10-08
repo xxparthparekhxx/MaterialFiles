@@ -92,6 +92,7 @@ import me.zhanghai.android.files.provider.common.setSeLinuxContext
 import me.zhanghai.android.files.provider.common.toByteString
 import me.zhanghai.android.files.provider.common.toModeString
 import me.zhanghai.android.files.provider.linux.isLinuxPath
+import me.zhanghai.android.files.provider.root.isAccessedByFileService
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.asFileName
@@ -1246,6 +1247,7 @@ private fun FileJob.create(path: Path, createDirectory: Boolean) {
                 path.createDirectory()
             } else {
                 path.createFile()
+                recordCreatedLinuxPath(path)
             }
         } catch (e: InterruptedIOException) {
             throw e
@@ -1336,7 +1338,7 @@ class DeleteFileJob(private val paths: List<Path>) : FileJob() {
     }
 }
 
-private fun FileJob.recordDeletedLinuxPath(path: Path) {
+private fun FileJob.recordMediaPath(path: Path) {
     if (!path.isLinuxPath) {
         return
     }
@@ -1345,20 +1347,34 @@ private fun FileJob.recordDeletedLinuxPath(path: Path) {
     } catch (e: UnsupportedOperationException) {
         return
     }
-    synchronized(deletedLinuxPaths) {
-        deletedLinuxPaths += filePath
+    synchronized(mediaPathsToScan) {
+        mediaPathsToScan += filePath
     }
 }
 
-internal fun FileJob.flushDeletedLinuxPaths() {
-    val paths = synchronized(deletedLinuxPaths) {
-        if (deletedLinuxPaths.isEmpty()) {
+// A delete always has to be reported: the media scanner does not always learn that a file is
+// gone, and the media database keeps counting it until it is scanned again, so the free space
+// display can be wrong until reboot.
+private fun FileJob.recordDeletedLinuxPath(path: Path) {
+    recordMediaPath(path)
+}
+
+// A file created through the root or Shizuku file service is never reported at all, because the
+// media scanner cannot read a file that needs root to access, so the provider skips it. The
+// gallery and other apps then don't show the new file.
+private fun FileJob.recordCreatedLinuxPath(path: Path) {
+    if (path.isAccessedByFileService) {
+        recordMediaPath(path)
+    }
+}
+
+internal fun FileJob.flushMediaPathsToScan() {
+    val paths = synchronized(mediaPathsToScan) {
+        if (mediaPathsToScan.isEmpty()) {
             return
         }
-        deletedLinuxPaths.toTypedArray().also { deletedLinuxPaths.clear() }
+        mediaPathsToScan.toTypedArray().also { mediaPathsToScan.clear() }
     }
-    // The media database keeps counting a file until it is scanned again, so a
-    // delete can leave the free-space display unchanged until reboot.
     MediaScannerConnection.scanFile(service, paths, null, null)
 }
 
@@ -1672,6 +1688,7 @@ private fun FileJob.copyOrMove(
             } else {
                 source.moveTo(target, *options)
             }
+            recordCreatedLinuxPath(target)
             transferInfo.incrementTransferredFileCount()
             postCopyMoveNotification(transferInfo, source, type)
         } catch (e: FileAlreadyExistsException) {
@@ -2701,6 +2718,7 @@ private fun FileJob.write(file: Path, content: ByteArray): Boolean {
                 }
                 postWriteNotification(transferInfo)
             }
+            recordCreatedLinuxPath(file)
         } catch (e: InterruptedIOException) {
             throw e
         } catch (e: IOException) {
