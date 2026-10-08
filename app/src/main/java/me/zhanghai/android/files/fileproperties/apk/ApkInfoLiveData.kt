@@ -16,10 +16,8 @@ import me.zhanghai.android.files.util.Loading
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.Success
 import me.zhanghai.android.files.util.getPackageArchiveInfoCompat
-import me.zhanghai.android.files.util.sha1Digest
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.application
-import me.zhanghai.android.files.util.toHexString
 import me.zhanghai.android.files.util.valueCompat
 import java.io.IOException
 
@@ -58,8 +56,8 @@ class ApkInfoLiveData(path: Path) : PathObserverLiveData<Stateful<ApkInfo>>(path
                         @Suppress("DEPRECATION")
                         packageInfo.signatures
                     } ?: emptyArray()
-                    val signingCertificateDigests = signingCertificates
-                        .map { it.toByteArray().sha1Digest().toHexString() }
+                    val signingCertificateInfos = signingCertificates
+                        .map { SigningCertificateInfo.of(it.toByteArray()) }
                     val pastSigningCertificates =
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                             val signingInfo = packageInfo.signingInfo
@@ -76,10 +74,10 @@ class ApkInfoLiveData(path: Path) : PathObserverLiveData<Stateful<ApkInfo>>(path
                         } else {
                             null
                         } ?: emptyList()
-                    val pastSigningCertificateDigests = pastSigningCertificates
-                        .map { it.toByteArray().sha1Digest().toHexString() }
+                    val pastSigningCertificateInfos = pastSigningCertificates
+                        .map { SigningCertificateInfo.of(it.toByteArray()) }
                     ApkInfo(
-                        packageInfo, label, signingCertificateDigests, pastSigningCertificateDigests
+                        packageInfo, label, signingCertificateInfos, pastSigningCertificateInfos
                     )
                 }
                 Success(apkInfo)
