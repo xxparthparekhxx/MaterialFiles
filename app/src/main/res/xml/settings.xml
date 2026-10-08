@@ -52,6 +52,12 @@
             android:defaultValue="@bool/pref_default_value_file_list_drawer_swipe" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_bottom_navigation_bar"
+            android:title="@string/settings_bottom_navigation_bar_title"
+            android:summary="@string/settings_bottom_navigation_bar_summary"
+            android:defaultValue="@bool/pref_default_value_bottom_navigation_bar" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_errors_in_dialog"
             android:title="@string/settings_errors_in_dialog_title"
             android:summary="@string/settings_errors_in_dialog_summary"

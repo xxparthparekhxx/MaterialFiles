@@ -458,4 +458,10 @@ object Settings {
         BooleanSettingLiveData(
             R.string.pref_key_read_only_mode, R.bool.pref_default_value_read_only_mode
         )
+
+    val BOTTOM_NAVIGATION_BAR: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_bottom_navigation_bar,
+            R.bool.pref_default_value_bottom_navigation_bar
+        )
 }
