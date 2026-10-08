@@ -79,9 +79,19 @@ class FtpServerUrlPreference : Preference {
         summary = when {
             url == null ->
                 context.getString(R.string.ftp_server_url_summary_no_local_inet_address)
-            entries.size > 1 -> context.getString(
-                R.string.ftp_server_url_summary_interface_format, url, entry!!.interfaceName
-            )
+            entries.size > 1 -> {
+                val interfaceName = entry!!.interfaceName
+                val interfaceLabel =
+                    if (entry.isHotspot) {
+                        "$interfaceName, " +
+                            context.getString(R.string.ftp_server_url_interface_hotspot)
+                    } else {
+                        interfaceName
+                    }
+                context.getString(
+                    R.string.ftp_server_url_summary_interface_format, url, interfaceLabel
+                )
+            }
             else -> url
         }
     }
