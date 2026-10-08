@@ -41,6 +41,7 @@ import me.zhanghai.android.files.file.fileSize
 import me.zhanghai.android.files.file.formatShort
 import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.file.isApk
+import me.zhanghai.android.files.file.isImage
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.provider.common.isEncrypted
 import me.zhanghai.android.files.provider.linux.isLinuxPath
@@ -589,6 +590,8 @@ class FileListAdapter(
         menu.findItem(R.id.action_archive).isVisible = !isArchivePath
         menu.findItem(R.id.action_add_bookmark).isVisible = isDirectory
         menu.findItem(R.id.action_show_in_folder).isVisible = isSearching
+        menu.findItem(R.id.action_remove_exif)?.isVisible =
+            !isDirectory && !hasPickOptions && !isReadOnly && file.mimeType.isImage
         holder.popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.action_open_with -> {
@@ -657,6 +660,10 @@ class FileListAdapter(
                 }
                 R.id.action_hide -> {
                     listener.hideFile(file)
+                    true
+                }
+                R.id.action_remove_exif -> {
+                    listener.removeExif(file)
                     true
                 }
                 R.id.action_properties -> {
@@ -924,6 +931,7 @@ class FileListAdapter(
         fun showInFolder(file: FileItem)
         fun createShortcut(file: FileItem)
         fun hideFile(file: FileItem)
+        fun removeExif(file: FileItem)
         fun showPropertiesDialog(file: FileItem)
         fun onFileActivated(file: FileItem)
     }

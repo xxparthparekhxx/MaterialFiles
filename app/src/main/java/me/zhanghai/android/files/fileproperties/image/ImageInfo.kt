@@ -28,5 +28,21 @@ class ExifInfo(
     val software: String?,
     val description: String?,
     val artist: String?,
-    val copyright: String?
-)
+    val copyright: String?,
+    val exposureTime: Double? = null,
+    val exposureBiasValue: Double? = null,
+    val flash: Int? = null,
+    val whiteBalance: Int? = null,
+    val focalLengthIn35mm: Int? = null,
+    val lensModel: String? = null,
+    val allAttributes: Map<String, String> = emptyMap()
+) {
+    val hasExifData: Boolean
+        get() = allAttributes.isNotEmpty() || dateTimeOriginal != null || gpsCoordinates != null ||
+            gpsAltitude != null || make != null || model != null || fNumber != null ||
+            shutterSpeedValue != null || focalLength != null || photographicSensitivity != null ||
+            software != null || description != null || artist != null || copyright != null ||
+            exposureTime != null || exposureBiasValue != null || flash != null ||
+            whiteBalance != null || focalLengthIn35mm != null || lensModel != null
+}
+

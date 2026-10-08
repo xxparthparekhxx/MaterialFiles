@@ -53,8 +53,11 @@ import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.withChooser
 import me.zhanghai.android.systemuihelper.SystemUiHelper
 
+import me.zhanghai.android.files.fileproperties.image.ConfirmRemoveExifDialogFragment
+import me.zhanghai.android.files.fileproperties.image.ExifRemover
+
 class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
-    RenameFileDialogFragment.Listener {
+    RenameFileDialogFragment.Listener, ConfirmRemoveExifDialogFragment.Listener {
     private val args by args<Args>()
 
     private var pathListId = 0
@@ -202,6 +205,10 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
                 showProperties()
                 true
             }
+            R.id.action_remove_exif -> {
+                ConfirmRemoveExifDialogFragment.show(currentPath, this)
+                true
+            }
             R.id.action_rename -> {
                 showRenameDialog()
                 true
@@ -244,7 +251,37 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
                 showToast(R.string.image_viewer_properties_error)
                 return@launch
             }
-            FilePropertiesDialogFragment.show(fileItem, this@ImageViewerFragment)
+            FilePropertiesDialogFragment.show(
+                fileItem, this@ImageViewerFragment, R.string.file_properties_image
+            )
+        }
+    }
+
+    override fun removeExif(path: Path) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (success, error) = withContext(Dispatchers.IO) {
+                try {
+                    ExifRemover.removeExif(path)
+                    true to null
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    false to e
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (success) {
+                showToast(R.string.file_properties_image_remove_exif_success)
+                adapter.replace(paths)
+            } else {
+                showToast(
+                    getString(
+                        R.string.file_properties_image_remove_exif_failed,
+                        error?.message
+                    )
+                )
+            }
         }
     }
 
