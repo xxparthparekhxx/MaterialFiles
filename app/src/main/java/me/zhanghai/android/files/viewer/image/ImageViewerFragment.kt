@@ -28,7 +28,9 @@ import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.ImageViewerFragmentBinding
 import me.zhanghai.android.files.file.FileItem
+import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.file.fileProviderUri
+import me.zhanghai.android.files.file.formatShort
 import me.zhanghai.android.files.file.loadFileItem
 import me.zhanghai.android.files.fileproperties.FilePropertiesDialogFragment
 import me.zhanghai.android.files.filelist.RenameFileDialogFragment
@@ -68,6 +70,8 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
     private var isAppBarVisible = true
 
     private lateinit var adapter: ImageViewerAdapter
+
+    private var titleGeneration = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -352,13 +356,47 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
     private fun updateTitle() {
         val path = currentPath
         requireActivity().title = path.fileName.toString()
+        val position = binding.viewPager.currentItem
         val size = paths.size
-        binding.toolbar.subtitle = if (size > 1) {
+        val countText = if (size > 1) {
             getString(
-                R.string.image_viewer_subtitle_format, binding.viewPager.currentItem + 1, size
+                R.string.image_viewer_subtitle_format, position + 1, size
             )
         } else {
             null
+        }
+        binding.toolbar.subtitle = countText
+        val generation = ++titleGeneration
+        viewLifecycleOwner.lifecycleScope.launch {
+            val fileItem = withContext(Dispatchers.IO) {
+                try {
+                    path.loadFileItem()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+            }
+            if (!isAdded || generation != titleGeneration ||
+                binding.viewPager.currentItem != position) {
+                return@launch
+            }
+            if (fileItem == null) {
+                return@launch
+            }
+            val context = requireContext()
+            val details = getString(
+                R.string.image_viewer_subtitle_with_details_format,
+                fileItem.attributes.size().asFileSize().formatHumanReadable(context),
+                fileItem.attributes.lastModifiedTime().toInstant().formatShort(context)
+            )
+            binding.toolbar.subtitle =
+                if (countText != null) {
+                    getString(
+                        R.string.image_viewer_subtitle_with_details_format, countText, details
+                    )
+                } else {
+                    details
+                }
         }
     }
 
