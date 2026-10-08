@@ -24,11 +24,15 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import java8.nio.file.Path
+import java8.nio.file.attribute.BasicFileAttributes
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.TextEditorFragmentBinding
 import me.zhanghai.android.files.file.asFileSize
+import me.zhanghai.android.files.provider.common.readAttributes
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.ThemedFastScroller
 import me.zhanghai.android.files.util.ActionState
@@ -36,6 +40,7 @@ import me.zhanghai.android.files.util.DataState
 import me.zhanghai.android.files.util.ParcelableArgs
 import me.zhanghai.android.files.util.addOnBackPressedCallback
 import me.zhanghai.android.files.util.args
+import me.zhanghai.android.files.util.asFileNameOrNull
 import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.fadeInUnsafe
 import me.zhanghai.android.files.util.fadeOutUnsafe
@@ -43,12 +48,14 @@ import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.showCharsetPickerDialog
 import me.zhanghai.android.files.util.showToast
+import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import java.nio.charset.Charset
 
 class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
-    ConfirmCloseDialogFragment.Listener, FindTextDialogFragment.Listener {
+    ConfirmCloseDialogFragment.Listener, FindTextDialogFragment.Listener,
+    SaveAsDialogFragment.Listener {
     private val args by args<Args>()
     private lateinit var argsFile: Path
 
@@ -221,6 +228,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         } else when (item.itemId) {
             R.id.action_save -> {
                 save()
+                true
+            }
+            R.id.action_save_as -> {
+                showSaveAsDialog()
                 true
             }
             R.id.action_find -> {
@@ -416,24 +427,98 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         viewModel.writeFile(argsFile, text, requireContext())
     }
 
+    private var pendingSaveAsPath: Path? = null
+
+    private fun showSaveAsDialog() {
+        if (!viewModel.writeFileState.value.isReady) {
+            return
+        }
+        SaveAsDialogFragment.show(argsFile.fileName.toString(), this)
+    }
+
+    override fun saveAs(name: String) {
+        if (name.isEmpty()) {
+            showToast(R.string.file_list_create_file_name_error_empty)
+            return
+        }
+        if (name.asFileNameOrNull() == null) {
+            showToast(R.string.file_list_create_file_name_error_invalid)
+            return
+        }
+        if (argsFile.fileSystem.isReadOnly || Settings.READ_ONLY_MODE.valueCompat) {
+            showToast(
+                if (Settings.READ_ONLY_MODE.valueCompat) {
+                    R.string.file_list_read_only_mode_blocked
+                } else {
+                    R.string.file_list_create_error_read_only
+                }
+            )
+            return
+        }
+        if (!viewModel.writeFileState.value.isReady) {
+            return
+        }
+        val text = binding.textEdit.text ?: return
+        val newPath = argsFile.resolveSibling(name)
+        lifecycleScope.launch {
+            val exists = withContext(Dispatchers.IO) {
+                try {
+                    newPath.readAttributes(BasicFileAttributes::class.java)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+            if (!isAdded) {
+                return@launch
+            }
+            if (exists) {
+                showToast(R.string.file_name_error_already_exists)
+                return@launch
+            }
+            pendingSaveAsPath = newPath
+            viewModel.writeFile(newPath, text, requireContext())
+        }
+    }
+
     private fun onWriteFileStateChanged(state: ActionState<Path, Unit>) {
         when (state) {
             is ActionState.Ready, is ActionState.Running -> updateSaveMenuItem()
             is ActionState.Success -> {
+                val saveAsPath = pendingSaveAsPath?.takeIf { it == state.argument }
+                pendingSaveAsPath = null
+                if (saveAsPath != null) {
+                    viewModel.discardDraft()
+                    viewModel.isTextChanged.value = false
+                    viewModel.finishWritingFile()
+                    openFile(saveAsPath)
+                    return
+                }
                 showToast(R.string.text_editor_save_success)
                 viewModel.finishWritingFile()
                 viewModel.isTextChanged.value = false
             }
             // The error will be toasted by service so we should never show it in UI.
-            is ActionState.Error -> viewModel.finishWritingFile()
+            is ActionState.Error -> {
+                pendingSaveAsPath = null
+                viewModel.finishWritingFile()
+            }
         }
+    }
+
+    private fun openFile(path: Path) {
+        val intent = Intent(requireActivity().intent).apply { extraPath = path }
+        startActivitySafe(intent)
+        finish()
     }
 
     private fun updateSaveMenuItem() {
         if (!this::menuBinding.isInitialized) {
             return
         }
-        menuBinding.saveItem.isEnabled = viewModel.writeFileState.value.isReady
+        val enabled = viewModel.writeFileState.value.isReady
+        menuBinding.saveItem.isEnabled = enabled
+        menuBinding.saveAsItem.isEnabled = enabled
     }
 
     @Parcelize
@@ -441,12 +526,15 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
 
     private class MenuBinding private constructor(
         val menu: Menu,
-        val saveItem: MenuItem
+        val saveItem: MenuItem,
+        val saveAsItem: MenuItem
     ) {
         companion object {
             fun inflate(menu: Menu, inflater: MenuInflater): MenuBinding {
                 inflater.inflate(R.menu.text_editor, menu)
-                return MenuBinding(menu, menu.findItem(R.id.action_save))
+                return MenuBinding(
+                    menu, menu.findItem(R.id.action_save), menu.findItem(R.id.action_save_as)
+                )
             }
         }
     }

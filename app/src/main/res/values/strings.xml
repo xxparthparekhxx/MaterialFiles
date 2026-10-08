@@ -797,6 +797,8 @@
     <string name="text_editor_title_format">%1$s</string>
     <string name="text_editor_title_changed_format">*%1$s</string>
     <string name="text_editor_save_success">Saved</string>
+    <string name="text_editor_save_as">Save as</string>
+    <string name="text_editor_save_as_file_name_hint">File name</string>
     <string name="text_editor_reload_message">Are you sure you want to reload? Unsaved changes to this document will be lost.</string>
     <string name="text_editor_find">Find</string>
     <string name="text_editor_find_next">Find next</string>
