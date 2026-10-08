@@ -574,6 +574,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
         }
         Settings.FILE_LIST_HIDDEN_FIRST.observe(viewLifecycleOwner) { adapter.isHiddenFirst = it }
+        Settings.FILE_LIST_SEARCH_IN_SUBFOLDERS.observe(viewLifecycleOwner) {
+            // An ongoing search may already have descended into subfolders.
+            if (viewModel.searchState.isSearching) {
+                viewModel.reload()
+            }
+        }
         Settings.FILE_LIST_FOLDER_SORT_BY.observe(viewLifecycleOwner) {
             adapter.folderSortBy = when (it) {
                 "1" -> By.NAME

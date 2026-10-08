@@ -98,6 +98,12 @@
             android:defaultValue="@bool/pref_default_value_file_list_hidden_first" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_search_in_subfolders"
+            android:title="@string/settings_file_list_search_in_subfolders_title"
+            android:summary="@string/settings_file_list_search_in_subfolders_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_search_in_subfolders" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_auto_calculate_checksums"
             android:title="@string/settings_auto_calculate_checksums_title"
             android:summary="@string/settings_auto_calculate_checksums_summary"
