@@ -37,6 +37,7 @@ import me.zhanghai.android.files.databinding.FileItemCompactListBinding
 import me.zhanghai.android.files.databinding.FileItemGridBinding
 import me.zhanghai.android.files.databinding.FileItemListBinding
 import me.zhanghai.android.files.file.FileItem
+import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.fileSize
 import me.zhanghai.android.files.file.formatShort
 import me.zhanghai.android.files.file.iconRes
@@ -727,6 +728,9 @@ class FileListAdapter(
         val attributes = file.attributes
         val descriptionParts = mutableListOf<String>()
         descriptionParts += attributes.lastModifiedTime().toInstant().formatShort(context)
+        if (file.mimeType == MimeType.MOUNT_POINT) {
+            descriptionParts += context.getString(R.string.file_item_description_mount_point)
+        }
         if (!isDirectory) {
             descriptionParts += attributes.fileSize.formatHumanReadable(context)
         } else if (Settings.FILE_LIST_SHOW_DIRECTORY_ITEM_COUNT.valueCompat) {

@@ -36,4 +36,6 @@
     <string name="file_type_name_posix_symbolic_link">Link</string>
     <string name="file_type_name_posix_socket">Socket</string>
     <string name="file_type_name_posix_symbolic_link_broken">Link (broken)</string>
+    <string name="file_type_name_mount_point">Mount point</string>
+    <string name="file_type_name_posix_mount_point">Mount point</string>
 </resources>
