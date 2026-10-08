@@ -1267,7 +1267,8 @@ private fun FileJob.create(path: Path, createDirectory: Boolean) {
             val result = showErrorDialog(
                 getString(R.string.file_job_create_error_title),
                 getString(
-                    R.string.file_job_create_error_message_format, getFileName(path), ioException.toString()
+                    R.string.file_job_create_error_message_format, getFileName(path),
+                    ioException.toUserFriendlyMessage(service)
                 ),
                 getReadOnlyFileStore(path, ioException),
                 false,
