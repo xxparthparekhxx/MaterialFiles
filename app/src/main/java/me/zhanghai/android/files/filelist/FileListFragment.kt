@@ -2474,7 +2474,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         (activity as? FileListActivity)?.openInNewTab(file.path)
     }
 
-    private fun openFileWithIntent(file: FileItem, withChooser: Boolean) {
+    override fun openFileInNewTask(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        openFileWithIntent(file, withChooser = false, inNewTask = true)
+    }
+
+    private fun openFileWithIntent(file: FileItem, withChooser: Boolean, inNewTask: Boolean = false) {
         if (adapter.indicateLastOpenedItem) {
             viewModel.lastActivatedPath = file.path
             adapter.lastActivatedPath = file.path
@@ -2495,7 +2502,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     if (override == null || override.packageName == requireContext().packageName) {
                         maybeAddImageViewerActivityExtras(this, path, mimeType)
                     }
-                    if (Settings.OPEN_FILES_IN_NEW_TASK.valueCompat) {
+                    if (inNewTask) {
+                        addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK
+                        )
+                    } else if (Settings.OPEN_FILES_IN_NEW_TASK.valueCompat) {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     if (override == null && Settings.OPEN_WITH_BUILT_IN_VIEWERS.valueCompat &&

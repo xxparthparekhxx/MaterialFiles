@@ -5,10 +5,10 @@
 
 package me.zhanghai.android.files.viewer.text
 
-enum class LineEnding(val separator: String, val displayName: String) {
-    LF("\n", "LF"),
-    CRLF("\r\n", "CRLF"),
-    CR("\r", "CR");
+enum class LineEnding(val separator: String) {
+    LF("\n"),
+    CRLF("\r\n"),
+    CR("\r");
 
     companion object {
         fun detect(text: String): LineEnding {

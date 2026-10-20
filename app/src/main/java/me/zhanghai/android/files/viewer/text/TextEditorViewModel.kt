@@ -141,7 +141,6 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                                     val detected = withContext(Dispatchers.Default) {
                                         detectLineEnding(text)
                                     }
-                                    detectedLineEnding = detected
                                     lineEnding.value = detected
                                 }
                                 _textState.value = DataState.Success(text)
@@ -164,12 +163,28 @@ class TextEditorViewModel(file: Path) : ViewModel() {
         private set
 
     // Line ending handling
-    private var detectedLineEnding: LineEnding? = null
     private var detectedLineEndingText: String? = null
-    private var isLineEndingChosen = false
+    var isLineEndingChosen = false
+        private set
 
-    /** Set the line ending explicitly, which turns off automatic detection. */
-    fun chooseLineEnding(lineEnding: LineEnding) {
+    /**
+     * Sets the line ending explicitly, which turns off the automatic detection. A null line
+     * ending turns the automatic detection on again.
+     */
+    fun chooseLineEnding(lineEnding: LineEnding?) {
+        if (lineEnding == null) {
+            isLineEndingChosen = false
+            detectedLineEndingText = null
+            val text = when (val state = textState.value) {
+                is DataState.Success -> state.data
+                else -> null
+            }
+            if (text != null) {
+                detectedLineEndingText = text
+                this.lineEnding.value = detectLineEnding(text)
+            }
+            return
+        }
         isLineEndingChosen = true
         this.lineEnding.value = lineEnding
     }

@@ -240,6 +240,11 @@ class FileListActivity : AppActivity() {
             if (index >= tabLabels.size) {
                 return@Observer
             }
+            // The path of the tab is the path that is shown, so that a new tab starts there and
+            // the tab is restored at the right place.
+            if (index < tabPathUris.size) {
+                tabPathUris[index] = path.toUri().toString()
+            }
             val label = getTabLabel(path)
             if (tabLabels[index] != label) {
                 tabLabels[index] = label
@@ -335,6 +340,10 @@ class FileListActivity : AppActivity() {
      * Opens a folder in a new tab and switches to it.
      */
     fun openInNewTab(path: Path) {
+        if (!Settings.FILE_LIST_TABS.valueCompat) {
+            // The tabs are turned off, so there is no tab to open the path in.
+            return
+        }
         addTab(path, getTabLabel(path))
     }
 

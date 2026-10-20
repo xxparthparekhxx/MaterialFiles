@@ -18,10 +18,12 @@ import androidx.core.view.isVisible
 import java8.nio.file.Path
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.databinding.BreadcrumbItemBinding
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.getColorByAttr
 import me.zhanghai.android.files.util.getDimensionPixelSize
 import me.zhanghai.android.files.util.getResourceIdByAttr
 import me.zhanghai.android.files.util.layoutInflater
+import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.withTheme
 
 class BreadcrumbLayout : HorizontalScrollView {
@@ -160,7 +162,12 @@ class BreadcrumbLayout : HorizontalScrollView {
         for (index in itemsLayout.childCount..<data.paths.size) {
             val binding = BreadcrumbItemBinding.inflate(context.layoutInflater, itemsLayout, false)
             val menu = PopupMenu(popupContext, binding.root)
-                .apply { inflate(R.menu.file_list_breadcrumb) }
+                .apply {
+                    inflate(R.menu.file_list_breadcrumb)
+                    // There is no tab to open the path in when the tabs are turned off.
+                    menu.findItem(R.id.action_open_in_new_tab)?.isVisible =
+                        Settings.FILE_LIST_TABS.valueCompat
+                }
             binding.root.setOnLongClickListener {
                 menu.show()
                 true

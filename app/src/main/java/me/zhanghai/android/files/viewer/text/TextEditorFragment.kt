@@ -393,11 +393,17 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
 
     private fun showLineEndingPicker() {
         val entries = resources.getStringArray(R.array.text_editor_line_ending_entries)
-        val currentOrdinal = viewModel.lineEnding.value.ordinal
+        // The last entry turns the automatic detection on again.
+        val options: List<LineEnding?> = LineEnding.values().toList() + null
+        val checkedIndex = if (viewModel.isLineEndingChosen) {
+            viewModel.lineEnding.value.ordinal
+        } else {
+            options.lastIndex
+        }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.text_editor_line_ending)
-            .setSingleChoiceItems(entries, currentOrdinal) { dialog, which ->
-                viewModel.chooseLineEnding(LineEnding.values()[which])
+            .setSingleChoiceItems(entries, checkedIndex) { dialog, which ->
+                viewModel.chooseLineEnding(options[which])
                 dialog.dismiss()
             }
             .setNegativeButton(android.R.string.cancel, null)

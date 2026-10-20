@@ -510,7 +510,8 @@ class FileListAdapter(
         menu.findItem(R.id.action_copy).isVisible = !hasPickOptions
         menu.findItem(R.id.action_paste_into).isVisible =
             isDirectory && !hasPickOptions && !isReadOnly && hasPaste
-        menu.findItem(R.id.action_open_in_new_tab).isVisible = isDirectory && !hasPickOptions
+        menu.findItem(R.id.action_open_in_new_tab).isVisible =
+            isDirectory && !hasPickOptions && Settings.FILE_LIST_TABS.valueCompat
         val checked = file in selectedFiles
         holder.itemLayout.isChecked = checked
         holder.itemLayout.isActivated =
@@ -699,6 +700,10 @@ class FileListAdapter(
                 }
                 R.id.action_open_in_new_tab -> {
                     listener.openInNewTab(file)
+                    true
+                }
+                R.id.action_open_in_new_task -> {
+                    listener.openFileInNewTask(file)
                     true
                 }
                 R.id.action_delete -> {
@@ -1025,6 +1030,7 @@ class FileListAdapter(
         fun dropFiles(event: DragEvent, directory: Path?)
         fun openFileWith(file: FileItem)
         fun openInNewTab(file: FileItem)
+        fun openFileInNewTask(file: FileItem)
         fun cutFile(file: FileItem)
         fun copyFile(file: FileItem)
         fun pasteInto(directory: Path)
