@@ -97,6 +97,10 @@ object Client {
 
     private val sessions = mutableMapOf<Authority, Session>()
 
+    // The authorities whose session has to be encrypted, so that the session setup is only
+    // retried with an encrypted session once.
+    private val encryptedAuthorities = mutableSetOf<Authority>()
+
     private val sessionUsedAt = mutableMapOf<Authority, Long>()
 
     private const val SESSION_IDLE_PROBE_NANOS = 15L * 1_000_000_000L
@@ -733,18 +737,25 @@ object Client {
                 ?: throw ClientException("No password found for $authority")
             val hostAddress = resolveHostName(authority.host)
             session = try {
-                authenticate(client, authority, hostAddress, password)
+                authenticate(
+                    if (authority in encryptedAuthorities) encryptedClient else client,
+                    authority, hostAddress, password
+                )
             } catch (e: SMBRuntimeException) {
                 if (e.isLogonFailure()) {
                     throw ClientException(e)
                 }
                 // The server rejected the session, which it does when it requires the session to
                 // be encrypted. Try again with an encrypted session.
-                try {
+                val encryptedSession = try {
                     authenticate(encryptedClient, authority, hostAddress, password)
                 } catch (e2: SMBRuntimeException) {
-                    throw ClientException(e)
+                    // The encrypted session is the more specific failure, so it is the one that
+                    // is reported.
+                    throw ClientException(e2)
                 }
+                encryptedAuthorities += authority
+                encryptedSession
             }
             sessions[authority] = session
             sessionUsedAt[authority] = System.nanoTime()
