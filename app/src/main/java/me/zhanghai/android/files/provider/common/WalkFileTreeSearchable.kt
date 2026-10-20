@@ -5,9 +5,6 @@
 
 package me.zhanghai.android.files.provider.common
 
-import androidx.annotation.BoolRes
-import androidx.annotation.StringRes
-import androidx.preference.PreferenceManager
 import java8.nio.file.DirectoryIteratorException
 import java8.nio.file.FileVisitOption
 import java8.nio.file.FileVisitResult
@@ -17,11 +14,9 @@ import java8.nio.file.LinkOption
 import java8.nio.file.Path
 import java8.nio.file.attribute.BasicFileAttributes
 import me.zhanghai.android.files.R
-import me.zhanghai.android.files.provider.root.isRunningAsRoot
-import me.zhanghai.android.files.provider.root.rootContext
-import me.zhanghai.android.files.settings.SettingLiveData
 import me.zhanghai.android.files.settings.Settings
-import me.zhanghai.android.files.util.valueCompat
+import me.zhanghai.android.files.settings.getBooleanSetting
+import me.zhanghai.android.files.util.isBinary
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InterruptedIOException
@@ -45,29 +40,6 @@ object WalkFileTreeSearchable {
             R.bool.pref_default_value_file_list_search_file_contents, false,
             Settings.FILE_LIST_SEARCH_FILE_CONTENTS
         )
-
-    // The file system providers run in another process when accessing as root, in which case the
-    // settings have to be read from the shared preferences directly.
-    private fun getBooleanSetting(
-        @StringRes keyRes: Int,
-        @BoolRes defaultValueRes: Int,
-        valueIfFailed: Boolean,
-        setting: SettingLiveData<Boolean>
-    ): Boolean =
-        try {
-            if (isRunningAsRoot) {
-                val sharedPreferences =
-                    PreferenceManager.getDefaultSharedPreferences(rootContext)
-                val key = rootContext.getString(keyRes)
-                val defaultValue = rootContext.resources.getBoolean(defaultValueRes)
-                sharedPreferences.getBoolean(key, defaultValue)
-            } else {
-                setting.valueCompat
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            valueIfFailed
-        }
 
     @Throws(IOException::class)
     fun search(
@@ -201,7 +173,7 @@ object WalkFileTreeSearchable {
     private fun matchesContents(path: Path, matcher: (String) -> Boolean): Boolean =
         try {
             val bytes = path.readAtMost(MAX_CONTENT_SEARCH_FILE_SIZE)
-            if (bytes.isBinary) {
+            if (bytes.isBinary()) {
                 false
             } else {
                 matcher(bytes.decodeText())
@@ -243,22 +215,10 @@ object WalkFileTreeSearchable {
             String(this, StandardCharsets.ISO_8859_1)
         }
 
-    private val ByteArray.isBinary: Boolean
-        get() {
-            val checkLength = minOf(size, BINARY_CHECK_LENGTH)
-            for (index in 0 until checkLength) {
-                if (this[index] == 0.toByte()) {
-                    return true
-                }
-            }
-            return false
-        }
-
     private const val REGEX_PREFIX = "re:"
 
     private const val MAX_CONTENT_SEARCH_FILE_SIZE = 1024 * 1024
 
-    private const val BINARY_CHECK_LENGTH = 8192
 
     // This method traverses the first level first, before diving into child directories.
     // FileVisitResult returned from visitor may be ignored and always considered CONTINUE.
