@@ -22,18 +22,24 @@ private val rootStrategy: RootStrategy
     }
 
 /**
+ * Whether the file service has to be used for these paths, which is the case when the root
+ * strategy asks for it or when the paths need root.
+ */
+private fun requiresFileService(paths: List<Path>, isAttributeAccess: Boolean): Boolean =
+    when (rootStrategy) {
+        RootStrategy.NEVER -> false
+        RootStrategy.ALWAYS -> true
+        RootStrategy.AUTOMATIC ->
+            paths.any { (it as? RootablePath)?.isRootRequired(isAttributeAccess) == true }
+    }
+
+/**
  * Whether this path is accessed through the root or Shizuku file service. The provider then runs
  * in the file service process, where it never notifies the media scanner, because the media
  * scanner cannot read a file that needs root to access. The caller has to notify it instead.
  */
 val Path.isAccessedByFileService: Boolean
-    get() =
-        when (rootStrategy) {
-            RootStrategy.NEVER -> false
-            RootStrategy.ALWAYS -> true
-            RootStrategy.AUTOMATIC ->
-                (this as? RootablePath)?.isRootRequired(isAttributeAccess = false) == true
-        }
+    get() = requiresFileService(listOf(this), isAttributeAccess = false)
 
 @Throws(IOException::class)
 fun <T, R> callRootable(
@@ -43,15 +49,10 @@ fun <T, R> callRootable(
     rootObject: T, block: T.() -> R
 ): R {
     path as? RootablePath ?: throw IllegalArgumentException("$path is not a RootablePath")
-    return when (rootStrategy) {
-        RootStrategy.NEVER -> localObject.block()
-        RootStrategy.AUTOMATIC ->
-            if (path.isRootRequired(isAttributeAccess)) {
-                rootObject.block()
-            } else {
-                localObject.block()
-            }
-        RootStrategy.ALWAYS -> rootObject.block()
+    return if (requiresFileService(listOf(path), isAttributeAccess)) {
+        rootObject.block()
+    } else {
+        localObject.block()
     }
 }
 
@@ -66,17 +67,9 @@ fun <T, R> callRootable(
 ): R {
     path1 as? RootablePath ?: throw IllegalArgumentException("$path1 is not a RootablePath")
     path2 as? RootablePath ?: throw IllegalArgumentException("$path2 is not a RootablePath")
-    return when (rootStrategy) {
-        RootStrategy.NEVER ->
-            localObject.block()
-        RootStrategy.AUTOMATIC ->
-            if (path1.isRootRequired(isAttributeAccess)
-                || path2.isRootRequired(isAttributeAccess)) {
-                rootObject.block()
-            } else {
-                localObject.block()
-            }
-        RootStrategy.ALWAYS ->
-            rootObject.block()
+    return if (requiresFileService(listOf(path1, path2), isAttributeAccess)) {
+        rootObject.block()
+    } else {
+        localObject.block()
     }
 }
