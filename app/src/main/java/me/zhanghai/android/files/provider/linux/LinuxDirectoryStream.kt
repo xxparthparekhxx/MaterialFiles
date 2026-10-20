@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.provider.linux
 
+import android.system.OsConstants
 import java8.nio.file.DirectoryIteratorException
 import java8.nio.file.DirectoryStream
 import java8.nio.file.Path
@@ -83,6 +84,13 @@ internal class LinuxDirectoryStream(
                     val dirent = try {
                         Syscall.readdir(dir)
                     } catch (e: SyscallException) {
+                        // A FUSE/sdcardfs quirk can make readdir64 fail with "No such file or
+                        // directory" mid-iteration on a perfectly valid, non-empty directory.
+                        // Treat it as end of stream so the entries read so far are still shown
+                        // instead of failing the whole listing.
+                        if (e.errno == OsConstants.ENOENT) {
+                            return null
+                        }
                         throw DirectoryIteratorException(
                             e.toFileSystemException(directory.toString())
                         )
