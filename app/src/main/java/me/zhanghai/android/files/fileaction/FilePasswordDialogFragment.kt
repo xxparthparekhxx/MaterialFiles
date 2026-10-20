@@ -58,9 +58,9 @@ class FilePasswordDialogFragment : AppCompatDialogFragment() {
         return MaterialAlertDialogBuilder(context, theme)
             .setTitle(
                 if (args.encrypt) {
-                    R.string.file_action_encrypt_title
+                    R.string.file_action_encrypt
                 } else {
-                    R.string.file_action_decrypt_title
+                    R.string.file_action_decrypt
                 }
             )
             .apply {

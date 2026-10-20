@@ -102,11 +102,9 @@
     <string name="file_action_sftp_password_message_format">Enter the password for “%1$s”.</string>
     <string name="file_action_sftp_password_error_empty" translatable="false">@string/file_action_archive_password_error_empty</string>
 
-    <string name="file_action_encrypt_title">Encrypt</string>
-    <string name="file_action_decrypt_title">Decrypt</string>
-    <string name="file_action_password_error_empty">Password cannot be empty</string>
     <string name="file_action_encrypt">Encrypt</string>
     <string name="file_action_decrypt">Decrypt</string>
+    <string name="file_action_password_error_empty" translatable="false">@string/file_action_archive_password_error_empty</string>
 
     <plurals name="file_job_archive_scan_notification_title_format">
         <item quantity="one">Preparing to compress %1$,d file (%2$s)</item>
@@ -942,6 +940,7 @@
         <item>LF (Unix)</item>
         <item>CRLF (Windows)</item>
         <item>CR (Classic Mac)</item>
+        <item>Automatic</item>
     </string-array>
     <string name="charset_picker_search_hint">Search</string>
     <string name="text_editor_undo">Undo</string>

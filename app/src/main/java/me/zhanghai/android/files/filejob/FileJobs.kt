@@ -2714,6 +2714,17 @@ private fun FileJob.encrypt(
             }
         }
     }
+    if (successful) {
+        // The plaintext is removed, so that the file is really encrypted and so that decrypting
+        // it again can write the plaintext back.
+        try {
+            source.deleteIfExists()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: UnsupportedOperationException) {
+            e.printStackTrace()
+        }
+    }
     transferInfo.incrementTransferredFileCount()
     postEncryptNotification(transferInfo, source)
 }
