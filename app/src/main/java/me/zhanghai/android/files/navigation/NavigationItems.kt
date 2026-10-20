@@ -15,6 +15,7 @@ import androidx.annotation.StringRes
 import java8.nio.file.Path
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.about.AboutActivity
+import me.zhanghai.android.files.applist.AppListActivity
 import me.zhanghai.android.files.file.JavaFile
 import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.filelist.RecentFilesActivity
@@ -342,6 +343,10 @@ private val menuItems: List<NavigationItem>
         } else {
             null
         },
+        IntentMenuItem(
+            R.drawable.file_apk_icon, R.string.navigation_app_list,
+            AppListActivity::class.createIntent()
+        ),
         IntentMenuItem(
             R.drawable.settings_icon_white_24dp, R.string.navigation_settings,
             SettingsActivity::class.createIntent()
