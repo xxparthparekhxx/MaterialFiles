@@ -109,11 +109,31 @@ class ImageInfoLiveData(
                                     exifInterface.getAttributeNotBlank(ExifInterface.TAG_ARTIST)
                                 val copyright =
                                     exifInterface.getAttributeNotBlank(ExifInterface.TAG_COPYRIGHT)
+                                val exposureTime = exifInterface.getAttributeDoubleOrNull(
+                                    ExifInterface.TAG_EXPOSURE_TIME
+                                )
+                                val exposureBiasValue = exifInterface.getAttributeDoubleOrNull(
+                                    ExifInterface.TAG_EXPOSURE_BIAS_VALUE
+                                )
+                                val flash = exifInterface.getAttributeIntOrNull(
+                                    ExifInterface.TAG_FLASH
+                                )
+                                val whiteBalance = exifInterface.getAttributeIntOrNull(
+                                    ExifInterface.TAG_WHITE_BALANCE
+                                )
+                                val focalLengthIn35mm = exifInterface.getAttributeIntOrNull(
+                                    ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM
+                                )
+                                val lensModel = exifInterface.getAttributeNotBlank(
+                                    ExifInterface.TAG_LENS_MODEL
+                                )
+                                val allAttributes = exifInterface.getAllAttributes()
                                 ExifInfo(
                                     dateTimeOriginal, gpsCoordinates, gpsAltitude, make,
                                     model, fNumber, shutterSpeedValue, focalLength,
                                     photographicSensitivity, software, description, artist,
-                                    copyright
+                                    copyright, exposureTime, exposureBiasValue, flash,
+                                    whiteBalance, focalLengthIn35mm, lensModel, allAttributes
                                 )
                             }
                         } catch (e: Exception) {

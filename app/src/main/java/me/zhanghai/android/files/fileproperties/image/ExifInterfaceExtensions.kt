@@ -59,3 +59,30 @@ private fun Instant.withTimezoneInferredFrom(other: Instant): Instant? {
     }
     return null
 }
+
+val ALL_EXIF_TAGS: List<String> by lazy {
+    ExifInterface::class.java.fields
+        .filter { it.name.startsWith("TAG_") && it.type == String::class.java }
+        .mapNotNull {
+            try {
+                it.get(null) as? String
+            } catch (e: Exception) {
+                null
+            }
+        }
+        .distinct()
+        .sorted()
+}
+
+fun ExifInterface.getAllAttributes(): Map<String, String> {
+    val map = sortedMapOf<String, String>()
+    for (tag in ALL_EXIF_TAGS) {
+        try {
+            val value = getAttribute(tag)
+            if (!value.isNullOrBlank()) {
+                map[tag] = value
+            }
+        } catch (ignored: Exception) {}
+    }
+    return map
+}

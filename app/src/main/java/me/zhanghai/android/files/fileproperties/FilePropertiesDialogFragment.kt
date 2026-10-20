@@ -126,6 +126,13 @@ class FilePropertiesDialogFragment : AppCompatDialogFragment() {
         binding.viewPager.offscreenPageLimit = tabAdapter.count - 1
         binding.viewPager.adapter = tabAdapter
         binding.tabLayout.setupWithViewPager(binding.viewPager)
+        if (args.initialTabRes != 0) {
+            val initialTitle = getString(args.initialTabRes)
+            val initialIndex = tabs.indexOfFirst { it.first == initialTitle }
+            if (initialIndex != -1) {
+                binding.viewPager.currentItem = initialIndex
+            }
+        }
     }
 
     override fun onStart() {
@@ -137,11 +144,11 @@ class FilePropertiesDialogFragment : AppCompatDialogFragment() {
     }
 
     companion object {
-        fun show(file: FileItem, fragment: Fragment) {
-            FilePropertiesDialogFragment().putArgs(Args(file)).show(fragment)
+        fun show(file: FileItem, fragment: Fragment, initialTabRes: Int = 0) {
+            FilePropertiesDialogFragment().putArgs(Args(file, initialTabRes)).show(fragment)
         }
     }
 
     @Parcelize
-    class Args(val file: FileItem): ParcelableArgs
+    class Args(val file: FileItem, val initialTabRes: Int = 0): ParcelableArgs
 }
