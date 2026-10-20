@@ -29,6 +29,7 @@ import me.zhanghai.android.files.provider.common.readAllBytes
 import me.zhanghai.android.files.provider.common.size
 import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.DataState
+import me.zhanghai.android.files.util.isBinary
 import me.zhanghai.android.files.util.isFinished
 import me.zhanghai.android.files.util.isReady
 import me.zhanghai.android.files.util.toError
@@ -116,7 +117,7 @@ class TextEditorViewModel(file: Path) : ViewModel() {
                     when (bytesState) {
                         is DataState.Loading -> _textState.value = _textState.value.toLoading()
                         is DataState.Success -> {
-                            if (bytesState.data.isBinary) {
+                            if (bytesState.data.isBinary()) {
                                 _textState.value = _textState.value.toError(BinaryFileException())
                                 return@collectLatest
                             }
@@ -309,14 +310,3 @@ class BinaryFileException : IOException("Binary file cannot be opened as text")
 
 class FileTooLargeException(val size: Long, val maxSize: Long) :
     IOException("File size $size is too large (maximum $maxSize)")
-
-private val ByteArray.isBinary: Boolean
-    get() {
-        val checkLength = minOf(size, 8192)
-        for (i in 0 until checkLength) {
-            if (this[i] == 0.toByte()) {
-                return true
-            }
-        }
-        return false
-    }

@@ -24,7 +24,7 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.WriteWith
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.requireViewByIdCompat
-import me.zhanghai.android.files.databinding.ArchivePasswordDialogBinding
+import me.zhanghai.android.files.databinding.PasswordDialogBinding
 import me.zhanghai.android.files.provider.archive.archiveAddPassword
 import me.zhanghai.android.files.provider.archive.archiveFile
 import me.zhanghai.android.files.ui.AllowSoftInputHackAlertDialogCustomView
@@ -46,7 +46,7 @@ import me.zhanghai.android.files.util.setOnEditorConfirmActionListener
 class ArchivePasswordDialogFragment : AppCompatDialogFragment() {
     private val args by args<Args>()
 
-    private lateinit var binding: ArchivePasswordDialogBinding
+    private lateinit var binding: PasswordDialogBinding
 
     private var isListenerNotified = false
 
@@ -64,7 +64,7 @@ class ArchivePasswordDialogFragment : AppCompatDialogFragment() {
             .setTitle(getTitle(context))
             .setMessage(getMessage(args.path.archiveFile.fileName, context))
             .apply {
-                binding = ArchivePasswordDialogBinding.inflate(context.layoutInflater)
+                binding = PasswordDialogBinding.inflate(context.layoutInflater)
                 binding.passwordEdit.hideTextInputLayoutErrorOnTextChange(binding.passwordLayout)
                 binding.passwordEdit.setOnEditorConfirmActionListener { onOk() }
                 if (savedInstanceState != null) {

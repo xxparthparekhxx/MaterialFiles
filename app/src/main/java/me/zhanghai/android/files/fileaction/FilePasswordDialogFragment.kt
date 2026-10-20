@@ -20,7 +20,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.requireViewByIdCompat
-import me.zhanghai.android.files.databinding.FilePasswordDialogBinding
+import me.zhanghai.android.files.databinding.PasswordDialogBinding
 import me.zhanghai.android.files.filelist.FileItemSet
 import me.zhanghai.android.files.ui.AllowSoftInputHackAlertDialogCustomView
 import me.zhanghai.android.files.util.ParcelableArgs
@@ -41,7 +41,7 @@ class FilePasswordDialogFragment : AppCompatDialogFragment() {
     private val listener: Listener
         get() = requireParentFragment() as Listener
 
-    private lateinit var binding: FilePasswordDialogBinding
+    private lateinit var binding: PasswordDialogBinding
 
     private var isListenerNotified = false
 
@@ -64,7 +64,7 @@ class FilePasswordDialogFragment : AppCompatDialogFragment() {
                 }
             )
             .apply {
-                binding = FilePasswordDialogBinding.inflate(context.layoutInflater)
+                binding = PasswordDialogBinding.inflate(context.layoutInflater)
                 binding.passwordEdit.hideTextInputLayoutErrorOnTextChange(binding.passwordLayout)
                 binding.passwordEdit.setOnEditorConfirmActionListener { onOk() }
                 if (savedInstanceState != null) {
