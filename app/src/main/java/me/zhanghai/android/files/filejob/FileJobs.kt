@@ -1701,6 +1701,11 @@ private fun FileJob.copyOrMove(
                 source.moveTo(target, *options)
             }
             recordCreatedLinuxPath(source, target)
+            if (type == CopyMoveType.MOVE) {
+                // The source is gone, so the media database has to learn about it, like it does
+                // for a deleted file.
+                recordDeletedLinuxPath(source)
+            }
             transferInfo.incrementTransferredFileCount()
             postCopyMoveNotification(transferInfo, source, type)
         } catch (e: FileAlreadyExistsException) {
