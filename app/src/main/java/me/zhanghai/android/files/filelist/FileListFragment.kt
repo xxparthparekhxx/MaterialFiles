@@ -7,7 +7,9 @@ package me.zhanghai.android.files.filelist
 
 import android.app.Activity
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ComponentName
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -25,6 +27,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.text.TextUtils
+import android.view.DragEvent
 import android.view.Gravity
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
@@ -87,6 +90,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.ConnectException
 import java.net.SocketTimeoutException
+import java.net.URI
 import java.net.UnknownHostException
 import java.nio.charset.Charset
 import kotlin.math.roundToInt
@@ -114,6 +118,7 @@ import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.file.asMimeTypeOrNull
 import me.zhanghai.android.files.provider.common.AndroidFileTypeDetector
 import me.zhanghai.android.files.file.extension
+import me.zhanghai.android.files.file.fileProviderPathOrNull
 import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.file.isImage
@@ -362,6 +367,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.recyclerView.layoutManager = layoutManager
         adapter = FileListAdapter(this)
         binding.recyclerView.adapter = adapter
+        binding.recyclerView.setOnDragListener { _, event ->
+            if (!event.clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_URILIST)
+                || !canDropInto(null)) {
+                return@setOnDragListener false
+            }
+            when (event.action) {
+                DragEvent.ACTION_DRAG_STARTED -> true
+                DragEvent.ACTION_DROP -> {
+                    dropFiles(event, null)
+                    true
+                }
+                else -> true
+            }
+        }
         val fastScroller = ThemedFastScroller.create(binding.recyclerView)
         binding.recyclerView.setOnApplyWindowInsetsListener(
             ScrollingViewOnApplyWindowInsetsListener(binding.recyclerView, fastScroller)
@@ -2072,6 +2091,97 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     override fun onDragSelectEnd() {
     }
+
+    override fun startDrag(view: View, files: FileItemSet) {
+        if (!isAdded || viewModel.pickOptions != null) {
+            return
+        }
+        val items = files.map { ClipData.Item(it.path.fileProviderUri) }
+        if (items.isEmpty()) {
+            return
+        }
+        val mimeTypes = (listOf(ClipDescription.MIMETYPE_TEXT_URILIST) +
+            files.map { it.mimeType.value }).distinct()
+        val clipData = ClipData::class.create(files.first().name, mimeTypes, items)
+        val flags = View.DRAG_FLAG_GLOBAL or View.DRAG_FLAG_GLOBAL_URI_READ
+        val shadow = View.DragShadowBuilder(view)
+        val localState = files.map { it.path }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            view.startDragAndDrop(clipData, shadow, localState, flags)
+        } else {
+            @Suppress("DEPRECATION")
+            view.startDrag(clipData, shadow, localState, flags)
+        }
+    }
+
+    override fun canDropInto(directory: Path?): Boolean {
+        if (!isAdded || viewModel.pickOptions != null || viewModel.searchState.isSearching) {
+            return false
+        }
+        val targetDirectory = directory ?: viewModel.currentPath
+        return !targetDirectory.isArchivePath && !targetDirectory.fileSystem.isReadOnly &&
+            !Settings.READ_ONLY_MODE.valueCompat
+    }
+
+    override fun dropFiles(event: DragEvent, directory: Path?) {
+        if (!canDropInto(directory)) {
+            return
+        }
+        val targetDirectory = directory ?: viewModel.currentPath
+        val internalSources = (event.localState as? List<*>)?.filterIsInstance<Path>()
+            ?.takeIf { it.isNotEmpty() }
+        val isInternal = internalSources != null
+        val clipData = event.clipData ?: return
+        if (!isInternal && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // The permission is bound to this activity and lives until it is destroyed.
+            requireActivity().requestDragAndDropPermissions(event)
+        }
+        val sources = internalSources ?: buildList {
+            for (i in 0 until clipData.itemCount) {
+                val uri = clipData.getItemAt(i).uri ?: continue
+                val path = uri.fileProviderPathOrNull ?: when (uri.scheme) {
+                    ContentResolver.SCHEME_CONTENT -> try {
+                        Paths.get(URI.create(uri.toString()))
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                    ContentResolver.SCHEME_FILE -> try {
+                        uri.path?.let { Paths.get(it) }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                    else -> null
+                }
+                if (path != null) {
+                    add(path)
+                }
+            }
+        }
+        val validSources = sources.distinct().filter { source ->
+            source != targetDirectory && !targetDirectory.startsWith(source) &&
+                (!isInternal || source.parent != targetDirectory)
+        }
+        if (validSources.isEmpty()) {
+            return
+        }
+        val move = isInternal &&
+            validSources.all { it.isSameFileStore(targetDirectory) } &&
+            validSources.none { it.fileSystem.isReadOnly }
+        if (move) {
+            FileJobService.move(validSources, targetDirectory, requireContext())
+        } else {
+            FileJobService.copy(validSources, targetDirectory, requireContext())
+        }
+    }
+
+    private fun Path.isSameFileStore(other: Path): Boolean =
+        try {
+            Files.getFileStore(this).name() == Files.getFileStore(other).name()
+        } catch (e: Exception) {
+            false
+        }
 
     override fun openFile(file: FileItem) {
         if (!isAdded) {

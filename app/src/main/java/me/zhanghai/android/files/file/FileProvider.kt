@@ -468,6 +468,19 @@ val Path.fileProviderUri: Uri
             .build()
     }
 
+val Uri.fileProviderPathOrNull: Path?
+    get() = try {
+        if (scheme == ContentResolver.SCHEME_CONTENT
+            && authority == BuildConfig.FILE_PROVIDIER_AUTHORITY) {
+            fileProviderPath
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+
 private val Uri.fileProviderPath: Path
     get() {
         // Strip the prepended slash. A slash is always prepended because our Uri path starts with
