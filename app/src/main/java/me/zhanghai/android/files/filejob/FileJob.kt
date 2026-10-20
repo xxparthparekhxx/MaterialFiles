@@ -22,7 +22,7 @@ abstract class FileJob {
     internal lateinit var service: FileJobService
         private set
 
-    internal val deletedLinuxPaths = mutableListOf<String>()
+    internal val mediaPathsToScan = mutableListOf<String>()
 
     fun cancel() {
         isCanceled = true
@@ -45,7 +45,7 @@ abstract class FileJob {
                 service.showToast(e.toString())
             }
         } finally {
-            flushDeletedLinuxPaths()
+            flushMediaPathsToScan()
             service.notificationManager.cancel(id)
             FileJobProgresses.remove(id)
             NavigationStorageRefreshLiveData.notifyChanged()
