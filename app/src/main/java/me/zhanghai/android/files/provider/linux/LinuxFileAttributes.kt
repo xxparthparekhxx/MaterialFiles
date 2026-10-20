@@ -33,6 +33,9 @@ internal class LinuxFileAttributes(
     override val mode: Set<PosixFileModeBit>?,
     override val seLinuxContext: ByteString?
 ) : AbstractPosixFileAttributes() {
+    val deviceId: Long
+        get() = (fileKey as LinuxFileKey).deviceId
+
     companion object {
         fun from(
             stat: StructStat,

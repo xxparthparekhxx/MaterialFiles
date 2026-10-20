@@ -10,6 +10,6 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 internal data class LinuxFileKey(
-    private val deviceId: Long,
-    private val inodeNumber: Long
+    val deviceId: Long,
+    val inodeNumber: Long
 ) : Parcelable

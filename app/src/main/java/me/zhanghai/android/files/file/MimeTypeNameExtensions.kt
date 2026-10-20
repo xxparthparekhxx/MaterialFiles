@@ -22,7 +22,8 @@ private val specialPosixFileTypeToNameResMap = mapOf(
     "inode/blockdevice" to R.string.file_type_name_posix_block_device,
     "inode/fifo" to R.string.file_type_name_posix_fifo,
     "inode/symlink" to R.string.file_type_name_posix_symbolic_link,
-    "inode/socket" to R.string.file_type_name_posix_socket
+    "inode/socket" to R.string.file_type_name_posix_socket,
+    "inode/mount-point" to R.string.file_type_name_posix_mount_point
 ).mapKeys { it.key.asMimeType() }
 
 private fun MimeTypeIcon.getNameRes(mimeType: MimeType, hasExtension: Boolean): Int =
@@ -35,6 +36,7 @@ private fun MimeTypeIcon.getNameRes(mimeType: MimeType, hasExtension: Boolean): 
         MimeTypeIcon.CODE -> R.string.file_type_name_code
         MimeTypeIcon.CONTACT -> R.string.file_type_name_contact
         MimeTypeIcon.DIRECTORY -> R.string.file_type_name_directory
+        MimeTypeIcon.MOUNT_POINT -> R.string.file_type_name_mount_point
         MimeTypeIcon.DOCUMENT -> R.string.file_type_name_document
         MimeTypeIcon.EBOOK -> R.string.file_type_name_ebook
         MimeTypeIcon.EMAIL -> R.string.file_type_name_email
