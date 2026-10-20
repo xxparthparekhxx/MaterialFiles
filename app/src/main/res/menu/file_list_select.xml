@@ -65,6 +65,12 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_compare"
+        android:orderInCategory="100"
+        android:title="@string/file_list_select_action_compare"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_pin"
         android:orderInCategory="100"
         android:title="@string/file_list_select_action_pin"

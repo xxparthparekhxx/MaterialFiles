@@ -194,6 +194,10 @@
             android:theme="@style/Theme.MaterialFiles.Translucent" />
 
         <activity
+            android:name="me.zhanghai.android.files.compare.FileCompareActivity"
+            android:label="@string/file_compare_title" />
+
+        <activity
             android:name="me.zhanghai.android.files.storage.AddStorageDialogActivity"
             android:label="@string/storage_add_storage_title"
             android:theme="@style/Theme.MaterialFiles.Translucent" />

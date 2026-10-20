@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  ~ Copyright (c) 2026 Hai Zhang <dreaming.in.code.zh@gmail.com>
+  ~ All Rights Reserved.
+  -->
+
+
+<me.zhanghai.android.foregroundcompat.ForegroundLinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="?selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/two_line_list_item_height"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/screen_edge_margin"
+    android:paddingEnd="@dimen/screen_edge_margin_minus_12dp_at_least_8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/iconImage"
+        android:layout_width="@dimen/large_icon_size"
+        android:layout_height="@dimen/large_icon_size"
+        android:layout_marginEnd="16dp"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?textAppearanceListItem" />
+
+        <TextView
+            android:id="@+id/descriptionText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?textAppearanceListItemSecondary"
+            android:textColor="?android:textColorSecondary" />
+    </LinearLayout>
+
+    <me.zhanghai.android.foregroundcompat.ForegroundImageButton
+        android:id="@+id/menuButton"
+        android:layout_width="@dimen/touch_target_size"
+        android:layout_height="@dimen/touch_target_size"
+        android:layout_marginStart="@dimen/content_start_from_screen_edge_margin_minus_36dp_considering_at_least_8dp"
+        android:layout_marginEnd="@dimen/screen_edge_margin_minus_12dp_at_least_8dp"
+        android:background="@null"
+        android:foreground="@drawable/selectable_item_background_oval"
+        android:padding="@dimen/touch_target_icon_padding"
+        android:src="@drawable/more_vertical_icon_white_24dp"
+        app:tint="?colorControlNormal" />
+</me.zhanghai.android.foregroundcompat.ForegroundLinearLayout>
