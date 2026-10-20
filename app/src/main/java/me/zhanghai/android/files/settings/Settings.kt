@@ -319,6 +319,12 @@ object Settings {
             R.bool.pref_default_value_open_with_built_in_viewers
         )
 
+    val OPEN_WITH_BUILT_IN_MEDIA_PLAYER: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_open_with_built_in_media_player,
+            R.bool.pref_default_value_open_with_built_in_media_player
+        )
+
     val HIGHLIGHT_DELETE: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_highlight_delete, R.bool.pref_default_value_highlight_delete

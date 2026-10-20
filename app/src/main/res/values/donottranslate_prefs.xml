@@ -218,6 +218,8 @@
     <bool name="pref_default_value_copy_path_shell_escape">false</bool>
     <string name="pref_key_open_with_built_in_viewers">key_open_with_built_in_viewers</string>
     <bool name="pref_default_value_open_with_built_in_viewers">false</bool>
+    <string name="pref_key_open_with_built_in_media_player">key_open_with_built_in_media_player</string>
+    <bool name="pref_default_value_open_with_built_in_media_player">false</bool>
     <string name="pref_key_highlight_delete">key_highlight_delete</string>
     <bool name="pref_default_value_highlight_delete">false</bool>
     <string name="pref_key_block_screenshots">key_block_screenshots</string>

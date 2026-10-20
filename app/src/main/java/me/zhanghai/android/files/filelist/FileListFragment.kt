@@ -122,6 +122,7 @@ import me.zhanghai.android.files.file.fileProviderPathOrNull
 import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.file.isImage
+import me.zhanghai.android.files.file.isMedia
 import me.zhanghai.android.files.filejob.FileJobProgress
 import me.zhanghai.android.files.filejob.FileJobProgresses
 import me.zhanghai.android.files.filejob.FileJobService
@@ -2288,6 +2289,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                         (mimeType.isImage || mimeType.value.startsWith("text/"))
                     ) {
                         // Restrict resolution to our own image viewer and text editor.
+                        setPackage(requireContext().packageName)
+                    }
+                    if (override == null &&
+                        Settings.OPEN_WITH_BUILT_IN_MEDIA_PLAYER.valueCompat &&
+                        mimeType.isMedia
+                    ) {
+                        // Restrict resolution to our own media player.
                         setPackage(requireContext().packageName)
                     }
                     override?.let { component = it }
