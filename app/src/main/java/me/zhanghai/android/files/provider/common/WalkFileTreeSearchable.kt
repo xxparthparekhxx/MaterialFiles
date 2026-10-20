@@ -5,7 +5,6 @@
 
 package me.zhanghai.android.files.provider.common
 
-import androidx.preference.PreferenceManager
 import java8.nio.file.DirectoryIteratorException
 import java8.nio.file.FileVisitOption
 import java8.nio.file.FileVisitResult
@@ -15,33 +14,28 @@ import java8.nio.file.LinkOption
 import java8.nio.file.Path
 import java8.nio.file.attribute.BasicFileAttributes
 import me.zhanghai.android.files.R
-import me.zhanghai.android.files.provider.root.isRunningAsRoot
-import me.zhanghai.android.files.provider.root.rootContext
 import me.zhanghai.android.files.settings.Settings
-import me.zhanghai.android.files.util.valueCompat
+import me.zhanghai.android.files.settings.getBooleanSetting
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.util.regex.PatternSyntaxException
 
 object WalkFileTreeSearchable {
     private val showHiddenFiles: Boolean
-        get() =
-            try {
-                if (isRunningAsRoot) {
-                    val sharedPreferences =
-                        PreferenceManager.getDefaultSharedPreferences(rootContext)
-                    val key = rootContext.getString(R.string.pref_key_file_list_show_hidden_files)
-                    val defaultValue = rootContext.resources.getBoolean(
-                        R.bool.pref_default_value_file_list_show_hidden_files
-                    )
-                    sharedPreferences.getBoolean(key, defaultValue)
-                } else {
-                    Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
-            }
+        get() = getBooleanSetting(
+            R.string.pref_key_file_list_show_hidden_files,
+            R.bool.pref_default_value_file_list_show_hidden_files, false,
+            Settings.FILE_LIST_SHOW_HIDDEN_FILES
+        )
+
+    // Searching a folder with a lot of subfolders is slow, so this can be turned off to only
+    // search the folder itself.
+    private val searchInSubfolders: Boolean
+        get() = getBooleanSetting(
+            R.string.pref_key_file_list_search_in_subfolders,
+            R.bool.pref_default_value_file_list_search_in_subfolders, true,
+            Settings.FILE_LIST_SEARCH_IN_SUBFOLDERS
+        )
 
     @Throws(IOException::class)
     fun search(
@@ -156,6 +150,7 @@ object WalkFileTreeSearchable {
     @Throws(IOException::class)
     private fun walkFileTreeForSearch(start: Path, visitor: FileVisitor<in Path>): Path {
         val showHiddenFiles = showHiddenFiles
+        val searchInSubfolders = searchInSubfolders
         val attributes = try {
             start.readAttributes(BasicFileAttributes::class.java)
         } catch (ignored: IOException) {
@@ -205,6 +200,10 @@ object WalkFileTreeSearchable {
                 visitor.postVisitDirectory(start, e.cause)
                 return start
             }
+        }
+        if (!searchInSubfolders) {
+            // The items in this folder have all been visited already.
+            return start
         }
         for (path in directories) {
             Files.walkFileTree(
