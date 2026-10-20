@@ -13,7 +13,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.Size
 import androidx.annotation.StringRes
 import java8.nio.file.Path
-import java8.nio.file.Paths
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.about.AboutActivity
 import me.zhanghai.android.files.file.JavaFile
@@ -182,7 +181,7 @@ private val standardDirectoryItems: List<NavigationItem>
 
 private class StandardDirectoryItem(
     private val standardDirectory: StandardDirectory
-) : PathItem(Paths.get(getExternalStorageDirectory(standardDirectory.relativePath))) {
+) : PathItem(standardDirectory.targetPath) {
     init {
         require(standardDirectory.isEnabled)
     }
@@ -213,7 +212,7 @@ val standardDirectories: List<StandardDirectory>
 
 private const val relativePathSeparator = ":"
 
-private val defaultStandardDirectories: List<StandardDirectory>
+internal val defaultStandardDirectories: List<StandardDirectory>
     // HACK: Show QQ, TIM and WeChat standard directories based on whether the directory exists.
     get() =
         DEFAULT_STANDARD_DIRECTORIES.mapNotNull {
