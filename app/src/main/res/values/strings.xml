@@ -85,10 +85,38 @@
     <string name="file_action_sftp_password_message_format">Enter the password for “%1$s”.</string>
     <string name="file_action_sftp_password_error_empty" translatable="false">@string/file_action_archive_password_error_empty</string>
 
+    <string name="file_action_encrypt_title">Encrypt</string>
+    <string name="file_action_decrypt_title">Decrypt</string>
+    <string name="file_action_password_error_empty">Password cannot be empty</string>
+    <string name="file_action_encrypt">Encrypt</string>
+    <string name="file_action_decrypt">Decrypt</string>
+
     <plurals name="file_job_archive_scan_notification_title_format">
         <item quantity="one">Preparing to compress %1$,d file (%2$s)</item>
         <item quantity="other">Preparing to compress %1$,d files (%2$s)</item>
     </plurals>
+    <plurals name="file_job_encrypt_scan_notification_title_format">
+        <item quantity="one">Preparing to encrypt %1$,d file (%2$s)</item>
+        <item quantity="other">Preparing to encrypt %1$,d files (%2$s)</item>
+    </plurals>
+    <string name="file_job_encrypt_notification_title_one_format">Encrypting “%1$s”</string>
+    <plurals name="file_job_encrypt_notification_title_multiple_format">
+        <item quantity="one">Encrypting %1$,d file</item>
+        <item quantity="other">Encrypting %1$,d files</item>
+    </plurals>
+    <plurals name="file_job_decrypt_scan_notification_title_format">
+        <item quantity="one">Preparing to decrypt %1$,d file (%2$s)</item>
+        <item quantity="other">Preparing to decrypt %1$,d files (%2$s)</item>
+    </plurals>
+    <string name="file_job_decrypt_notification_title_one_format">Decrypting “%1$s”</string>
+    <plurals name="file_job_decrypt_notification_title_multiple_format">
+        <item quantity="one">Decrypting %1$,d file</item>
+        <item quantity="other">Decrypting %1$,d files</item>
+    </plurals>
+    <string name="file_job_encrypt_error_title_format">Failed to encrypt “%1$s”</string>
+    <string name="file_job_encrypt_error_message_format">%1$s</string>
+    <string name="file_job_decrypt_error_title_format">Failed to decrypt “%1$s”</string>
+    <string name="file_job_decrypt_error_message_format">%1$s</string>
     <string name="file_job_archive_notification_title_one_format">Compressing “%1$s” into “%2$s”</string>
     <plurals name="file_job_archive_notification_title_multiple_format">
         <item quantity="one">Compressing %1$,d file into “%2$s”</item>

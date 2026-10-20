@@ -123,6 +123,7 @@ import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.file.isImage
 import me.zhanghai.android.files.file.isMedia
+import me.zhanghai.android.files.fileaction.FilePasswordDialogFragment
 import me.zhanghai.android.files.filejob.FileJobProgress
 import me.zhanghai.android.files.filejob.FileJobProgresses
 import me.zhanghai.android.files.filejob.FileJobService
@@ -137,6 +138,7 @@ import me.zhanghai.android.files.navigation.NavigationRootMapLiveData
 import me.zhanghai.android.files.navigation.NavigationStorageRefreshLiveData
 import me.zhanghai.android.files.provider.archive.createArchiveRootPath
 import me.zhanghai.android.files.provider.archive.isArchivePath
+import me.zhanghai.android.files.provider.aes.AesCrypt
 import me.zhanghai.android.files.provider.common.isDirectory
 import me.zhanghai.android.files.provider.linux.isLinuxPath
 import me.zhanghai.android.files.settings.Settings
@@ -190,6 +192,7 @@ import me.zhanghai.android.files.util.hideSoftInput
 import me.zhanghai.android.files.util.isOrientationLandscape
 import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.setOnEditorConfirmActionListener
+import me.zhanghai.android.files.util.show
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.supportsExternalStorageManager
@@ -215,7 +218,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     ShowRequestNotificationPermissionInSettingsRationaleDialogFragment.Listener,
     ShowRequestStoragePermissionRationaleDialogFragment.Listener,
     ShowRequestStoragePermissionInSettingsRationaleDialogFragment.Listener,
-    ConfirmRemoveExifDialogFragment.Listener {
+    ConfirmRemoveExifDialogFragment.Listener,
+    FilePasswordDialogFragment.Listener {
     private val requestAllFilesAccessLauncher = registerForActivityResult(
         RequestAllFilesAccessContract(), this::onRequestAllFilesAccessResult
     )
@@ -1616,6 +1620,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             val isCurrentPathReadOnly =
                 Settings.READ_ONLY_MODE.valueCompat || viewModel.currentPath.fileSystem.isReadOnly
             menu.findItem(R.id.action_archive).isVisible = !isCurrentPathReadOnly
+            val areAllFilesRegularFiles = files.all { it.attributesNoFollowLinks.isRegularFile }
+            menu.findItem(R.id.action_encrypt).isVisible =
+                !isCurrentPathReadOnly && areAllFilesRegularFiles
+            val areAllFilesEncrypted = files.all {
+                it.path.fileName.toString().endsWith(AesCrypt.FILE_EXTENSION, ignoreCase = true)
+            }
+            menu.findItem(R.id.action_decrypt).isVisible =
+                !isCurrentPathReadOnly && areAllFilesRegularFiles && areAllFilesEncrypted
         }
         if (!overlayActionMode.isActive) {
             binding.appBarLayout.setExpanded(true)
@@ -1716,6 +1728,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     return true
                 }
                 showCreateArchiveDialog(viewModel.selectedFiles)
+                true
+            }
+            R.id.action_encrypt -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
+                showFilePasswordDialog(viewModel.selectedFiles, true)
+                true
+            }
+            R.id.action_decrypt -> {
+                if (isReadOnlyBlocked()) {
+                    return true
+                }
+                showFilePasswordDialog(viewModel.selectedFiles, false)
                 true
             }
             R.id.action_share -> {
@@ -1827,6 +1853,23 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private fun shareFiles(files: FileItemSet) {
         shareFiles(files.map { it.path }, files.map { it.mimeType })
         viewModel.selectFiles(files, false)
+    }
+
+    private fun showFilePasswordDialog(files: FileItemSet, encrypt: Boolean) {
+        if (isReadOnlyBlocked()) {
+            return
+        }
+        FilePasswordDialogFragment.show(files, encrypt, this)
+    }
+
+    override fun providePassword(files: FileItemSet, encrypt: Boolean, password: String) {
+        val paths = makePathListForJob(files)
+        viewModel.selectFiles(files, false)
+        if (encrypt) {
+            FileJobService.encrypt(paths, password, requireContext())
+        } else {
+            FileJobService.decrypt(paths, password, requireContext())
+        }
     }
 
     private fun Path.toClipboardString(): String {

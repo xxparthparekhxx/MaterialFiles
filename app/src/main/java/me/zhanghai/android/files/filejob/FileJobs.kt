@@ -52,6 +52,7 @@ import me.zhanghai.android.files.provider.archive.archiver.ArchiveReader
 import me.zhanghai.android.files.provider.archive.archiver.ArchiveWriter
 import me.zhanghai.android.files.provider.archive.createArchiveRootPath
 import me.zhanghai.android.files.provider.archive.isArchivePath
+import me.zhanghai.android.files.provider.aes.AesCrypt
 import me.zhanghai.android.files.provider.common.ByteString
 import me.zhanghai.android.files.provider.common.ByteStringBuilder
 import me.zhanghai.android.files.provider.common.InvalidFileNameException
@@ -2639,6 +2640,158 @@ private fun FileJob.postSetSeLinuxContextNotification(
         transferInfo, currentPath,
         R.string.file_job_set_selinux_context_notification_title_one_format,
         R.plurals.file_job_set_selinux_context_notification_title_multiple_format
+    )
+}
+
+class EncryptFileJob(
+    private val sources: List<Path>,
+    private val password: String
+) : FileJob() {
+    @Throws(IOException::class)
+    override fun run() {
+        val scanInfo = scan(sources, R.plurals.file_job_encrypt_scan_notification_title_format)
+        for (source in sources) {
+            val target = source.resolveSibling("${getFileName(source)}$AesCrypt.FILE_EXTENSION")
+            encrypt(source, target, scanInfo, password)
+            throwIfInterrupted()
+        }
+    }
+}
+
+@Throws(IOException::class)
+private fun FileJob.encrypt(
+    source: Path,
+    target: Path,
+    scanInfo: ScanInfo,
+    password: String
+) {
+    val transferInfo = TransferInfo(scanInfo, target)
+    prepareCurrentFile(transferInfo, source)
+    postEncryptNotification(transferInfo, source)
+    var isTargetCreated = false
+    var successful = false
+    try {
+        source.newInputStream().use { inputStream ->
+            target.newOutputStream(
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE
+            ).use { outputStream ->
+                isTargetCreated = true
+                AesCrypt(password).encrypt(inputStream, outputStream)
+            }
+        }
+        successful = true
+    } catch (e: IOException) {
+        e.printStackTrace()
+        showErrorDialog(
+            getString(R.string.file_job_encrypt_error_title_format, getFileName(source)),
+            getString(R.string.file_job_encrypt_error_message_format, e.toString()),
+            getReadOnlyFileStore(target, e),
+            false,
+            null,
+            getString(android.R.string.cancel),
+            null
+        )
+        throw InterruptedIOException()
+    } finally {
+        if (!successful && isTargetCreated) {
+            try {
+                target.deleteIfExists()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            } catch (e: UnsupportedOperationException) {
+                e.printStackTrace()
+            }
+        }
+    }
+    transferInfo.incrementTransferredFileCount()
+    postEncryptNotification(transferInfo, source)
+}
+
+private fun FileJob.postEncryptNotification(transferInfo: TransferInfo, currentFile: Path) {
+    postTransferCountNotification(
+        transferInfo, currentFile,
+        R.string.file_job_encrypt_notification_title_one_format,
+        R.plurals.file_job_encrypt_notification_title_multiple_format
+    )
+}
+
+class DecryptFileJob(
+    private val sources: List<Path>,
+    private val password: String
+) : FileJob() {
+    @Throws(IOException::class)
+    override fun run() {
+        val scanInfo = scan(sources, R.plurals.file_job_decrypt_scan_notification_title_format)
+        for (source in sources) {
+            val target = source.resolveSibling(getDecryptedFileName(source))
+            decrypt(source, target, scanInfo, password)
+            throwIfInterrupted()
+        }
+    }
+}
+
+private fun getDecryptedFileName(source: Path): String {
+    val fileName = source.fileName.toString()
+    if (fileName.endsWith(AesCrypt.FILE_EXTENSION, ignoreCase = true)) {
+        return fileName.substring(0, fileName.length - AesCrypt.FILE_EXTENSION.length)
+    }
+    return fileName
+}
+
+@Throws(IOException::class)
+private fun FileJob.decrypt(
+    source: Path,
+    target: Path,
+    scanInfo: ScanInfo,
+    password: String
+) {
+    val transferInfo = TransferInfo(scanInfo, target)
+    prepareCurrentFile(transferInfo, source)
+    postDecryptNotification(transferInfo, source)
+    var isTargetCreated = false
+    var successful = false
+    try {
+        source.newInputStream().use { inputStream ->
+            target.newOutputStream(
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE
+            ).use { outputStream ->
+                isTargetCreated = true
+                AesCrypt(password).decrypt(inputStream, outputStream)
+            }
+        }
+        successful = true
+    } catch (e: IOException) {
+        e.printStackTrace()
+        showErrorDialog(
+            getString(R.string.file_job_decrypt_error_title_format, getFileName(source)),
+            getString(R.string.file_job_decrypt_error_message_format, e.toString()),
+            getReadOnlyFileStore(target, e),
+            false,
+            null,
+            getString(android.R.string.cancel),
+            null
+        )
+        throw InterruptedIOException()
+    } finally {
+        if (!successful && isTargetCreated) {
+            try {
+                target.deleteIfExists()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            } catch (e: UnsupportedOperationException) {
+                e.printStackTrace()
+            }
+        }
+    }
+    transferInfo.incrementTransferredFileCount()
+    postDecryptNotification(transferInfo, source)
+}
+
+private fun FileJob.postDecryptNotification(transferInfo: TransferInfo, currentFile: Path) {
+    postTransferCountNotification(
+        transferInfo, currentFile,
+        R.string.file_job_decrypt_notification_title_one_format,
+        R.plurals.file_job_decrypt_notification_title_multiple_format
     )
 }
 
