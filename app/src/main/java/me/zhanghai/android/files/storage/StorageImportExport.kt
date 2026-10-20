@@ -76,6 +76,11 @@ object StorageImportExport {
                 .put("username", storage.authority.username)
                 .put("authentication", exportWebDavAuthentication(storage.authentication))
                 .put("relativePath", storage.relativePath)
+            is UpnpServer -> JSONObject()
+                .put("type", "upnp")
+                .put("customName", storage.customName)
+                .put("location", storage.location)
+                .put("friendlyName", storage.friendlyName)
             else -> null
         }
 
@@ -164,6 +169,9 @@ object StorageImportExport {
                     id, customName, authority, importWebDavAuthentication(item), relativePath
                 )
             }
+            "upnp" -> UpnpServer(
+                id, customName, item.getString("location"), item.optString("friendlyName")
+            )
             else -> null
         }
     }
