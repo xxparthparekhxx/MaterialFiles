@@ -15,6 +15,7 @@ import androidx.fragment.app.commit
 import java8.nio.file.Path
 import me.zhanghai.android.files.app.AppActivity
 import me.zhanghai.android.files.file.MimeType
+import me.zhanghai.android.files.util.ACTION_PICK_DIRECTORY_OI
 import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.putArgs
@@ -48,6 +49,11 @@ class FileListActivity : AppActivity() {
             FileListActivity::class.createIntent()
                 .setAction(Intent.ACTION_VIEW)
                 .apply { extraPath = path }
+
+        fun createPickDirectoryIntent(path: Path? = null): Intent =
+            FileListActivity::class.createIntent()
+                .setAction(ACTION_PICK_DIRECTORY_OI)
+                .apply { path?.let { extraPath = it } }
     }
 
     class OpenFileContract : ActivityResultContract<List<MimeType>, Path?>() {
