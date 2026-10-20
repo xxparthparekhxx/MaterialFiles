@@ -357,6 +357,24 @@ class FileListAdapter(
         listener.selectFiles(files, true)
     }
 
+    // Selects every file between the two positions in the list, inclusive, replacing the currently
+    // selected files.
+    fun selectRangeBetween(firstPosition: Int, secondPosition: Int) {
+        if (itemCount == 0) {
+            return
+        }
+        val first = minOf(firstPosition, secondPosition).coerceIn(0, itemCount - 1)
+        val last = maxOf(firstPosition, secondPosition).coerceIn(0, itemCount - 1)
+        val files = fileItemSetOf()
+        for (index in first..last) {
+            val file = getItem(index)
+            if (isFileSelectable(file)) {
+                files.add(file)
+            }
+        }
+        listener.replaceSelectedFiles(files)
+    }
+
     private fun isFileSelectable(file: FileItem): Boolean {
         val pickOptions = pickOptions ?: return true
         return when (pickOptions.mode) {
@@ -523,6 +541,8 @@ class FileListAdapter(
             setOnLongClickListener {
                 if (selectedFiles.isEmpty()) {
                     selectFile(file)
+                    // The user can now drag to select a range of files.
+                    listener.onFileLongPressed(file, getFilePosition(file.path))
                 } else {
                     listener.openFile(file)
                 }
@@ -950,6 +970,14 @@ class FileListAdapter(
         fun clearSelectedFiles()
         fun selectFile(file: FileItem, selected: Boolean)
         fun selectFiles(files: FileItemSet, selected: Boolean)
+        fun replaceSelectedFiles(files: FileItemSet)
+        /**
+         * Called when the user long presses an item, so that a drag selection can be started at
+         * that item.
+         *
+         * @param position the adapter position of the item
+         */
+        fun onFileLongPressed(file: FileItem, position: Int)
         fun openFile(file: FileItem)
         fun openFileWith(file: FileItem)
         fun cutFile(file: FileItem)

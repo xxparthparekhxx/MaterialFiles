@@ -137,6 +137,7 @@ import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.terminal.Terminal
 import me.zhanghai.android.files.ui.AppBarLayoutExpandHackListener
 import me.zhanghai.android.files.ui.CoordinatorAppBarLayout
+import me.zhanghai.android.files.ui.DragSelectTouchListener
 import me.zhanghai.android.files.ui.DrawerLayoutOnBackPressedCallback
 import me.zhanghai.android.files.ui.FixQueryChangeSearchView
 import me.zhanghai.android.files.ui.OverlayToolbarActionMode
@@ -196,6 +197,7 @@ import me.zhanghai.android.files.fileproperties.image.ConfirmRemoveExifDialogFra
 import me.zhanghai.android.files.fileproperties.image.ExifRemover
 
 class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.Listener,
+    DragSelectTouchListener.Listener,
     ConfirmReplaceFileDialogFragment.Listener, OpenApkDialogFragment.Listener,
     ConfirmDeleteFilesDialogFragment.Listener, CreateArchiveDialogFragment.Listener,
     RenameFileDialogFragment.Listener, RenameFilesDialogFragment.Listener,
@@ -270,6 +272,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private var fabBaseBottomMargin = -1
 
     private lateinit var adapter: FileListAdapter
+
+    private lateinit var dragSelectTouchListener: DragSelectTouchListener
 
     private var appBarOffsetListener: AppBarLayout.OnOffsetChangedListener? = null
 
@@ -362,6 +366,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.recyclerView.setOnApplyWindowInsetsListener(
             ScrollingViewOnApplyWindowInsetsListener(binding.recyclerView, fastScroller)
         )
+        // Added after the fast scroller, so that the fast scroller gets to handle the touches on
+        // the scroll bar first.
+        dragSelectTouchListener = DragSelectTouchListener(binding.recyclerView, this)
+        binding.recyclerView.addOnItemTouchListener(dragSelectTouchListener)
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 if (newState == RecyclerView.SCROLL_STATE_DRAGGING && viewModel.isSearchViewExpanded) {
@@ -2040,6 +2048,29 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         viewModel.selectFiles(files, selected)
+    }
+
+    override fun replaceSelectedFiles(files: FileItemSet) {
+        if (!isAdded) {
+            return
+        }
+        viewModel.replaceSelectedFiles(files)
+    }
+
+    override fun onFileLongPressed(file: FileItem, position: Int) {
+        val pickOptions = viewModel.pickOptions
+        if (pickOptions != null && !pickOptions.allowMultiple) {
+            // Only one file can be selected at a time.
+            return
+        }
+        dragSelectTouchListener.startDragSelect(position)
+    }
+
+    override fun onDragSelectMove(anchorPosition: Int, position: Int) {
+        adapter.selectRangeBetween(anchorPosition, position)
+    }
+
+    override fun onDragSelectEnd() {
     }
 
     override fun openFile(file: FileItem) {
