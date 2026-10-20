@@ -100,17 +100,19 @@ class FilePropertiesBasicTabFragment : FilePropertiesTabFragment() {
                 }
                 val spaceTextView = addItemView(R.string.file_properties_basic_mount_space, "")
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val fileStore = withContext(Dispatchers.IO) {
+                    // The space of the file system is asked for with a syscall, which is a
+                    // remote call when the file system is accessed through the root service.
+                    val space = withContext(Dispatchers.IO) {
                         try {
-                            path.getFileStore()
+                            val fileStore = path.getFileStore()
+                            fileStore.totalSpace to fileStore.usableSpace
                         } catch (e: Exception) {
                             null
                         }
                     }
-                    if (fileStore != null && isAdded) {
+                    if (space != null && isAdded) {
                         try {
-                            val totalSpace = fileStore.totalSpace
-                            val usableSpace = fileStore.usableSpace
+                            val (totalSpace, usableSpace) = space
                             if (totalSpace > 0) {
                                 val context = requireContext()
                                 val freeStr = usableSpace.asFileSize().formatHumanReadable(context)
