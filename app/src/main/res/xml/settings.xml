@@ -180,6 +180,12 @@
             android:defaultValue="@bool/pref_default_value_file_list_hide_add_button" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_tabs"
+            android:title="@string/settings_file_list_tabs_title"
+            android:summary="@string/settings_file_list_tabs_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_tabs" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_dividers"
             android:title="@string/settings_file_list_dividers_title"
             android:summary="@string/settings_file_list_dividers_summary"

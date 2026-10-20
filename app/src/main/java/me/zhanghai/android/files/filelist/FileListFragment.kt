@@ -247,7 +247,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     )
 
     private val args by args<Args>()
-    private val argsPath by lazy { args.intent.extraPath }
+    internal val argsPath by lazy { args.intent.extraPath }
 
     private val viewModel by viewModels { { FileListViewModel() } }
 
@@ -255,6 +255,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         get() = viewModel
 
     private lateinit var binding: Binding
+
+    /**
+     * The toolbar of this fragment, or null if its view has not been created yet. Only the visible
+     * tab may own the action bar.
+     */
+    internal val toolbar: Toolbar?
+        get() = if (this::binding.isInitialized) binding.toolbar else null
 
     private lateinit var navigationFragment: NavigationFragment
 
@@ -349,7 +356,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         navigationFragment.listener = this
         val activity = requireActivity() as AppCompatActivity
         activity.setTitle(R.string.file_list_title)
-        activity.setSupportActionBar(binding.toolbar)
+        // In tab mode only the visible tab may own the action bar.
+        (activity as? FileListActivity)?.updateSupportActionBar(this)
+            ?: activity.setSupportActionBar(binding.toolbar)
         overlayActionMode = OverlayToolbarActionMode(binding.overlayToolbar, binding.toolbar)
         bottomActionMode = PersistentBarLayoutToolbarActionMode(
             binding.persistentBarLayout, binding.bottomBarLayout, binding.bottomToolbar
@@ -1577,6 +1586,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         startActivitySafe(intent)
     }
 
+    override fun openInNewTab(path: Path) {
+        (activity as? FileListActivity)?.openInNewTab(path)
+    }
+
     private fun onPickOptionsChanged(pickOptions: PickOptions?) {
         updateTitle()
         updateSelectAllMenuItem()
@@ -2452,6 +2465,13 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         openFileWithIntent(file, true)
+    }
+
+    override fun openInNewTab(file: FileItem) {
+        if (!isAdded) {
+            return
+        }
+        (activity as? FileListActivity)?.openInNewTab(file.path)
     }
 
     private fun openFileWithIntent(file: FileItem, withChooser: Boolean) {

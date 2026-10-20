@@ -377,6 +377,12 @@ object Settings {
             R.bool.pref_default_value_file_list_hide_add_button
         )
 
+    val FILE_LIST_TABS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_tabs,
+            R.bool.pref_default_value_file_list_tabs
+        )
+
     val FILE_LIST_DIVIDERS: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_file_list_dividers, R.bool.pref_default_value_file_list_dividers

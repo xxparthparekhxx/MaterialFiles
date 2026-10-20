@@ -242,6 +242,8 @@
     <bool name="pref_default_value_full_date_time">false</bool>
     <string name="pref_key_file_list_hide_add_button">key_file_list_hide_add_button</string>
     <bool name="pref_default_value_file_list_hide_add_button">false</bool>
+    <string name="pref_key_file_list_tabs">key_file_list_tabs</string>
+    <bool name="pref_default_value_file_list_tabs">true</bool>
     <string name="pref_key_file_list_dividers">key_file_list_dividers</string>
     <bool name="pref_default_value_file_list_dividers">false</bool>
 

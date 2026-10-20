@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  ~ Copyright (c) 2026 Hai Zhang <dreaming.in.code.zh@gmail.com>
+  ~ All Rights Reserved.
+  -->
+
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_new_tab"
+        android:icon="@drawable/add_icon_white_24dp"
+        android:title="@string/file_list_action_new_tab"
+        app:showAsAction="ifRoom|withText" />
+
+    <item
+        android:id="@+id/action_close_tab"
+        android:icon="@drawable/close_icon_control_normal_24dp"
+        android:title="@string/file_list_action_close_tab"
+        app:showAsAction="ifRoom|withText" />
+
+</menu>

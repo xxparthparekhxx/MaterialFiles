@@ -369,6 +369,10 @@
     <string name="file_list_action_sort_directories_first">Folders first</string>
     <string name="file_list_action_view_sort_path_specific">Only for this folder</string>
     <string name="file_list_action_new_task">New window</string>
+    <string name="file_list_action_new_tab">New tab</string>
+    <string name="file_list_action_close_tab">Close tab</string>
+    <string name="file_list_action_open_in_new_tab">Open in new tab</string>
+    <string name="file_list_breadcrumb_action_open_in_new_tab">Open in new tab</string>
     <string name="file_list_action_navigate_up">Go up</string>
     <string name="file_list_action_navigate_to">Go to</string>
     <string name="file_list_navigate_to_title" translatable="false">@string/file_list_action_navigate_to</string>
@@ -1074,6 +1078,8 @@
     <string name="settings_full_date_time_summary">Show the full date and time of files instead of only the time for today and only the date for earlier days</string>
     <string name="settings_file_list_hide_add_button_title">Hide the add button</string>
     <string name="settings_file_list_hide_add_button_summary">Remove the floating add button and offer New folder and New file in the toolbar menu instead</string>
+    <string name="settings_file_list_tabs_title">Show tabs</string>
+    <string name="settings_file_list_tabs_summary">Open multiple folders in tabs within a single window</string>
     <string name="file_list_action_new_folder">New folder</string>
     <string name="file_list_action_new_file">New file</string>
     <string name="settings_file_list_dividers_title">Show dividers in the list</string>
