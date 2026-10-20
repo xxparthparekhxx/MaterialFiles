@@ -1371,6 +1371,14 @@ private fun FileJob.recordCreatedLinuxPath(path: Path) {
     }
 }
 
+// A copy or a move is done by the file service when the source or the target needs root, so the
+// new file is owned by root in both cases and has to be reported.
+private fun FileJob.recordCreatedLinuxPath(source: Path, target: Path) {
+    if (source.isAccessedByFileService || target.isAccessedByFileService) {
+        recordMediaPath(target)
+    }
+}
+
 internal fun FileJob.flushMediaPathsToScan() {
     val paths = synchronized(mediaPathsToScan) {
         if (mediaPathsToScan.isEmpty()) {
@@ -1692,7 +1700,7 @@ private fun FileJob.copyOrMove(
             } else {
                 source.moveTo(target, *options)
             }
-            recordCreatedLinuxPath(target)
+            recordCreatedLinuxPath(source, target)
             transferInfo.incrementTransferredFileCount()
             postCopyMoveNotification(transferInfo, source, type)
         } catch (e: FileAlreadyExistsException) {
