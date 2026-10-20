@@ -310,6 +310,21 @@ class FileListAdapter(
         listener.selectFiles(files, true)
     }
 
+    // Every file between the two positions in the list, inclusive. The files that cannot be
+    // selected in the current pick mode are skipped.
+    private fun filesInRange(firstPosition: Int, secondPosition: Int): FileItemSet {
+        val files = fileItemSetOf()
+        val first = minOf(firstPosition, secondPosition).coerceIn(0, itemCount - 1)
+        val last = maxOf(firstPosition, secondPosition).coerceIn(0, itemCount - 1)
+        for (index in first..last) {
+            val file = getItem(index)
+            if (isFileSelectable(file)) {
+                files.add(file)
+            }
+        }
+        return files
+    }
+
     // Selects every file between the first and the last selected file in the list.
     fun selectRange() {
         var first = -1
@@ -325,14 +340,7 @@ class FileListAdapter(
         if (first == -1 || first == last) {
             return
         }
-        val files = fileItemSetOf()
-        for (index in first..last) {
-            val file = getItem(index)
-            if (isFileSelectable(file)) {
-                files.add(file)
-            }
-        }
-        listener.selectFiles(files, true)
+        listener.selectFiles(filesInRange(first, last), true)
     }
 
     // Selects every file between the first selected file and the given file in the list, inclusive,
@@ -349,14 +357,7 @@ class FileListAdapter(
         if (first == -1 || last == RecyclerView.NO_POSITION || first == last) {
             return
         }
-        val files = fileItemSetOf()
-        for (index in minOf(first, last)..maxOf(first, last)) {
-            val fileInRange = getItem(index)
-            if (isFileSelectable(fileInRange)) {
-                files.add(fileInRange)
-            }
-        }
-        listener.selectFiles(files, true)
+        listener.selectFiles(filesInRange(first, last), true)
     }
 
     // Selects every file between the two positions in the list, inclusive, replacing the currently
@@ -365,16 +366,7 @@ class FileListAdapter(
         if (itemCount == 0) {
             return
         }
-        val first = minOf(firstPosition, secondPosition).coerceIn(0, itemCount - 1)
-        val last = maxOf(firstPosition, secondPosition).coerceIn(0, itemCount - 1)
-        val files = fileItemSetOf()
-        for (index in first..last) {
-            val file = getItem(index)
-            if (isFileSelectable(file)) {
-                files.add(file)
-            }
-        }
-        listener.replaceSelectedFiles(files)
+        listener.replaceSelectedFiles(filesInRange(firstPosition, secondPosition))
     }
 
     private fun isFileSelectable(file: FileItem): Boolean {
@@ -593,7 +585,8 @@ class FileListAdapter(
         holder.iconLayout.setOnLongClickListener {
             if (selectedFiles.isEmpty()) {
                 selectFile(file)
-            } else {
+            } else if (pickOptions?.allowMultiple != false) {
+                // Only one file can be selected at a time in a pick mode that allows one file.
                 selectRangeTo(file)
             }
             true
