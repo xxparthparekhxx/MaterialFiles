@@ -641,14 +641,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     }
                 }
             }
-            if (path == null) {
-                path = intent.extraPath
-                if (path != null && pickOptions?.mode == PickOptions.Mode.OPEN_DIRECTORY) {
-                    path = try {
-                        if (path.isDirectory(LinkOption.NOFOLLOW_LINKS)) path else path.parent ?: path
-                    } catch (e: Exception) {
-                        path.parent ?: path
-                    }
+            if (path != null && pickOptions?.mode == PickOptions.Mode.OPEN_DIRECTORY) {
+                // A directory pick that points at a file starts at the directory of the file.
+                path = try {
+                    if (path.isDirectory(LinkOption.NOFOLLOW_LINKS)) path else path.parent ?: path
+                } catch (e: Exception) {
+                    path.parent ?: path
                 }
             }
             if (path == null) {
@@ -2353,12 +2351,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                         e.printStackTrace()
                         null
                     }
-                    ContentResolver.SCHEME_FILE -> try {
-                        uri.path?.let { Paths.get(it) }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        null
-                    }
+                    ContentResolver.SCHEME_FILE ->
+                        // A file URI with an authority names a file of another host, which is not
+                        // a path of this device.
+                        if (uri.authority.isNullOrEmpty() || uri.authority == "localhost") {
+                            try {
+                                uri.path?.let { Paths.get(it) }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
+                            }
+                        } else {
+                            null
+                        }
                     else -> null
                 }
                 if (path != null) {
@@ -2373,22 +2378,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (validSources.isEmpty()) {
             return
         }
-        val move = isInternal &&
-            validSources.all { it.isSameFileStore(targetDirectory) } &&
-            validSources.none { it.fileSystem.isReadOnly }
+        // The move job copies the file and deletes it when it cannot be moved directly, so a
+        // move to another volume is a move too.
+        val move = isInternal && validSources.none { it.fileSystem.isReadOnly }
         if (move) {
             FileJobService.move(validSources, targetDirectory, requireContext())
         } else {
             FileJobService.copy(validSources, targetDirectory, requireContext())
         }
     }
-
-    private fun Path.isSameFileStore(other: Path): Boolean =
-        try {
-            Files.getFileStore(this).name() == Files.getFileStore(other).name()
-        } catch (e: Exception) {
-            false
-        }
 
     override fun openFile(file: FileItem) {
         if (!isAdded) {
