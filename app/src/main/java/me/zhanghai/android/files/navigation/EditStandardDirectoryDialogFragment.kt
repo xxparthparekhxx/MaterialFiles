@@ -37,6 +37,9 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
     private lateinit var path: Path
     private lateinit var customTitle: String
     private var isEnabled: Boolean = true
+    // The custom path is kept apart from the path, because the path of the standard directory is
+    // the custom one when there is one.
+    private var customPath: String? = null
 
     private lateinit var binding: EditStandardDirectoryDialogBinding
 
@@ -48,6 +51,7 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
         path = state?.path ?: args.standardDirectory.targetPath
         customTitle = state?.customTitle ?: settings.customTitle.orEmpty()
         isEnabled = state?.isEnabled ?: args.standardDirectory.isEnabled
+        customPath = state?.customPath ?: settings.customPath
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
@@ -74,7 +78,7 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putState(State(path, customTitle, isEnabled))
+        outState.putState(State(path, customTitle, isEnabled, customPath))
     }
 
     private fun onEditPath() {
@@ -84,6 +88,7 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
     private fun onOpenPathResult(result: Path?) {
         result ?: return
         path = result
+        customPath = result.takeIf { it != args.standardDirectory.defaultPath }?.toString()
         updatePathText()
     }
 
@@ -94,10 +99,7 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
     private fun save() {
         val title = binding.nameEdit.text.toString()
         val newCustomTitle = title.takeIf { it.isNotEmpty() }
-        val originalCustomPath = Settings.STANDARD_DIRECTORY_SETTINGS.valueCompat
-            .find { it.id == args.standardDirectory.key }?.customPath
-        val newCustomPath = path.takeIf { it != args.standardDirectory.targetPath }?.toString()
-            ?: originalCustomPath
+        val newCustomPath = customPath
         val newIsEnabled = binding.enableSwitch.isChecked
         val settingsList = Settings.STANDARD_DIRECTORY_SETTINGS.valueCompat.toMutableList()
         val index = settingsList.indexOfFirst { it.id == args.standardDirectory.key }
@@ -108,23 +110,24 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
             )
         } else {
             settingsList += StandardDirectorySettings(
-                args.standardDirectory.key, newCustomTitle, newCustomPath, newIsEnabled
+                args.standardDirectory.key, newCustomTitle, newIsEnabled, newCustomPath
             )
         }
         Settings.STANDARD_DIRECTORY_SETTINGS.putValue(settingsList)
     }
 
     private fun reset() {
+        // The reset only changes the dialog, so that the changes are saved when the dialog is
+        // confirmed and not undone by it.
         val defaultIsEnabled = defaultStandardDirectories
             .find { it.key == args.standardDirectory.key }?.isEnabled ?: false
-        val settingsList = Settings.STANDARD_DIRECTORY_SETTINGS.valueCompat.toMutableList()
-        val index = settingsList.indexOfFirst { it.id == args.standardDirectory.key }
-        if (index != -1) {
-            settingsList[index] = settingsList[index].copy(
-                customTitle = null, customPath = null, isEnabled = defaultIsEnabled
-            )
-            Settings.STANDARD_DIRECTORY_SETTINGS.putValue(settingsList)
-        }
+        customTitle = ""
+        path = args.standardDirectory.defaultPath
+        customPath = null
+        isEnabled = defaultIsEnabled
+        binding.nameEdit.setText(customTitle)
+        binding.enableSwitch.isChecked = isEnabled
+        updatePathText()
     }
 
     @Parcelize
@@ -134,6 +137,7 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
     private class State(
         var path: @WriteWith<ParcelableParceler> Path,
         var customTitle: String,
-        var isEnabled: Boolean
+        var isEnabled: Boolean,
+        var customPath: String?
     ) : ParcelableState
 }

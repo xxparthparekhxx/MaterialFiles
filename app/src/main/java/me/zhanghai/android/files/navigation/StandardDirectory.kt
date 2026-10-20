@@ -35,9 +35,11 @@ data class StandardDirectory internal constructor(
     val key: String
         get() = relativePath
 
+    val defaultPath: Path
+        get() = Paths.get(getExternalStorageDirectory(relativePath))
+
     val targetPath: Path
-        get() = customPath?.takeIf { it.isNotEmpty() }?.let { Paths.get(it) }
-            ?: Paths.get(getExternalStorageDirectory(relativePath))
+        get() = customPath?.takeIf { it.isNotEmpty() }?.let { Paths.get(it) } ?: defaultPath
 
     fun getTitle(context: Context): String =
         if (!customTitle.isNullOrEmpty()) customTitle else context.getString(titleRes)
@@ -49,5 +51,5 @@ data class StandardDirectory internal constructor(
         )
 
     fun toSettings(): StandardDirectorySettings =
-        StandardDirectorySettings(relativePath, customTitle, customPath, isEnabled)
+        StandardDirectorySettings(relativePath, customTitle, isEnabled, customPath)
 }

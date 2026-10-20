@@ -143,8 +143,8 @@ private fun migrateStandardDirectorySettingsSetting1_1_0() {
                     newParcel.writeString(StandardDirectorySettings::class.java.name)
                     newParcel.writeString(oldParcel.readString())
                     newParcel.writeString(oldParcel.readString())
-                    newParcel.writeString("")
                     newParcel.writeInt(oldParcel.readByte().toInt())
+                    newParcel.writeString(null)
                 }
             }
             newParcel.marshall()
