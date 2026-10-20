@@ -32,6 +32,10 @@ object FtpServerUrl {
 
     // The URL of the HTTP server that serves the same files, or null if it is turned off.
     fun getHttpUrl(): String? {
+        if (!FtpServerService.isHttpServerRunning) {
+            // The server did not start, so there is no URL to show.
+            return null
+        }
         val httpPort = Settings.FTP_SERVER_HTTP_PORT.valueCompat
         if (httpPort <= 0) {
             return null

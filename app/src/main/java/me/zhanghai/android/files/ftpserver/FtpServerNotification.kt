@@ -43,6 +43,10 @@ class FtpServerNotification(private val service: Service) {
         receiver.register()
     }
 
+    fun update() {
+        doStartForeground()
+    }
+
     private fun doStartForeground() {
         val contextText = FtpServerUrl.getUrl()
             ?: service.getString(R.string.ftp_server_notification_text_no_local_inet_address)

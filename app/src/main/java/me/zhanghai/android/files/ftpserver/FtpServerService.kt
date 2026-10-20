@@ -152,23 +152,29 @@ class FtpServerService : Service() {
         }
         val httpPort = Settings.FTP_SERVER_HTTP_PORT.valueCompat
         if (httpPort > 0) {
-            val homeDirectoryUri = homeDirectory.toUri().toString()
-            val httpServer = HttpServer(
-                httpPort, ProviderFileSystemFactory().createFileSystemView(
-                    BaseUser().apply {
-                        name = username
-                        this.homeDirectory = homeDirectoryUri
-                    }
-                )
-            )
             try {
+                val homeDirectoryUri = homeDirectory.toUri().toString()
+                val httpServer = HttpServer(
+                    httpPort, ProviderFileSystemFactory().createFileSystemView(
+                        BaseUser().apply {
+                            name = username
+                            this.homeDirectory = homeDirectoryUri
+                        }
+                    )
+                )
                 httpServer.start()
                 this.httpServer = httpServer
+                isHttpServerRunning = true
             } catch (e: Exception) {
                 e.printStackTrace()
+                isHttpServerRunning = false
                 mainExecutorCompat.execute { showToast(e.toString()) }
             }
+        } else {
+            isHttpServerRunning = false
         }
+        // The notification shows the URL of the HTTP server, so it has to be updated.
+        mainExecutorCompat.execute { notification.update() }
         mainExecutorCompat.execute { FtpServerNsd.register(port, tls) }
         postState(State.RUNNING)
     }
@@ -178,6 +184,7 @@ class FtpServerService : Service() {
         mainExecutorCompat.execute { FtpServerNsd.unregister() }
         httpServer?.stop()
         httpServer = null
+        isHttpServerRunning = false
         val server = server ?: return
         server.stop()
         this.server = null
@@ -186,6 +193,10 @@ class FtpServerService : Service() {
 
     companion object {
         const val USERNAME_ANONYMOUS = "anonymous"
+
+        // Whether the HTTP server is running, so that its URL is only shown when it works.
+        @Volatile
+        internal var isHttpServerRunning = false
 
         private val _stateLiveData = MutableLiveData(State.STOPPED)
         val stateLiveData: LiveData<State>

@@ -35,7 +35,7 @@ class HttpServer(private val port: Int, private val fileSystemView: FileSystemVi
     fun start() {
         val serverSocket = ServerSocket(port)
         this.serverSocket = serverSocket
-        val executorService = Executors.newCachedThreadPool { runnable ->
+        val executorService = Executors.newFixedThreadPool(MAX_THREADS) { runnable ->
             Thread(runnable, "HTTP server").apply { isDaemon = true }
         }
         this.executorService = executorService
@@ -65,6 +65,8 @@ class HttpServer(private val port: Int, private val fileSystemView: FileSystemVi
     private fun handle(socket: Socket) {
         socket.use {
             try {
+                // A client that does not send anything must not keep a thread forever.
+                it.soTimeout = SOCKET_TIMEOUT_MILLIS
                 val inputStream = socket.getInputStream()
                 val outputStream = BufferedOutputStream(socket.getOutputStream())
                 val requestLine = readLine(inputStream) ?: return
@@ -240,6 +242,10 @@ class HttpServer(private val port: Int, private val fileSystemView: FileSystemVi
             return null
         }
         val end = if (endString.isEmpty()) size - 1 else endString.toLongOrNull() ?: return null
+        if (end < start) {
+            // The range ends before it starts, so it is not a range.
+            return null
+        }
         return start..minOf(end, size - 1)
     }
 
@@ -255,6 +261,9 @@ class HttpServer(private val port: Int, private val fileSystemView: FileSystemVi
                     builder.setLength(builder.length - 1)
                 }
                 return builder.toString()
+            }
+            if (builder.length >= MAX_LINE_LENGTH) {
+                throw IOException("The request line is too long")
             }
             builder.append(byte.toChar())
         }
@@ -282,6 +291,15 @@ class HttpServer(private val port: Int, private val fileSystemView: FileSystemVi
 
     companion object {
         private const val BUFFER_SIZE = 8192
+
+        // The number of connections that are served at the same time.
+        private const val MAX_THREADS = 8
+
+        // A connection that is idle for this long is closed.
+        private const val SOCKET_TIMEOUT_MILLIS = 30 * 1000
+
+        // The longest request line or header that is read.
+        private const val MAX_LINE_LENGTH = 8 * 1024
 
         private val HTTP_DATE_FORMATTER: DateTimeFormatter =
             DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US)
