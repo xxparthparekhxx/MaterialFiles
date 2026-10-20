@@ -1116,6 +1116,11 @@
         <item>Compact</item>
         <item>Tight</item>
     </string-array>
+    <string name="settings_file_list_top_bar_title">File list top bar</string>
+    <string-array name="settings_file_list_top_bar_entries">
+        <item>Path bar</item>
+        <item>Directory name</item>
+    </string-array>
     <string-array name="settings_file_name_ellipsize_entries">
         <item>Ellipsize the beginning</item>
         <item>Ellipsize the middle</item>

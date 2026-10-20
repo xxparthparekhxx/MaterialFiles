@@ -12,6 +12,7 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.compat.EnvironmentCompat2
 import me.zhanghai.android.files.filelist.FileListDensity
+import me.zhanghai.android.files.filelist.FileListTopBar
 import me.zhanghai.android.files.filelist.FileNameEllipsize
 import me.zhanghai.android.files.filelist.FileSortOptions
 import me.zhanghai.android.files.filelist.FileViewType
@@ -87,6 +88,12 @@ object Settings {
         EnumSettingLiveData(
             R.string.pref_key_file_list_density, R.string.pref_default_value_file_list_density,
             FileListDensity::class.java
+        )
+
+    val FILE_LIST_TOP_BAR: SettingLiveData<FileListTopBar> =
+        EnumSettingLiveData(
+            R.string.pref_key_file_list_top_bar, R.string.pref_default_value_file_list_top_bar,
+            FileListTopBar::class.java
         )
 
     val FILE_LIST_LOCK_HEADER: SettingLiveData<Boolean> =

@@ -656,6 +656,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         viewModel.breadcrumbLiveData.observe(viewLifecycleOwner) {
             binding.breadcrumbLayout.setData(it)
+            updateTitle()
         }
         viewModel.viewTypeLiveData.observe(viewLifecycleOwner) { onViewTypeChanged(it) }
         // Live data only calls observeForever() on its sources when it is active, so we have to
@@ -713,6 +714,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         Settings.BOTTOM_NAVIGATION_BAR.observe(viewLifecycleOwner) {
             updateBreadcrumbPosition()
         }
+        Settings.FILE_LIST_TOP_BAR.observe(viewLifecycleOwner) { updateTopBar() }
         Settings.FILE_LIST_DIVIDERS.observe(viewLifecycleOwner) { updateDividers() }
         Settings.FILE_LIST_DENSITY.observe(viewLifecycleOwner) { adapter.listDensity = it }
         Settings.FILE_LIST_GRID_SPAN_COUNT.observe(viewLifecycleOwner) { updateSpanCount() }
@@ -1041,6 +1043,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             breadcrumb.elevation = 0f
         }
         positionFabAboveFileJobs(binding.fileJobProgressLayout)
+    }
+
+    private fun updateTopBar() {
+        binding.breadcrumbLayout.isVisible =
+            Settings.FILE_LIST_TOP_BAR.valueCompat == FileListTopBar.PATH_BAR
+        updateTitle()
     }
 
     private fun onCurrentPathChanged(path: Path) {
@@ -1570,9 +1578,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun onPickOptionsChanged(pickOptions: PickOptions?) {
-        val title = if (pickOptions == null) {
-            getString(R.string.file_list_title)
-        } else {
+        updateTitle()
+        updateSelectAllMenuItem()
+        updateOverlayToolbar()
+        updateBottomToolbar()
+        adapter.pickOptions = pickOptions
+    }
+
+    private fun updateTitle() {
+        val pickOptions = viewModel.pickOptions
+        val title = if (pickOptions != null) {
             val customTitle = args.intent.getStringExtra(EXTRA_TITLE_OI)
                 ?: (if (pickOptions.mode == PickOptions.Mode.OPEN_DIRECTORY) args.intent.getStringExtra(Intent.EXTRA_TITLE) else null)
             val count = if (pickOptions.allowMultiple) Int.MAX_VALUE else 1
@@ -1583,12 +1598,21 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 PickOptions.Mode.OPEN_DIRECTORY ->
                     getQuantityString(R.plurals.file_list_title_open_directory, count)
             }
+        } else {
+            when (Settings.FILE_LIST_TOP_BAR.valueCompat) {
+                FileListTopBar.PATH_BAR -> getString(R.string.file_list_title)
+                FileListTopBar.DIRECTORY_NAME -> getCurrentDirectoryName()
+            }
         }
         requireActivity().title = title
-        updateSelectAllMenuItem()
-        updateOverlayToolbar()
-        updateBottomToolbar()
-        adapter.pickOptions = pickOptions
+    }
+
+    private fun getCurrentDirectoryName(): String {
+        val breadcrumbData = viewModel.breadcrumbLiveData.valueCompat
+        val name = breadcrumbData?.nameProducers
+            ?.getOrNull(breadcrumbData.selectedIndex)
+            ?.invoke(requireContext())
+        return name?.takeIfNotEmpty() ?: getString(R.string.file_list_title)
     }
 
     private fun updateSelectAllMenuItem() {

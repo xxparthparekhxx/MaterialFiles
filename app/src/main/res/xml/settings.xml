@@ -233,6 +233,14 @@
             android:entryValues="@array/pref_entry_values_file_list_density"
             app:useSimpleSummaryProvider="true" />
 
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_file_list_top_bar"
+            android:title="@string/settings_file_list_top_bar_title"
+            android:defaultValue="@string/pref_default_value_file_list_top_bar"
+            android:entries="@array/settings_file_list_top_bar_entries"
+            android:entryValues="@array/pref_entry_values_file_list_top_bar"
+            app:useSimpleSummaryProvider="true" />
+
         <Preference
             android:key="@string/pref_key_file_list_hidden_paths_manage"
             android:title="@string/settings_file_list_hidden_paths_title"
