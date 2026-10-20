@@ -128,6 +128,12 @@
             android:defaultValue="@bool/pref_default_value_open_with_built_in_viewers" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_open_with_built_in_media_player"
+            android:title="@string/settings_open_with_built_in_media_player_title"
+            android:summary="@string/settings_open_with_built_in_media_player_summary"
+            android:defaultValue="@bool/pref_default_value_open_with_built_in_media_player" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_highlight_delete"
             android:title="@string/settings_highlight_delete_title"
             android:summary="@string/settings_highlight_delete_summary"
