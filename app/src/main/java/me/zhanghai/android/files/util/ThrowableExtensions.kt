@@ -61,6 +61,8 @@ private fun Throwable.findUserFriendlyMessageRes(): Int? {
         return R.string.error_shizuku_unavailable
     }
     return findCauseMessageRes<UserActionRequiredException>(R.string.error_user_action_required)
+        // A socket timeout is an InterruptedIOException too, so it has to be checked before it.
+        ?: findCauseMessageRes<SocketTimeoutException>(R.string.error_connection_failed)
         ?: findCauseMessageRes<InterruptedIOException>(R.string.error_operation_canceled)
         ?: findCauseMessageRes<AccessDeniedException>(R.string.error_permission_denied)
         ?: findCauseMessageRes<SecurityException>(R.string.error_permission_denied)
@@ -76,7 +78,6 @@ private fun Throwable.findUserFriendlyMessageRes(): Int? {
         ?: findCauseMessageRes<FileSystemLoopException>(R.string.error_symbolic_links_too_deep)
         ?: findCauseMessageRes<UnknownHostException>(R.string.error_host_not_found)
         ?: findCauseMessageRes<ConnectException>(R.string.error_connection_failed)
-        ?: findCauseMessageRes<SocketTimeoutException>(R.string.error_connection_failed)
         ?: findCauseMessageRes<PortUnreachableException>(R.string.error_connection_failed)
         ?: findCauseMessageRes<NoRouteToHostException>(R.string.error_connection_failed)
 }
