@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/action_compare_contents"
+        android:title="@string/file_compare_action_compare_contents" />
+
+    <item
+        android:id="@+id/action_copy_to_left"
+        android:title="@string/file_compare_action_copy_to_left" />
+
+    <item
+        android:id="@+id/action_copy_to_right"
+        android:title="@string/file_compare_action_copy_to_right" />
+</menu>

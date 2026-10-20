@@ -105,6 +105,7 @@ import me.zhanghai.android.files.databinding.FileListFragmentBottomBarIncludeBin
 import me.zhanghai.android.files.databinding.FileListFragmentContentIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentSpeedDialIncludeBinding
+import me.zhanghai.android.files.compare.FileCompareActivity
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.asFileSize
@@ -114,6 +115,7 @@ import me.zhanghai.android.files.file.asMimeTypeOrNull
 import me.zhanghai.android.files.provider.common.AndroidFileTypeDetector
 import me.zhanghai.android.files.file.extension
 import me.zhanghai.android.files.file.fileProviderUri
+import me.zhanghai.android.files.file.intentType
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.file.isImage
 import me.zhanghai.android.files.filejob.FileJobProgress
@@ -1584,6 +1586,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             val isCurrentPathReadOnly =
                 Settings.READ_ONLY_MODE.valueCompat || viewModel.currentPath.fileSystem.isReadOnly
             menu.findItem(R.id.action_archive).isVisible = !isCurrentPathReadOnly
+            val areBothDirectories = files.all { it.attributesNoFollowLinks.isDirectory }
+            val areBothTextFiles = files.all {
+                !it.attributesNoFollowLinks.isDirectory && it.mimeType.intentType.startsWith("text/")
+            }
+            menu.findItem(R.id.action_compare).isVisible =
+                files.size == 2 && (areBothDirectories || areBothTextFiles)
         }
         if (!overlayActionMode.isActive) {
             binding.appBarLayout.setExpanded(true)
@@ -1686,6 +1694,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 showCreateArchiveDialog(viewModel.selectedFiles)
                 true
             }
+            R.id.action_compare -> {
+                compareFiles(viewModel.selectedFiles)
+                true
+            }
             R.id.action_share -> {
                 shareFiles(viewModel.selectedFiles)
                 true
@@ -1740,6 +1752,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun copyFiles(files: FileItemSet) {
         viewModel.addToPasteState(true, files)
+        viewModel.selectFiles(files, false)
+    }
+
+    private fun compareFiles(files: FileItemSet) {
+        if (files.size != 2) {
+            return
+        }
+        val paths = files.map { it.path }
+        startActivitySafe(
+            Intent(requireContext(), FileCompareActivity::class.java).apply {
+                extraPathList = paths
+            }
+        )
         viewModel.selectFiles(files, false)
     }
 
