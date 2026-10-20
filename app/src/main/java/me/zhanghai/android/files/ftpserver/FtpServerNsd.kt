@@ -14,16 +14,17 @@ import me.zhanghai.android.files.app.application
 
 object FtpServerNsd {
     private const val SERVICE_TYPE = "_ftp._tcp."
+    private const val SERVICE_TYPE_SSL = "_ftps._tcp."
 
     private var registrationListener: NsdManager.RegistrationListener? = null
     private var multicastLock: WifiManager.MulticastLock? = null
 
-    fun register(port: Int) {
+    fun register(port: Int, tls: FtpServerTls) {
         unregister()
         val nsdManager = application.getSystemService(NsdManager::class.java) ?: return
         val serviceInfo = NsdServiceInfo().apply {
             serviceName = Build.MODEL?.takeIf { it.isNotBlank() } ?: "Material Files"
-            serviceType = SERVICE_TYPE
+            serviceType = if (tls == FtpServerTls.IMPLICIT) SERVICE_TYPE_SSL else SERVICE_TYPE
             this.port = port
         }
         val listener = object : NsdManager.RegistrationListener {

@@ -893,6 +893,12 @@
     <string name="ftp_server_writable_title">Allow writing</string>
     <string name="ftp_server_expose_all_storages_title">Show all storages</string>
     <string name="ftp_server_expose_all_storages_summary">List every storage at the top level instead of only the root folder. Only applies when anonymous login is off; keep off for anonymous access</string>
+    <string name="ftp_server_tls_title">TLS (self-signed certificate)</string>
+    <string-array name="ftp_server_tls_entries">
+        <item>None</item>
+        <item>Explicit (AUTH TLS)</item>
+        <item>Implicit</item>
+    </string-array>
     <string name="ftp_server_notification_title" translatable="false">@string/ftp_server_title</string>
     <string name="ftp_server_notification_text_no_local_inet_address" translatable="false">@string/ftp_server_url_summary_no_local_inet_address</string>
 

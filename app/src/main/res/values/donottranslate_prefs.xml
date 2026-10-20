@@ -96,6 +96,13 @@
     <bool name="pref_default_value_ftp_server_writable">true</bool>
     <string name="pref_key_ftp_server_expose_all_storages">key_ftp_server_expose_all_storages</string>
     <bool name="pref_default_value_ftp_server_expose_all_storages">false</bool>
+    <string name="pref_key_ftp_server_tls">key_ftp_server_tls</string>
+    <string name="pref_default_value_ftp_server_tls">0</string>
+    <string-array name="pref_entry_values_ftp_server_tls">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
     <string name="pref_key_locale">key_locale</string>
     <string name="pref_key_theme_color">key_theme_color</string>

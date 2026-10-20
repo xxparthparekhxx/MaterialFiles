@@ -104,7 +104,8 @@ class FtpServerService : Service() {
         val port = Settings.FTP_SERVER_PORT.valueCompat
         val homeDirectory = Settings.FTP_SERVER_HOME_DIRECTORY.valueCompat
         val writable = Settings.FTP_SERVER_WRITABLE.valueCompat
-        val server = FtpServer(username, password, port, homeDirectory, writable)
+        val tls = Settings.FTP_SERVER_TLS.valueCompat
+        val server = FtpServer(username, password, port, homeDirectory, writable, tls)
         this.server = server
         try {
             server.start()
@@ -114,7 +115,7 @@ class FtpServerService : Service() {
             mainExecutorCompat.execute { onStartError(e) }
             return
         }
-        mainExecutorCompat.execute { FtpServerNsd.register(port) }
+        mainExecutorCompat.execute { FtpServerNsd.register(port, tls) }
         postState(State.RUNNING)
     }
 
