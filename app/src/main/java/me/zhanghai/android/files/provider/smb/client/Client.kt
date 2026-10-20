@@ -30,6 +30,7 @@ import com.hierynomus.smbj.common.SMBRuntimeException
 import com.hierynomus.smbj.session.Session
 import com.hierynomus.smbj.share.Directory
 import com.hierynomus.smbj.share.DiskShare
+import com.hierynomus.smbj.share.File
 import com.hierynomus.smbj.share.PipeShare
 import com.hierynomus.smbj.share.PrinterShare
 import com.hierynomus.smbj.share.Share
@@ -455,24 +456,25 @@ object Client {
                             } catch (e: SMBRuntimeException) {
                                 throw ClientException(e)
                             }.endOfFile
+                            var copiedSize = 0L
                             val progressListener = listener?.let {
-                                var lastCopiedSize = 0L
-                                ProgressListener { copiedSize, _ ->
-                                    it(copiedSize - lastCopiedSize)
-                                    lastCopiedSize = copiedSize
+                                ProgressListener { size, _ ->
+                                    it(size - copiedSize)
+                                    copiedSize = size
                                 }
                             }
                             try {
                                 sourceFile.serverCopy(0, targetFile, 0, length, progressListener)
                             } catch (e: SMBRuntimeException) {
-                                throw ClientException(e)
+                                if (!e.isServerCopyUnsupported()) {
+                                    throw ClientException(e)
+                                }
+                                // The server does not support the server-side copy, so the data is
+                                // transferred by this device instead.
+                                copyFileData(sourceFile, targetFile, intervalMillis, listener, copiedSize)
                             }
                         } else {
-                            val sourceInputStream = FileByteChannel(sourceFile, false)
-                                .newInputStream()
-                            val targetOutputStream = FileByteChannel(targetFile, false)
-                                .newOutputStream()
-                            sourceInputStream.copyTo(targetOutputStream, intervalMillis, listener)
+                            copyFileData(sourceFile, targetFile, intervalMillis, listener, 0)
                         }
                         successful = true
                     } finally {
@@ -489,6 +491,32 @@ object Client {
         } catch (e: SMBRuntimeException) {
             throw ClientException(e)
         }
+    }
+
+    // The already copied size is not reported again, because the server-side copy may have copied
+    // some data before the server rejected it.
+    private fun copyFileData(
+        sourceFile: File,
+        targetFile: File,
+        intervalMillis: Long,
+        listener: ((Long) -> Unit)?,
+        alreadyCopiedSize: Long
+    ) {
+        val sourceInputStream = FileByteChannel(sourceFile, false)
+            .newInputStream()
+        val targetOutputStream = FileByteChannel(targetFile, false)
+            .newOutputStream()
+        var remaining = alreadyCopiedSize
+        val progressListener: ((Long) -> Unit)? = listener?.let { listener ->
+            { delta: Long ->
+                val toReport = delta - remaining
+                remaining = maxOf(remaining - delta, 0L)
+                if (toReport > 0) {
+                    listener(toReport)
+                }
+            }
+        }
+        sourceInputStream.copyTo(targetOutputStream, intervalMillis, progressListener)
     }
 
     // @see https://gitlab.com/samba-team/devel/samba/-/blob/master/source3/libsmb/cli_smb2_fnum.c
