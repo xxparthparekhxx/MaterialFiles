@@ -30,6 +30,7 @@ import me.zhanghai.android.files.provider.common.newInputStream
 import me.zhanghai.android.files.provider.common.readAllBytes
 import me.zhanghai.android.files.provider.common.readAttributes
 import me.zhanghai.android.files.util.Failure
+import me.zhanghai.android.files.util.isBinary
 import me.zhanghai.android.files.util.Loading
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.Success
@@ -253,7 +254,7 @@ class FileCompareViewModel(
         }
         val leftBytes = leftPath.readAllBytes()
         val rightBytes = rightPath.readAllBytes()
-        if (leftBytes.isBinary || rightBytes.isBinary) {
+        if (leftBytes.isBinary() || rightBytes.isBinary()) {
             throw FileCompareException(R.string.file_compare_error_binary_file)
         }
         val leftLines = leftBytes.decodeLines()
@@ -276,17 +277,6 @@ class FileCompareViewModel(
         return (if (lines.isNotEmpty() && lines.last().isEmpty()) lines.dropLast(1) else lines)
             .map { it.removeSuffix("\r") }
     }
-
-    private val ByteArray.isBinary: Boolean
-        get() {
-            val checkLength = minOf(size, BINARY_CHECK_LENGTH)
-            for (index in 0 until checkLength) {
-                if (this[index] == 0.toByte()) {
-                    return true
-                }
-            }
-            return false
-        }
 
     private fun createUnifiedDiff(
         leftLines: List<String>,
@@ -460,6 +450,5 @@ class FileCompareViewModel(
 
         private const val CONTEXT_LINES = 3
 
-        private const val BINARY_CHECK_LENGTH = 8192
     }
 }

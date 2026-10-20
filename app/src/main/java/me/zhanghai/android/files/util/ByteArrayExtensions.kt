@@ -20,3 +20,19 @@ fun ByteArray.toHexString(): String {
 }
 
 private fun Int.toHexChar(): Char = if (this >= 10) 'A' + (this - 10) else '0' + this
+
+/**
+ * Whether the content looks like binary data rather than text, by looking for a NUL byte in the
+ * first few kilobytes.
+ */
+fun ByteArray.isBinary(): Boolean {
+    val checkLength = minOf(size, BINARY_CHECK_LENGTH)
+    for (index in 0 until checkLength) {
+        if (this[index] == 0.toByte()) {
+            return true
+        }
+    }
+    return false
+}
+
+private const val BINARY_CHECK_LENGTH = 8192
