@@ -934,6 +934,7 @@
     <string name="text_editor_find_hint">Text to find</string>
     <string name="text_editor_find_not_found">Not found</string>
     <string name="text_editor_replace_hint">Replacement text</string>
+    <string name="text_editor_replace_all_title">Replace all</string>
     <string name="text_editor_monospace">Monospace font</string>
     <string name="text_editor_encoding">Encoding</string>
     <string name="text_editor_line_ending">Line ending</string>

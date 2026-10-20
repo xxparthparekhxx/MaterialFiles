@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
-import android.widget.FrameLayout
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -40,7 +40,8 @@ class FindTextDialogFragment : AppCompatDialogFragment() {
             setHint(R.string.text_editor_replace_hint)
         }
         val padding = context.resources.getDimensionPixelSize(R.dimen.screen_edge_margin)
-        val container = FrameLayout(context).apply {
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
             setPaddingRelative(padding, padding / 2, padding, 0)
             addView(edit)
             addView(replaceEdit)
@@ -51,7 +52,7 @@ class FindTextDialogFragment : AppCompatDialogFragment() {
             .setPositiveButton(R.string.text_editor_find_next_short) { _, _ ->
                 listener.findText(edit.text.toString())
             }
-            .setNeutralButton(R.string.replace) { _, _ ->
+            .setNeutralButton(R.string.text_editor_replace_all_title) { _, _ ->
                 listener.replaceText(edit.text.toString(), replaceEdit.text.toString())
             }
             .setNegativeButton(android.R.string.cancel, null)

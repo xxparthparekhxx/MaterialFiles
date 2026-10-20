@@ -308,18 +308,25 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     }
 
     override fun replaceText(query: String, replacement: String) {
-        if (query.isEmpty()) {
+        // The editor refuses to be edited while it is read-only, so the replacement must not
+        // change the document either.
+        if (query.isEmpty() || isReadOnly) {
             return
         }
-        val text = binding.textEdit.text ?: return
-        val newText = text.toString().replace(query, replacement)
-        if (newText != text.toString()) {
-            isSettingText = true
-            binding.textEdit.setText(newText)
-            isSettingText = false
-            viewModel.updateDraft(newText)
-            viewModel.isTextChanged.value = true
+        val editable = binding.textEdit.text ?: return
+        val text = editable.toString()
+        if (!text.contains(query)) {
+            return
         }
+        // Replacing through the Editable instead of setting the whole text again keeps the undo
+        // history, which the Undo menu drives.
+        var index = text.indexOf(query)
+        while (index >= 0) {
+            editable.replace(index, index + query.length, replacement)
+            index = editable.toString().indexOf(query, index + replacement.length)
+        }
+        viewModel.updateDraft(editable.toString())
+        viewModel.isTextChanged.value = true
     }
 
     private fun findNext() {
