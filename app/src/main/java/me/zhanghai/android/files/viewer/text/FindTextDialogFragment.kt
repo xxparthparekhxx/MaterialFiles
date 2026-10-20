@@ -34,16 +34,25 @@ class FindTextDialogFragment : AppCompatDialogFragment() {
                 selectAll()
             }
         }
+        val replaceEdit = EditText(context).apply {
+            setSingleLine()
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            setHint(R.string.text_editor_replace_hint)
+        }
         val padding = context.resources.getDimensionPixelSize(R.dimen.screen_edge_margin)
         val container = FrameLayout(context).apply {
             setPaddingRelative(padding, padding / 2, padding, 0)
             addView(edit)
+            addView(replaceEdit)
         }
         val dialog = MaterialAlertDialogBuilder(context, theme)
             .setTitle(R.string.text_editor_find)
             .setView(container)
             .setPositiveButton(R.string.text_editor_find_next_short) { _, _ ->
                 listener.findText(edit.text.toString())
+            }
+            .setNeutralButton(R.string.replace) { _, _ ->
+                listener.replaceText(edit.text.toString(), replaceEdit.text.toString())
             }
             .setNegativeButton(android.R.string.cancel, null)
             .create()
@@ -66,5 +75,6 @@ class FindTextDialogFragment : AppCompatDialogFragment() {
 
     interface Listener {
         fun findText(query: String)
+        fun replaceText(query: String, replacement: String)
     }
 }

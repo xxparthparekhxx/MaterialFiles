@@ -55,7 +55,7 @@ import java.nio.charset.Charset
 
 class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     ConfirmCloseDialogFragment.Listener, FindTextDialogFragment.Listener,
-    SaveAsDialogFragment.Listener {
+    SaveAsDialogFragment.Listener, GoToLineDialogFragment.Listener {
     private val args by args<Args>()
     private lateinit var argsFile: Path
 
@@ -238,6 +238,10 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
                 FindTextDialogFragment.show(lastFindQuery, this)
                 true
             }
+            R.id.action_go_to_line -> {
+                GoToLineDialogFragment.show(this)
+                true
+            }
             R.id.action_find_next -> {
                 findNext()
                 true
@@ -278,6 +282,38 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
     override fun findText(query: String) {
         lastFindQuery = query
         findNext()
+    }
+
+    override fun goToLine(line: Int) {
+        val text = binding.textEdit.text ?: return
+        if (line <= 0) {
+            showToast(R.string.text_editor_go_to_line_invalid)
+            return
+        }
+        val layout = binding.textEdit.layout ?: return
+        val lineCount = layout.lineCount
+        if (line > lineCount) {
+            showToast(R.string.text_editor_go_to_line_invalid)
+            return
+        }
+        val offset = layout.getLineStart(line - 1)
+        binding.textEdit.requestFocus()
+        binding.textEdit.setSelection(offset)
+    }
+
+    override fun replaceText(query: String, replacement: String) {
+        if (query.isEmpty()) {
+            return
+        }
+        val text = binding.textEdit.text ?: return
+        val newText = text.toString().replace(query, replacement)
+        if (newText != text.toString()) {
+            isSettingText = true
+            binding.textEdit.setText(newText)
+            isSettingText = false
+            viewModel.updateDraft(newText)
+            viewModel.isTextChanged.value = true
+        }
     }
 
     private fun findNext() {
