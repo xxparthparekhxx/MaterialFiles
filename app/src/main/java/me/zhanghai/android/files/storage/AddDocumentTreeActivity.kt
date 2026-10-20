@@ -17,7 +17,8 @@ class AddDocumentTreeActivity : AppActivity() {
         // Calls ensureSubDecor().
         findViewById<View>(android.R.id.content)
         if (savedInstanceState == null) {
-            supportFragmentManager.commit { add(android.R.id.content, AddDocumentTreeFragment()) }
+            val fragment = AddDocumentTreeFragment().apply { arguments = intent.extras }
+            supportFragmentManager.commit { add(android.R.id.content, fragment) }
         }
     }
 }
