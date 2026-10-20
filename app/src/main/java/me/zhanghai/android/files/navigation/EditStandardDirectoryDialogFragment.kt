@@ -117,17 +117,17 @@ class EditStandardDirectoryDialogFragment : AppCompatDialogFragment() {
     }
 
     private fun reset() {
-        // The reset only changes the dialog, so that the changes are saved when the dialog is
-        // confirmed and not undone by it.
+        // The reset button closes the dialog, so the settings are written right away.
         val defaultIsEnabled = defaultStandardDirectories
             .find { it.key == args.standardDirectory.key }?.isEnabled ?: false
-        customTitle = ""
-        path = args.standardDirectory.defaultPath
-        customPath = null
-        isEnabled = defaultIsEnabled
-        binding.nameEdit.setText(customTitle)
-        binding.enableSwitch.isChecked = isEnabled
-        updatePathText()
+        val settingsList = Settings.STANDARD_DIRECTORY_SETTINGS.valueCompat.toMutableList()
+        val index = settingsList.indexOfFirst { it.id == args.standardDirectory.key }
+        if (index != -1) {
+            settingsList[index] = settingsList[index].copy(
+                customTitle = null, customPath = null, isEnabled = defaultIsEnabled
+            )
+            Settings.STANDARD_DIRECTORY_SETTINGS.putValue(settingsList)
+        }
     }
 
     @Parcelize
