@@ -23,6 +23,7 @@ import me.zhanghai.android.files.storage.StorageVolumeListLiveData
 import me.zhanghai.android.files.storage.WebDavServerAuthenticator
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.theme.night.NightModeHelper
+import rikka.preference.SimpleMenuPreference
 import java.util.Properties
 import me.zhanghai.android.files.provider.ftp.client.Client as FtpClient
 import me.zhanghai.android.files.provider.sftp.client.Client as SftpClient
@@ -39,6 +40,7 @@ val appInitializers = listOf(
     ::initializeLiveDataObjects,
     ::initializeCustomTheme,
     ::initializeNightMode,
+    ::enableSimpleMenuLightFix,
     ::createNotificationChannels
 )
 
@@ -88,6 +90,13 @@ private fun initializeCustomTheme() {
 
 private fun initializeNightMode() {
     NightModeHelper.initialize(application)
+}
+
+private fun enableSimpleMenuLightFix() {
+    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.N
+        || Build.VERSION.SDK_INT == Build.VERSION_CODES.N_MR1) {
+        SimpleMenuPreference.setLightFixEnabled(true)
+    }
 }
 
 private fun createNotificationChannels() {
