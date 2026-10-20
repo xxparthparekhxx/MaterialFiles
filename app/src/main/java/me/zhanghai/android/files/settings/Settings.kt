@@ -248,6 +248,11 @@ object Settings {
             R.string.pref_key_text_editor_word_wrap, R.bool.pref_default_value_text_editor_word_wrap
         )
 
+    val TEXT_EDITOR_LINE_ENDING: SettingLiveData<Int> =
+        IntegerSettingLiveData(
+            R.string.pref_key_text_editor_line_ending, R.integer.pref_default_value_text_editor_line_ending
+        )
+
     val ERRORS_IN_DIALOG: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_errors_in_dialog, R.bool.pref_default_value_errors_in_dialog
