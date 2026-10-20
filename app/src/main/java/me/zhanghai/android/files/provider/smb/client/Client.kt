@@ -21,6 +21,7 @@ import com.hierynomus.mssmb2.SMB2ShareAccess
 import com.hierynomus.mssmb2.SMBApiException
 import com.hierynomus.mssmb2.messages.SMB2ChangeNotifyResponse
 import com.hierynomus.protocol.commons.EnumWithValue
+import com.hierynomus.protocol.commons.socket.ProxySocketFactory
 import com.hierynomus.protocol.transport.TransportException
 import com.hierynomus.smbj.ProgressListener
 import com.hierynomus.smbj.SMBClient
@@ -51,6 +52,7 @@ import java.io.IOException
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
+import java.net.Proxy
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -67,6 +69,9 @@ object Client {
     // round trip does not stall the copy after every chunk.
     internal const val SMB_IO_BUFFER_SIZE = 128 * 1024
     internal const val SMB_READ_AHEAD = 16
+    // The socket factory smbj uses by default gives up on connecting after 5 seconds, which is
+    // too short for a server that is slow to answer or a network that needs a moment to wake up.
+    internal const val SMB_CONNECT_TIMEOUT_MILLIS = 30 * 1000
 
     @Volatile
     lateinit var authenticator: Authenticator
@@ -82,6 +87,7 @@ object Client {
             .withReadTimeout(5, TimeUnit.MINUTES)
             .withWriteTimeout(5, TimeUnit.MINUTES)
             .withTransactTimeout(5, TimeUnit.MINUTES)
+            .withSocketFactory(ProxySocketFactory(Proxy.NO_PROXY, SMB_CONNECT_TIMEOUT_MILLIS))
 
     private val client = SMBClient(smbConfigBuilder().build())
 
@@ -756,7 +762,7 @@ object Client {
         val connection = try {
             client.connect(hostAddress, authority.port)
         } catch (e: IOException) {
-            throw ClientException(e)
+            throw ClientException("Failed to connect to ${authority.host}:${authority.port}", e)
         }
         val authenticationContext =
             AuthenticationContext(authority.username, password.toCharArray(), authority.domain)
