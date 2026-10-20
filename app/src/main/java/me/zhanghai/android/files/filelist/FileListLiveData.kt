@@ -13,8 +13,10 @@ import java8.nio.file.DirectoryIteratorException
 import java8.nio.file.Path
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.loadFileItem
+import me.zhanghai.android.files.provider.common.isHidden
 import me.zhanghai.android.files.provider.common.newDirectoryStream
 import me.zhanghai.android.files.provider.common.newInputStream
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.CloseableLiveData
 import me.zhanghai.android.files.util.Failure
 import me.zhanghai.android.files.util.Loading
@@ -93,7 +95,7 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
                     if (task.isCancelled) {
                         return@submit
                     }
-                    Success(applyHiddenFile(fileList))
+                    Success(filterEmptyDirectories(applyHiddenFile(fileList)))
                 }
             } catch (e: Exception) {
                 if (task.isCancelled || Thread.currentThread().isInterrupted ||
@@ -144,6 +146,38 @@ class FileListLiveData(private val path: Path) : CloseableLiveData<Stateful<List
         }
         return fileList.map {
             if (!it.isHidden && it.name in hiddenNames) it.copy(isHidden = true) else it
+        }
+    }
+
+    /**
+     * When hiding empty folders is enabled, drop directories that contain no entries the
+     * current list would show. A directory that cannot be inspected is kept, so a failed
+     * listing never hides a folder.
+     */
+    private fun filterEmptyDirectories(fileList: List<FileItem>): List<FileItem> {
+        if (!Settings.FILE_LIST_HIDE_EMPTY_DIRECTORIES.valueCompat) {
+            return fileList
+        }
+        val showHidden = Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat
+        return fileList.filter { file ->
+            !file.attributes.isDirectory || hasVisibleDirectoryEntry(file.path, showHidden)
+        }
+    }
+
+    private fun hasVisibleDirectoryEntry(path: Path, showHidden: Boolean): Boolean {
+        return try {
+            path.newDirectoryStream().use { stream ->
+                for (child in stream) {
+                    if (!showHidden && child.isHidden) {
+                        continue
+                    }
+                    return true
+                }
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            true
         }
     }
 

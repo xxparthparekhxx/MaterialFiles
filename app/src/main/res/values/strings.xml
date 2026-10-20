@@ -30,6 +30,7 @@
     <string name="paste">Paste</string>
     <string name="refresh">Refresh</string>
     <string name="reload">Reload</string>
+    <string name="move">Move</string>
     <string name="remove">Remove</string>
     <string name="rename">Rename</string>
     <string name="file_rename_multiple_title">Rename selected items</string>
@@ -392,6 +393,8 @@
     <string name="file_item_action_create_shortcut" translatable="false">@string/file_list_action_create_shortcut</string>
     <string name="file_item_action_hide">Hide</string>
     <string name="file_hide_success">Hidden</string>
+    <string name="file_item_action_dot_hide">Hide with dot prefix</string>
+    <string name="file_item_action_dot_show">Remove dot prefix</string>
     <string name="settings_file_list_hidden_paths_title">Hidden files</string>
     <string name="settings_file_list_hidden_paths_summary">Files and folders hidden from the list</string>
     <string name="file_list_hidden_paths_empty">Nothing is hidden</string>
@@ -415,6 +418,8 @@
         <item quantity="other">%1$,d items, totaling %2$s</item>
     </plurals>
     <string name="file_properties_basic_last_modification_time">Last Modified</string>
+    <string name="file_properties_basic_set_last_modified_time_title">Set last modified time</string>
+    <string name="file_properties_basic_set_last_modified_time_failed">The last modified time could not be changed</string>
     <string name="file_properties_basic_parent_directory">Parent Folder</string>
     <string name="file_properties_basic_archive_file">Archive File</string>
     <string name="file_properties_basic_archive_entry">Archive Entry</string>
@@ -775,6 +780,10 @@
     <string name="navigation_edit_bookmark_directory_title">Bookmark folder</string>
     <string name="navigation_edit_bookmark_directory_name">Name</string>
     <string name="navigation_edit_bookmark_directory_path">Path</string>
+    <string name="navigation_home" translatable="false">@string/home_title</string>
+    <string name="home_title">Home</string>
+    <string name="file_item_action_file_color">Color tag</string>
+    <string name="file_color_none">None</string>
     <string name="navigation_recent_files">Recent files</string>
     <string name="recent_files_title">Recent files</string>
     <string name="recent_files_empty">No recent files</string>
@@ -936,6 +945,8 @@
     </plurals>
     <string name="settings_file_list_show_directory_item_count_title">Show item count for folders</string>
     <string name="settings_file_list_show_directory_item_count_summary">Count the files and folders directly inside each folder. Large folders can take a while.</string>
+    <string name="settings_file_list_hide_empty_directories_title">Hide empty folders</string>
+    <string name="settings_file_list_hide_empty_directories_summary">Don\'t show folders that have no visible files or folders inside them</string>
     <plurals name="file_list_directory_item_count_format">
         <item quantity="one">%1$,d item</item>
         <item quantity="other">%1$,d items</item>

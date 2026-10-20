@@ -29,7 +29,7 @@
 
     <color name="activity_icon_tint">@color/secondary_text_default_material_light</color>
 
-    <color name="shortcut_icon_background">#F5F5F5</color>
+    <color name="shortcut_icon_background">@color/color_surface</color>
 
     <color name="file_icon_light_blue">#4B86F0</color>
     <color name="file_icon_blue">#4285F4</color>
@@ -43,4 +43,12 @@
     <color name="file_icon_red">#EA4335</color>
     <color name="file_icon_deep_red">#DB4437</color>
     <color name="file_icon_yellow">#F4B400</color>
+    <color name="file_color_red">#E57373</color>
+    <color name="file_color_orange">#FDBA74</color>
+    <color name="file_color_yellow">#FFF176</color>
+    <color name="file_color_green">#81C784</color>
+    <color name="file_color_cyan">#4DD0E1</color>
+    <color name="file_color_blue">#64B5F6</color>
+    <color name="file_color_purple">#BA68C8</color>
+    <color name="file_color_pink">#F06292</color>
 </resources>

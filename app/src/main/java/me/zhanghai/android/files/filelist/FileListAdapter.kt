@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.filelist
 
+import android.graphics.drawable.GradientDrawable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -31,11 +32,13 @@ import java8.nio.file.Path
 import me.zhanghai.android.fastscroll.PopupTextProvider
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.coil.AppIconPackageName
+import me.zhanghai.android.files.compat.getColorCompat
 import me.zhanghai.android.files.compat.foregroundCompat
 import me.zhanghai.android.files.compat.getDrawableCompat
 import me.zhanghai.android.files.databinding.FileItemCompactListBinding
 import me.zhanghai.android.files.databinding.FileItemGridBinding
 import me.zhanghai.android.files.databinding.FileItemListBinding
+import me.zhanghai.android.files.file.FileColorStore
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.fileSize
 import me.zhanghai.android.files.file.formatShort
@@ -538,26 +541,7 @@ class FileListAdapter(
                 load(AppIconPackageName(appDirectoryPackageName!!))
             }
         }
-        holder.badgeImage.apply {
-            val badgeIconRes = if (file.attributesNoFollowLinks.isSymbolicLink) {
-                if (file.isSymbolicLinkBroken) {
-                    R.drawable.error_badge_icon_18dp
-                } else {
-                    R.drawable.symbolic_link_badge_icon_18dp
-                }
-            } else if (file.attributesNoFollowLinks.isEncrypted()) {
-                R.drawable.encrypted_badge_icon_18dp
-            } else {
-                null
-            }
-            val hasBadge = badgeIconRes != null
-            isVisible = hasBadge
-            if (hasBadge) {
-                setImageResource(badgeIconRes!!)
-            } else {
-                setImageDrawable(null)
-            }
-        }
+        bindBadge(holder, file)
         holder.nameText.text = file.name
         val isArchivePath = path.isArchivePath
         menu.findItem(R.id.action_copy)
@@ -589,6 +573,13 @@ class FileListAdapter(
         menu.findItem(R.id.action_archive).isVisible = !isArchivePath
         menu.findItem(R.id.action_add_bookmark).isVisible = isDirectory
         menu.findItem(R.id.action_show_in_folder).isVisible = isSearching
+        menu.findItem(R.id.action_dot_hide).apply {
+            isVisible = isDirectory && !hasPickOptions && !isReadOnly
+            setTitle(
+                if (file.name.startsWith('.')) R.string.file_item_action_dot_show
+                else R.string.file_item_action_dot_hide
+            )
+        }
         holder.popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.action_open_with -> {
@@ -659,11 +650,57 @@ class FileListAdapter(
                     listener.hideFile(file)
                     true
                 }
+                R.id.action_dot_hide -> {
+                    listener.toggleDotHidden(file)
+                    true
+                }
+                R.id.action_file_color -> {
+                    listener.showFileColorDialog(file)
+                    true
+                }
                 R.id.action_properties -> {
                     listener.showPropertiesDialog(file)
                     true
                 }
                 else -> false
+            }
+        }
+    }
+
+    private fun bindBadge(holder: ViewHolder, file: FileItem) {
+        val badgeImage = holder.badgeImage
+        val color = FileColorStore.colorOf(file.path)
+        if (color != null) {
+            badgeImage.apply {
+                val colorDrawable = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(context.getColorCompat(FileColorStore.colorResOf(color)))
+                }
+                background = null
+                setImageDrawable(colorDrawable)
+                isVisible = true
+            }
+            return
+        }
+        badgeImage.apply {
+            background = context.getDrawableCompat(R.drawable.badge_background_18dp)
+            val badgeIconRes = if (file.attributesNoFollowLinks.isSymbolicLink) {
+                if (file.isSymbolicLinkBroken) {
+                    R.drawable.error_badge_icon_18dp
+                } else {
+                    R.drawable.symbolic_link_badge_icon_18dp
+                }
+            } else if (file.attributesNoFollowLinks.isEncrypted()) {
+                R.drawable.encrypted_badge_icon_18dp
+            } else {
+                null
+            }
+            val hasBadge = badgeIconRes != null
+            isVisible = hasBadge
+            if (hasBadge) {
+                setImageResource(badgeIconRes!!)
+            } else {
+                setImageDrawable(null)
             }
         }
     }
@@ -924,6 +961,8 @@ class FileListAdapter(
         fun showInFolder(file: FileItem)
         fun createShortcut(file: FileItem)
         fun hideFile(file: FileItem)
+        fun toggleDotHidden(file: FileItem)
+        fun showFileColorDialog(file: FileItem)
         fun showPropertiesDialog(file: FileItem)
         fun onFileActivated(file: FileItem)
     }

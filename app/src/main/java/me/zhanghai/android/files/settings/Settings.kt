@@ -364,6 +364,12 @@ object Settings {
             R.bool.pref_default_value_file_list_indicate_last_opened_item
         )
 
+    val FILE_LIST_HIDE_EMPTY_DIRECTORIES: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_hide_empty_directories,
+            R.bool.pref_default_value_file_list_hide_empty_directories
+        )
+
     val BINARY_FILE_SIZE_UNIT: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_binary_file_size_unit,
