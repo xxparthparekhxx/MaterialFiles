@@ -66,6 +66,24 @@ private fun throwIfInterrupted() {
     }
 }
 
+// Not every server implements the file system controls used for a server-side copy. Samba, for
+// example, rejects them as not supported, and the copy has to be done by this device instead.
+internal fun SMBRuntimeException.isServerCopyUnsupported(): Boolean {
+    var current: Throwable? = this
+    while (current != null) {
+        if (current is SMBApiException) {
+            val statusCode = current.statusCode
+            if (statusCode == NtStatus.STATUS_NOT_SUPPORTED.value
+                || statusCode == NtStatus.STATUS_NOT_IMPLEMENTED.value
+                || statusCode == NtStatuses.STATUS_INVALID_DEVICE_REQUEST) {
+                return true
+            }
+        }
+        current = current.cause
+    }
+    return false
+}
+
 // @see https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/5c03c9d6-15de-48a2-9835-8fb37f8a79d8
 private const val FSCTL_SRV_REQUEST_RESUME_KEY = 0x00140078
 
