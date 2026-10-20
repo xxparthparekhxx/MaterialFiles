@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import me.zhanghai.android.files.provider.common.PosixFileStore
+import me.zhanghai.android.files.provider.root.RootAvailability
 import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.isFinished
 import me.zhanghai.android.files.util.isReady
@@ -21,6 +22,19 @@ class FileJobErrorViewModel : ViewModel() {
     private val _remountState =
         MutableStateFlow<ActionState<PosixFileStore, Unit>>(ActionState.Ready())
     val remountState = _remountState.asStateFlow()
+
+    // Whether root or Shizuku is available, or null while it is not known yet. The check starts
+    // a process and does a binder call, so it must not run on the main thread.
+    private val _isRootAvailable = MutableStateFlow<Boolean?>(null)
+    val isRootAvailable = _isRootAvailable.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _isRootAvailable.value = runInterruptible(Dispatchers.IO) {
+                RootAvailability.isAvailable
+            }
+        }
+    }
 
     fun remount(fileStore: PosixFileStore) {
         viewModelScope.launch {
