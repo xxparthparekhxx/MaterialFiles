@@ -24,6 +24,7 @@ import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.requireViewByIdCompat
 import me.zhanghai.android.files.databinding.FileJobErrorDialogViewBinding
 import me.zhanghai.android.files.provider.common.PosixFileStore
+import me.zhanghai.android.files.provider.root.RootAvailability
 import me.zhanghai.android.files.util.ActionState
 import me.zhanghai.android.files.util.ParcelableArgs
 import me.zhanghai.android.files.util.ParcelableParceler
@@ -64,7 +65,8 @@ class FileJobErrorDialogFragment : AppCompatDialogFragment() {
             .apply {
                 binding = FileJobErrorDialogViewBinding.inflate(context.layoutInflater)
                 val hasReadOnlyFileStore = args.readOnlyFileStore != null
-                binding.remountButton.isVisible = hasReadOnlyFileStore
+                binding.remountButton.isVisible =
+                    hasReadOnlyFileStore && RootAvailability.isAvailable
                 if (hasReadOnlyFileStore) {
                     updateRemountButton()
                     binding.remountButton.setOnClickListener { remount() }
