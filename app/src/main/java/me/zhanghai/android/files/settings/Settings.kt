@@ -216,6 +216,11 @@ object Settings {
             R.bool.pref_default_value_ftp_server_expose_all_storages
         )
 
+    val FTP_SERVER_HTTP_PORT: SettingLiveData<Int> =
+        IntegerSettingLiveData(
+            R.string.pref_key_ftp_server_http_port, R.integer.pref_default_value_ftp_server_http_port
+        )
+
     val THEME_COLOR: SettingLiveData<ThemeColor> =
         EnumSettingLiveData(
             R.string.pref_key_theme_color, R.string.pref_default_value_theme_color,

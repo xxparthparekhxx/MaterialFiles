@@ -72,5 +72,11 @@
             android:title="@string/ftp_server_expose_all_storages_title"
             android:summary="@string/ftp_server_expose_all_storages_summary"
             android:defaultValue="@bool/pref_default_value_ftp_server_expose_all_storages" />
+
+        <me.zhanghai.android.files.settings.NonNegativeIntegerPreference
+            android:key="@string/pref_key_ftp_server_http_port"
+            android:title="@string/ftp_server_http_port_title"
+            android:defaultValue="@integer/pref_default_value_ftp_server_http_port"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>

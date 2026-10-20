@@ -852,6 +852,7 @@
     <string name="ftp_server_writable_title">Allow writing</string>
     <string name="ftp_server_expose_all_storages_title">Show all storages</string>
     <string name="ftp_server_expose_all_storages_summary">List every storage at the top level instead of only the root folder. Only applies when anonymous login is off; keep off for anonymous access</string>
+    <string name="ftp_server_http_port_title">HTTP server port (0 to disable)</string>
     <string name="ftp_server_notification_title" translatable="false">@string/ftp_server_title</string>
     <string name="ftp_server_notification_text_no_local_inet_address" translatable="false">@string/ftp_server_url_summary_no_local_inet_address</string>
 
