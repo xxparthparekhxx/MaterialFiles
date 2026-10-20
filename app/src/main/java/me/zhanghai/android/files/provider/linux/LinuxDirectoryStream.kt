@@ -89,6 +89,9 @@ internal class LinuxDirectoryStream(
                         // Treat it as end of stream so the entries read so far are still shown
                         // instead of failing the whole listing.
                         if (e.errno == OsConstants.ENOENT) {
+                            // The listing is incomplete, so log it to make the missing entries
+                            // diagnosable.
+                            e.printStackTrace()
                             return null
                         }
                         throw DirectoryIteratorException(
