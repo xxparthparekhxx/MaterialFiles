@@ -44,6 +44,10 @@ private val extensionToMimeTypeOverrideMap = mapOf(
     "swm" to "application/x-ms-wim",
     "esd" to "application/x-ms-wim",
     "z" to "application/x-compress",
+    "lz" to "application/x-lzip",
+    "lzip" to "application/x-lzip",
+    "tlz" to "application/x-lzip-compressed-tar",
+    "lpzip" to "application/zip",
     "lzma" to "application/x-lzma",
     "p7b" to "application/x-pkcs7-certificates",
     "spc" to "application/x-pkcs7-certificates", // Clashes with "chemical/x-galactic-spc"
