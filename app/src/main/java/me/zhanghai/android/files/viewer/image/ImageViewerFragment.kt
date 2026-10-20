@@ -331,7 +331,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
                 return@launch
             }
             if (target == null) {
-                showToast(error.toString())
+                showToast(requireNotNull(error))
                 return@launch
             }
             RemovedPaths.notifyRemoved(path)
@@ -364,7 +364,7 @@ class ImageViewerFragment : Fragment(), ConfirmDeleteDialogFragment.Listener,
             }
             if (error != null) {
                 error.printStackTrace()
-                showToast(error.toString())
+                showToast(error)
                 return@launch
             }
             RemovedPaths.notifyRemoved(path)

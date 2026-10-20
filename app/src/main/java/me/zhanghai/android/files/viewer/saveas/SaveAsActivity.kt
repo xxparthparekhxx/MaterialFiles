@@ -28,6 +28,7 @@ import me.zhanghai.android.files.util.isDirectoryView
 import me.zhanghai.android.files.util.saveAsPath
 import me.zhanghai.android.files.util.saveAsPaths
 import me.zhanghai.android.files.util.showToast
+import me.zhanghai.android.files.util.toUserFriendlyMessage
 import java.io.File
 import java.io.IOException
 
@@ -106,7 +107,7 @@ class SaveAsActivity : AppActivity() {
             val snapshot = try {
                 withContext(Dispatchers.IO) { snapshotSource(source) }
             } catch (e: IOException) {
-                showToast(e.toString())
+                showToast(e)
                 finish()
                 return@launch
             }
@@ -132,7 +133,7 @@ class SaveAsActivity : AppActivity() {
                         val target = getUniqueTarget(result, source)
                         FileJobService.save(snapshot, target, this@SaveAsActivity)
                     } catch (e: IOException) {
-                        failures += e.toString()
+                        failures += e.toUserFriendlyMessage(this@SaveAsActivity)
                     }
                 }
             }

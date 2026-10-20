@@ -75,7 +75,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.leinardi.android.speeddial.SpeedDialView
-import java8.nio.file.AccessDeniedException
 import java8.nio.file.FileVisitResult
 import java8.nio.file.Files
 import java8.nio.file.NoSuchFileException
@@ -88,10 +87,7 @@ import java8.nio.file.attribute.BasicFileAttributes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.ConnectException
-import java.net.SocketTimeoutException
 import java.net.URI
-import java.net.UnknownHostException
 import java.nio.charset.Charset
 import kotlin.math.roundToInt
 import kotlinx.parcelize.Parcelize
@@ -206,6 +202,7 @@ import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.startActivitySafe
 import me.zhanghai.android.files.util.supportsExternalStorageManager
 import me.zhanghai.android.files.util.takeIfNotEmpty
+import me.zhanghai.android.files.util.toUserFriendlyMessage
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import me.zhanghai.android.files.util.withChooser
@@ -1213,6 +1210,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         )
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
+        var missingDirectoryMessage: String? = null
         if (throwable != null && !isSearching && throwable.isMissingDirectory()) {
             if (viewModel.dropMissingCurrentPath()) {
                 showToast(getString(R.string.file_list_error_directory_not_found))
@@ -1220,6 +1218,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             // Couldn't navigate away (e.g. already at trail root): fall through and show a
             // friendly message instead of the raw exception below.
+            missingDirectoryMessage = getString(R.string.file_list_error_directory_not_found)
         }
         if (throwable != null) {
             throwable.printStackTrace()
@@ -1228,7 +1227,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 viewModel.promptedUserAction = userAction
                 promptUserAction(userAction)
             }
-            val error = throwable.toUserFriendlyMessage()
+            val error = missingDirectoryMessage
+                ?: throwable.toUserFriendlyMessage(requireContext())
             if (hasFiles && userAction == null) {
                 if (Settings.ERRORS_IN_DIALOG.valueCompat) {
                     errorDialog?.dismiss()
@@ -2900,7 +2900,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            showToast(e.toString())
+            showToast(e)
         }
     }
 
@@ -3290,26 +3290,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         return false
     }
-
-    private fun Throwable.toUserFriendlyMessage(): String =
-        when {
-            isMissingDirectory() -> getString(R.string.file_list_error_directory_not_found)
-            hasCauseMessage("Root isn't available") ->
-                getString(R.string.file_list_error_root_unavailable)
-            hasCauseMessage("Shizuku isn't available") ->
-                getString(R.string.file_list_error_shizuku_unavailable)
-            hasCause<AccessDeniedException>() -> getString(R.string.file_list_error_access_denied)
-            hasCause<UnknownHostException>() -> getString(R.string.file_list_error_unknown_host)
-            hasCause<ConnectException>() || hasCause<SocketTimeoutException>() ->
-                getString(R.string.file_list_error_connection_failed)
-            else -> localizedMessage?.takeIfNotEmpty() ?: toString()
-        }
-
-    private inline fun <reified T : Throwable> Throwable.hasCause(): Boolean =
-        generateSequence(this) { it.cause }.any { it is T }
-
-    private fun Throwable.hasCauseMessage(message: String): Boolean =
-        generateSequence(this) { it.cause }.any { it.message == message }
 
     private class MenuBinding private constructor(
         val menu: Menu,

@@ -69,7 +69,7 @@ class FtpServerService : Service() {
 
     private fun onStartError(exception: Exception) {
         state = State.STOPPED
-        showToast(exception.toString())
+        showToast(exception)
         notification.stopForeground()
         wakeWifiLock.isAcquired = false
         stopSelf()

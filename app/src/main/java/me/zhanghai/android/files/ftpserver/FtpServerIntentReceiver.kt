@@ -27,7 +27,7 @@ class FtpServerIntentReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             // Android may refuse to start a foreground service from the background.
             e.printStackTrace()
-            context.showToast(e.toString())
+            context.showToast(e)
         }
     }
 
