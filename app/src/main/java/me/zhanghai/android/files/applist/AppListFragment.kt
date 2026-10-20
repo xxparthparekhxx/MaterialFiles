@@ -27,6 +27,7 @@ import me.zhanghai.android.files.databinding.AppListFragmentBinding
 import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.filejob.FileJobService
 import me.zhanghai.android.files.navigation.getExternalStorageDirectory
+import me.zhanghai.android.files.provider.common.createDirectories
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.startActivitySafe
 import android.content.Intent
@@ -166,6 +167,14 @@ class AppListFragment : Fragment(), AppListAdapter.Listener {
                 .plus(applicationInfo.splitSourceDirs?.asSequence() ?: emptySequence())
                 .map { Paths.get(it) }
                 .toList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            showToast(e.toString())
+            return
+        }
+        // The directory of the app does not exist yet, and the copy does not create it.
+        try {
+            targetDirectory.createDirectories()
         } catch (e: Exception) {
             e.printStackTrace()
             showToast(e.toString())
