@@ -12,5 +12,6 @@ import kotlinx.parcelize.Parcelize
 data class StandardDirectorySettings(
     val id: String,
     val customTitle: String?,
+    val customPath: String?,
     val isEnabled: Boolean
 ) : Parcelable
