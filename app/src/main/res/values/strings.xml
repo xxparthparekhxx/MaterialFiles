@@ -333,6 +333,7 @@
     <string name="file_list_action_navigate_to">Go to</string>
     <string name="file_list_navigate_to_title" translatable="false">@string/file_list_action_navigate_to</string>
     <string name="file_list_action_show_hidden_files">Show hidden files</string>
+    <string name="file_list_action_search_file_contents">Search inside text files</string>
     <string name="file_list_action_copy_path">Copy path</string>
     <string name="file_list_action_rescan_media">Rescan media</string>
     <string name="file_list_rescan_media_started">Rescanning media in this folder</string>
@@ -910,6 +911,8 @@
     <string name="settings_iso_date_format_summary">Show dates as 2024-02-19 14:05 instead of using the system format</string>
     <string name="settings_file_list_hidden_first_title">Sort hidden files first</string>
     <string name="settings_file_list_hidden_first_summary">Show hidden files and folders before other items instead of after them</string>
+    <string name="settings_file_list_search_file_contents_title">Search inside text files</string>
+    <string name="settings_file_list_search_file_contents_summary">Also match text inside files up to 1 MB when searching. This makes searching slower</string>
     <string name="settings_auto_calculate_checksums_title">Calculate checksums automatically</string>
     <string name="settings_auto_calculate_checksums_summary">When off, the checksum tab only calculates the checksums you tap, which is faster for large files</string>
     <string name="file_properties_checksum_tap_to_calculate">Tap to calculate</string>
