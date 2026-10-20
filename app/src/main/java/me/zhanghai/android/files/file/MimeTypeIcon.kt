@@ -136,6 +136,7 @@ private val mimeTypeToIconMap = mapOf(
     "text/x-python" to MimeTypeIcon.CODE,
     "text/x-ruby" to MimeTypeIcon.CODE,
     "text/x-shellscript" to MimeTypeIcon.CODE,
+    "text/x-source" to MimeTypeIcon.CODE,
     "text/x-tcl" to MimeTypeIcon.CODE,
     "text/x-tex" to MimeTypeIcon.CODE,
     "text/x-yaml" to MimeTypeIcon.CODE,
