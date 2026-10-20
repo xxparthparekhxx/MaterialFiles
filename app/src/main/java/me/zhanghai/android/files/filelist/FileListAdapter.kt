@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.filelist
 
+import android.content.ClipDescription
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -14,6 +15,7 @@ import android.os.Looper
 import android.text.TextUtils
 import android.content.res.ColorStateList
 import android.util.TypedValue
+import android.view.DragEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -497,6 +499,8 @@ class FileListAdapter(
             setOnLongClickListener {
                 if (selectedFiles.isEmpty()) {
                     selectFile(file)
+                } else if (file in selectedFiles) {
+                    listener.startDrag(holder.iconLayout, selectedFiles)
                 } else {
                     listener.openFile(file)
                 }
@@ -506,6 +510,32 @@ class FileListAdapter(
             setOnContextClickListener {
                 holder.menuButton.performClick()
                 true
+            }
+            setOnDragListener { view, event ->
+                val targetDirectory = if (isDirectory) file.path else null
+                if (event.action == DragEvent.ACTION_DRAG_EXITED ||
+                    event.action == DragEvent.ACTION_DRAG_ENDED) {
+                    holder.restoreActivatedState(file)
+                }
+                if (!event.clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_URILIST)
+                    || !listener.canDropInto(targetDirectory)) {
+                    return@setOnDragListener false
+                }
+                when (event.action) {
+                    DragEvent.ACTION_DRAG_STARTED -> true
+                    DragEvent.ACTION_DRAG_ENTERED -> {
+                        if (isDirectory) {
+                            view.isActivated = true
+                        }
+                        true
+                    }
+                    DragEvent.ACTION_DROP -> {
+                        holder.restoreActivatedState(file)
+                        listener.dropFiles(event, targetDirectory)
+                        true
+                    }
+                    else -> true
+                }
             }
         }
         holder.iconLayout.setOnClickListener { selectFile(file) }
@@ -721,6 +751,11 @@ class FileListAdapter(
     override val isAnimationEnabled: Boolean
         get() = Settings.FILE_LIST_ANIMATION.valueCompat
 
+    private fun ViewHolder.restoreActivatedState(file: FileItem) {
+        itemLayout.isActivated = indicateLastOpenedItem && !itemLayout.isChecked &&
+            file.path == lastActivatedPath
+    }
+
     private fun bindDescription(holder: ViewHolder, file: FileItem, isDirectory: Boolean) {
         val descriptionText = holder.descriptionText ?: return
         val context = descriptionText.context
@@ -906,6 +941,9 @@ class FileListAdapter(
         fun selectFile(file: FileItem, selected: Boolean)
         fun selectFiles(files: FileItemSet, selected: Boolean)
         fun openFile(file: FileItem)
+        fun startDrag(view: View, files: FileItemSet)
+        fun canDropInto(directory: Path?): Boolean
+        fun dropFiles(event: DragEvent, directory: Path?)
         fun openFileWith(file: FileItem)
         fun cutFile(file: FileItem)
         fun copyFile(file: FileItem)
