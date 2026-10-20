@@ -332,6 +332,30 @@ class FileListAdapter(
         listener.selectFiles(files, true)
     }
 
+    // Selects every file between the first selected file and the given file in the list, inclusive,
+    // in addition to the currently selected files.
+    fun selectRangeTo(file: FileItem) {
+        var first = -1
+        for (index in 0..<itemCount) {
+            if (getItem(index) in selectedFiles) {
+                first = index
+                break
+            }
+        }
+        val last = getFilePosition(file.path)
+        if (first == -1 || last == RecyclerView.NO_POSITION || first == last) {
+            return
+        }
+        val files = fileItemSetOf()
+        for (index in minOf(first, last)..maxOf(first, last)) {
+            val fileInRange = getItem(index)
+            if (isFileSelectable(fileInRange)) {
+                files.add(fileInRange)
+            }
+        }
+        listener.selectFiles(files, true)
+    }
+
     private fun isFileSelectable(file: FileItem): Boolean {
         val pickOptions = pickOptions ?: return true
         return when (pickOptions.mode) {
@@ -510,6 +534,16 @@ class FileListAdapter(
             }
         }
         holder.iconLayout.setOnClickListener { selectFile(file) }
+        // Long pressing the icon selects the range between the first selected file and this file,
+        // like holding shift while clicking in a desktop file manager.
+        holder.iconLayout.setOnLongClickListener {
+            if (selectedFiles.isEmpty()) {
+                selectFile(file)
+            } else {
+                selectRangeTo(file)
+            }
+            true
+        }
         val attributes = file.attributes
         val standardDirectoryIconRes = if (attributes.isDirectory &&
             Settings.FILE_LIST_STANDARD_DIRECTORY_ICONS.valueCompat
