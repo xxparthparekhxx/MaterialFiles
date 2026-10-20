@@ -33,7 +33,9 @@ fun FTPClient.mlistFileCompat(pathname: String): FTPFile? {
             return file
         }
     }
-    return mlistDirCompat(parent)?.firstOrNull { it.name == path.name }
+    // Servers commonly list directories with a trailing slash, which the listing parser keeps
+    // as part of the name, so it has to be ignored when looking the entry up.
+    return mlistDirCompat(parent)?.firstOrNull { it.name.trimEnd('/') == path.name }
 }
 
 @Throws(IOException::class)

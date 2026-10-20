@@ -204,8 +204,28 @@ object Client {
 
     @Throws(IOException::class)
     fun delete(path: Path) {
-        val file = listFile(path, true)
-        delete(path, file.isDirectory)
+        val file = listFileOrNull(path, true)
+        if (file == null) {
+            // The server didn't tell us whether the entry is a file or a directory, so try both.
+            deleteFileOrDirectory(path)
+        } else {
+            delete(path, file.isDirectory)
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun deleteFileOrDirectory(path: Path) {
+        val fileException = try {
+            deleteFile(path)
+            return
+        } catch (e: NegativeReplyCodeException) {
+            e
+        }
+        try {
+            deleteDirectory(path)
+        } catch (e: NegativeReplyCodeException) {
+            throw fileException
+        }
     }
 
     @Throws(IOException::class)
