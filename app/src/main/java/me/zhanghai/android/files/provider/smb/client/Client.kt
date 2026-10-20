@@ -516,21 +516,34 @@ object Client {
         listener: ((Long) -> Unit)?,
         alreadyCopiedSize: Long
     ) {
-        val sourceInputStream = FileByteChannel(sourceFile, false)
-            .newInputStream()
-        val targetOutputStream = FileByteChannel(targetFile, false)
-            .newOutputStream()
-        var remaining = alreadyCopiedSize
-        val progressListener: ((Long) -> Unit)? = listener?.let { listener ->
-            { delta: Long ->
-                val toReport = delta - remaining
-                remaining = maxOf(remaining - delta, 0L)
-                if (toReport > 0) {
-                    listener(toReport)
+        val sourceChannel = FileByteChannel(sourceFile, false)
+        val targetChannel = FileByteChannel(targetFile, false)
+        try {
+            if (alreadyCopiedSize > 0) {
+                // The server may have copied some data before it rejected the copy. The data is
+                // copied again from the start, so the target is truncated, or the data would be
+                // in the target twice.
+                targetChannel.truncate(0)
+            }
+            var remaining = alreadyCopiedSize
+            val progressListener: ((Long) -> Unit)? = listener?.let { listener ->
+                { delta: Long ->
+                    val toReport = delta - remaining
+                    remaining = maxOf(remaining - delta, 0L)
+                    if (toReport > 0) {
+                        listener(toReport)
+                    }
                 }
             }
+            sourceChannel.newInputStream().use { sourceInputStream ->
+                targetChannel.newOutputStream().use { targetOutputStream ->
+                    sourceInputStream.copyTo(targetOutputStream, intervalMillis, progressListener)
+                }
+            }
+        } finally {
+            sourceChannel.close()
+            targetChannel.close()
         }
-        sourceInputStream.copyTo(targetOutputStream, intervalMillis, progressListener)
     }
 
     // @see https://gitlab.com/samba-team/devel/samba/-/blob/master/source3/libsmb/cli_smb2_fnum.c
