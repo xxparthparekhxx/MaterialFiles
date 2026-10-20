@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.ftpserver
 
+import org.apache.ftpserver.ftplet.DefaultFtpReply
 import org.apache.ftpserver.ftplet.FtpReply
 import org.apache.ftpserver.ftplet.FtpRequest
 import org.apache.ftpserver.ftplet.FtpSession
@@ -27,7 +28,9 @@ class RequireTlsFtplet : Ftplet {
 
     override fun beforeCommand(session: FtpSession, request: FtpRequest): FtpletResult {
         if (request.command == USER_COMMAND && !session.isSecure()) {
-            session.write(TextFtpReply(534, "The server requires an encrypted connection."))
+            session.write(
+                DefaultFtpReply(534, "The server requires an encrypted connection.")
+            )
             return FtpletResult.SKIP
         }
         return FtpletResult.DEFAULT
@@ -50,15 +53,3 @@ class RequireTlsFtplet : Ftplet {
 
 // The session is encrypted when the TLS filter is in its filter chain.
 private fun FtpSession.isSecure(): Boolean = (this as? DefaultFtpSession)?.isSecure == true
-
-private class TextFtpReply(private val code: Int, private val message: String) : FtpReply {
-    override fun getCode(): Int = code
-
-    override fun getMessage(): String = message
-
-    override fun getSentTime(): Long = 0
-
-    override fun toString(): String = "$code $message"
-
-    override fun isPositive(): Boolean = code in 200..299
-}
