@@ -53,6 +53,18 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_encrypt"
+        android:orderInCategory="100"
+        android:title="@string/file_action_encrypt"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_decrypt"
+        android:orderInCategory="100"
+        android:title="@string/file_action_decrypt"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_pin"
         android:orderInCategory="100"
         android:title="@string/file_list_select_action_pin"

@@ -147,6 +147,14 @@ class FileJobService : Service() {
             startJob(CreateSymbolicLinkJob(link, target), context)
         }
 
+        fun encrypt(sources: List<Path>, password: String, context: Context) {
+            startJob(EncryptFileJob(sources, password), context)
+        }
+
+        fun decrypt(sources: List<Path>, password: String, context: Context) {
+            startJob(DecryptFileJob(sources, password), context)
+        }
+
         fun create(path: Path, createDirectory: Boolean, context: Context) {
             startJob(CreateFileJob(path, createDirectory), context)
         }
