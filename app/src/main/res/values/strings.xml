@@ -622,6 +622,7 @@
     <string name="storage_add_storage_ftp_server">FTP server</string>
     <string name="storage_add_storage_sftp_server">SFTP server</string>
     <string name="storage_add_storage_smb_server">SMB server</string>
+    <string name="storage_add_storage_upnp_server">UPnP/DLNA server</string>
     <string name="storage_add_storage_webdav_server">WebDAV server</string>
     <string name="storage_edit_device_storage_title">Edit device storage</string>
     <string name="storage_edit_device_storage_name">Name</string>
@@ -733,6 +734,15 @@
     <string name="storage_edit_smb_server_add">Add</string>
     <string name="storage_edit_webdav_server_title_edit">Edit WebDAV server</string>
     <string name="storage_edit_webdav_server_title_add">Add WebDAV server</string>
+    <string name="storage_edit_upnp_server_title_edit">Edit UPnP/DLNA server</string>
+    <string name="storage_edit_upnp_server_title_add">Add UPnP/DLNA server</string>
+    <string name="storage_edit_upnp_server_discover">Discover servers</string>
+    <string name="storage_edit_upnp_server_no_device_found">No server found yet. Tap “Discover servers” to search the local network.</string>
+    <string name="storage_edit_upnp_server_devices_found">Select a server:</string>
+    <string name="storage_edit_upnp_server_name">Name</string>
+    <string name="storage_edit_upnp_server_name_placeholder">Use the server name</string>
+    <string name="storage_edit_upnp_server_add">Add</string>
+    <string name="storage_edit_upnp_server_error_no_device">Select a server first</string>
     <string name="storage_edit_webdav_server_host">Hostname</string>
     <string name="storage_edit_webdav_server_host_error_empty">Enter a hostname</string>
     <string name="storage_edit_webdav_server_host_error_invalid">Invalid hostname</string>
