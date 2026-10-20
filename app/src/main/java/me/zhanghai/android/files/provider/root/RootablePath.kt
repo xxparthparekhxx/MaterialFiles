@@ -15,10 +15,19 @@ interface RootablePath {
 }
 
 private val rootStrategy: RootStrategy
-    get() = if (isRunningAsRoot || !RootAvailability.isAvailable) {
-        RootStrategy.NEVER
-    } else {
-        Settings.ROOT_STRATEGY.valueCompat
+    get() {
+        if (isRunningAsRoot) {
+            return RootStrategy.NEVER
+        }
+        return when (Settings.ROOT_STRATEGY.valueCompat) {
+            // The root access is only used when it is available, so that the files can still be
+            // read without it.
+            RootStrategy.AUTOMATIC ->
+                if (RootAvailability.isAvailable) RootStrategy.AUTOMATIC else RootStrategy.NEVER
+            // The strategy was chosen explicitly, so it is not silently changed.
+            RootStrategy.ALWAYS -> RootStrategy.ALWAYS
+            RootStrategy.NEVER -> RootStrategy.NEVER
+        }
     }
 
 /**

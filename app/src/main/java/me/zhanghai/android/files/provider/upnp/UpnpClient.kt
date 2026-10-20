@@ -210,6 +210,11 @@ object UpnpClient {
         for (i in 0 until children.length) {
             val element = children.item(i) as? Element ?: continue
             val localName = element.tagName.substringAfter(':')
+            if (localName == "DIDL-Lite") {
+                // The document is embedded in a wrapper element, so the items are in it.
+                items += parseDidlItems(element)
+                continue
+            }
             if (localName != "item" && localName != "container") {
                 continue
             }

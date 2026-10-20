@@ -558,8 +558,10 @@ class FileListAdapter(
                     event.action == DragEvent.ACTION_DRAG_ENDED) {
                     holder.restoreActivatedState(file)
                 }
-                if (!event.clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_URILIST)
-                    || !listener.canDropInto(targetDirectory)) {
+                val clipDescription = event.clipDescription
+                if (clipDescription == null ||
+                    !clipDescription.hasMimeType(ClipDescription.MIMETYPE_TEXT_URILIST) ||
+                    !listener.canDropInto(targetDirectory)) {
                     return@setOnDragListener false
                 }
                 when (event.action) {

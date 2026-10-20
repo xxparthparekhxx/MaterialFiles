@@ -102,7 +102,7 @@ private val extensionToMimeTypeOverrideMap = mapOf(
     "vb" to "text/x-source",
     "sol" to "text/x-source",
     "zig" to "text/x-source",
-    "vhd" to "text/x-source",
+    // "vhd" is not claimed, because it is the extension of a virtual hard disk image.
     "vhdl" to "text/x-source",
     "jl" to "text/x-source",
     "r" to "text/x-source",
