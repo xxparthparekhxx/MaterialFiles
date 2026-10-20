@@ -519,12 +519,8 @@ object Client {
         val sourceChannel = FileByteChannel(sourceFile, false)
         val targetChannel = FileByteChannel(targetFile, false)
         try {
-            if (alreadyCopiedSize > 0) {
-                // The server may have copied some data before it rejected the copy. The data is
-                // copied again from the start, so the target is truncated, or the data would be
-                // in the target twice.
-                targetChannel.truncate(0)
-            }
+            // The data is written from the start, so the part that the server copied before it
+            // rejected the copy is overwritten.
             var remaining = alreadyCopiedSize
             val progressListener: ((Long) -> Unit)? = listener?.let { listener ->
                 { delta: Long ->
@@ -541,8 +537,9 @@ object Client {
                 }
             }
         } finally {
-            sourceChannel.close()
-            targetChannel.close()
+            // The data is already transferred, so a failure to close must not fail the copy.
+            sourceChannel.closeSafe()
+            targetChannel.closeSafe()
         }
     }
 
