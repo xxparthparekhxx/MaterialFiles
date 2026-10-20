@@ -16,8 +16,14 @@ import java8.nio.file.attribute.BasicFileAttributes
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.settings.getBooleanSetting
+import me.zhanghai.android.files.util.isBinary
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InterruptedIOException
+import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
+import java.nio.charset.CodingErrorAction
+import java.nio.charset.StandardCharsets
 import java.util.regex.PatternSyntaxException
 
 object WalkFileTreeSearchable {
@@ -37,6 +43,13 @@ object WalkFileTreeSearchable {
             Settings.FILE_LIST_SEARCH_IN_SUBFOLDERS
         )
 
+    private val searchFileContents: Boolean
+        get() = getBooleanSetting(
+            R.string.pref_key_file_list_search_file_contents,
+            R.bool.pref_default_value_file_list_search_file_contents, false,
+            Settings.FILE_LIST_SEARCH_FILE_CONTENTS
+        )
+
     @Throws(IOException::class)
     fun search(
         directory: Path,
@@ -46,6 +59,8 @@ object WalkFileTreeSearchable {
     ) {
         val paths = mutableListOf<Path>()
         val matches = createNameMatcher(query)
+        val searchContents = searchFileContents
+        val matchesContents = if (searchContents) createContentMatcher(query) else null
         // We cannot use Files.find() or Files.walk() because it cannot ignore exceptions.
         walkFileTreeForSearch(directory, object : FileVisitor<Path> {
             private var lastProgressMillis = System.currentTimeMillis()
@@ -55,14 +70,14 @@ object WalkFileTreeSearchable {
                 directory: Path,
                 attributes: BasicFileAttributes
             ): FileVisitResult {
-                visit(directory)
+                visit(directory, attributes)
                 throwIfInterrupted()
                 return FileVisitResult.CONTINUE
             }
 
             @Throws(InterruptedIOException::class)
             override fun visitFile(file: Path, attributes: BasicFileAttributes): FileVisitResult {
-                visit(file)
+                visit(file, attributes)
                 throwIfInterrupted()
                 return FileVisitResult.CONTINUE
             }
@@ -73,7 +88,7 @@ object WalkFileTreeSearchable {
                     throw exception
                 }
                 exception.printStackTrace()
-                visit(file)
+                visit(file, null)
                 throwIfInterrupted()
                 return FileVisitResult.CONTINUE
             }
@@ -91,13 +106,18 @@ object WalkFileTreeSearchable {
                 return FileVisitResult.CONTINUE
             }
 
-            private fun visit(path: Path) {
+            private fun visit(path: Path, attributes: BasicFileAttributes?) {
                 // Exclude the directory being searched.
                 if (path == directory) {
                     return
                 }
                 val fileName = path.fileName
-                if (fileName != null && matches(fileName.toString())) {
+                val matchesName = fileName != null && matches(fileName.toString())
+                val matchesContent = !matchesName && matchesContents != null &&
+                    attributes != null && attributes.isRegularFile &&
+                    attributes.size() <= MAX_CONTENT_SEARCH_FILE_SIZE.toLong() &&
+                    matchesContents(path, matchesContents)
+                if (matchesName || matchesContent) {
                     paths.add(path)
                 }
                 if (paths.isNotEmpty()) {
@@ -143,7 +163,71 @@ object WalkFileTreeSearchable {
         return { it.contains(query, true) }
     }
 
+    private fun createContentMatcher(query: String): ((String) -> Boolean)? {
+        if (query.startsWith(REGEX_PREFIX) && query.length > REGEX_PREFIX.length) {
+            return try {
+                val regex = Regex(query.substring(REGEX_PREFIX.length), RegexOption.IGNORE_CASE)
+                val matcher = { text: String -> regex.containsMatchIn(text) }
+                matcher
+            } catch (e: PatternSyntaxException) {
+                null
+            }
+        }
+        if (query.any { it == '*' || it == '?' }) {
+            return null
+        }
+        return { it.contains(query, true) }
+    }
+
+    private fun matchesContents(path: Path, matcher: (String) -> Boolean): Boolean =
+        try {
+            val bytes = path.readAtMost(MAX_CONTENT_SEARCH_FILE_SIZE)
+            if (bytes.isBinary()) {
+                false
+            } else {
+                matcher(bytes.decodeText())
+            }
+        } catch (e: InterruptedIOException) {
+            throw e
+        } catch (e: IOException) {
+            e.printStackTrace()
+            false
+        }
+
+    private fun Path.readAtMost(maxSize: Int): ByteArray =
+        newInputStream().use { inputStream ->
+            val outputStream = ByteArrayOutputStream(minOf(maxSize, DEFAULT_BUFFER_SIZE))
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var totalSize = 0
+            while (totalSize < maxSize) {
+                if (Thread.interrupted()) {
+                    throw InterruptedIOException()
+                }
+                val size = inputStream.read(buffer, 0, minOf(buffer.size, maxSize - totalSize))
+                if (size == -1) {
+                    break
+                }
+                outputStream.write(buffer, 0, size)
+                totalSize += size
+            }
+            outputStream.toByteArray()
+        }
+
+    private fun ByteArray.decodeText(): String =
+        try {
+            StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(this))
+                .toString()
+        } catch (e: CharacterCodingException) {
+            String(this, StandardCharsets.ISO_8859_1)
+        }
+
     private const val REGEX_PREFIX = "re:"
+
+    private const val MAX_CONTENT_SEARCH_FILE_SIZE = 1024 * 1024
+
 
     // This method traverses the first level first, before diving into child directories.
     // FileVisitResult returned from visitor may be ignored and always considered CONTINUE.

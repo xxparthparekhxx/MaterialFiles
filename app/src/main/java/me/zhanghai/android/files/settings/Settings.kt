@@ -297,6 +297,12 @@ object Settings {
             R.bool.pref_default_value_file_list_search_in_subfolders
         )
 
+    val FILE_LIST_SEARCH_FILE_CONTENTS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_search_file_contents,
+            R.bool.pref_default_value_file_list_search_file_contents
+        )
+
     val AUTO_CALCULATE_CHECKSUMS: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_auto_calculate_checksums,

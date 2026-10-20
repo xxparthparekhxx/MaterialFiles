@@ -43,7 +43,7 @@ class SearchFileListLiveData(
     fun loadValue() {
         observer.observe()
         currentTask?.isCancelled = true
-        future?.cancel(false)
+        future?.cancel(true)
         val task = LoadTask()
         currentTask = task
         value = Loading(value?.value ?: emptyList())
@@ -92,7 +92,7 @@ class SearchFileListLiveData(
     override fun close() {
         observer.close()
         currentTask?.isCancelled = true
-        future?.cancel(false)
+        future?.cancel(true)
     }
 
     override fun onInactive() {

@@ -102,6 +102,10 @@
             android:title="@string/settings_file_list_search_in_subfolders_title"
             android:summary="@string/settings_file_list_search_in_subfolders_summary"
             android:defaultValue="@bool/pref_default_value_file_list_search_in_subfolders" />
+            android:key="@string/pref_key_file_list_search_file_contents"
+            android:title="@string/settings_file_list_search_file_contents_title"
+            android:summary="@string/settings_file_list_search_file_contents_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_search_file_contents" />
 
         <SwitchPreferenceCompat
             android:key="@string/pref_key_auto_calculate_checksums"

@@ -673,6 +673,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 viewModel.reload()
             }
         }
+        Settings.FILE_LIST_SEARCH_FILE_CONTENTS.observe(viewLifecycleOwner) {
+            // An ongoing search may have skipped file contents based on the previous setting.
+            if (viewModel.searchState.isSearching) {
+                viewModel.reload()
+            }
+        }
         Settings.FILE_LIST_FOLDER_SORT_BY.observe(viewLifecycleOwner) {
             adapter.folderSortBy = when (it) {
                 "1" -> By.NAME
@@ -793,6 +799,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         searchView.setOnSearchClickListener {
             viewModel.isSearchViewExpanded = true
             searchView.setQuery(viewModel.searchViewQuery, false)
+            menuBinding.searchFileContentsItem.isVisible = true
             debouncedSearchRunnable()
         }
         // SearchView.OnCloseListener.onClose() is not always called.
@@ -801,6 +808,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
                 viewModel.isSearchViewExpanded = false
+                menuBinding.searchFileContentsItem.isVisible = false
                 viewModel.stopSearching()
                 return true
             }
@@ -833,6 +841,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (viewModel.isSearchViewExpanded) {
             menuBinding.searchItem.expandActionView()
         }
+        updateSearchFileContentsMenuItem()
     }
 
     private fun collapseSearchView() {
@@ -847,6 +856,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateViewSortMenuItems()
         updateSelectAllMenuItem()
         updateShowHiddenFilesMenuItem()
+        updateSearchFileContentsMenuItem()
         menu.findItem(R.id.action_rescan_media)?.isVisible = currentPath.isLinuxPath
         updateAddButton()
         updateArchiveFileNameEncodingMenuItem()
@@ -901,6 +911,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             R.id.action_show_hidden_files -> {
                 setShowHiddenFiles(!menuBinding.showHiddenFilesItem.isChecked)
+                true
+            }
+            R.id.action_search_file_contents -> {
+                val searchFileContents = !menuBinding.searchFileContentsItem.isChecked
+                Settings.FILE_LIST_SEARCH_FILE_CONTENTS.putValue(searchFileContents)
+                menuBinding.searchFileContentsItem.isChecked = searchFileContents
                 true
             }
             R.id.action_share -> {
@@ -1484,6 +1500,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         val showHiddenFiles = Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat
         menuBinding.showHiddenFilesItem.isChecked = showHiddenFiles
+    }
+
+    private fun updateSearchFileContentsMenuItem() {
+        if (!this::menuBinding.isInitialized) {
+            return
+        }
+        menuBinding.searchFileContentsItem.isVisible = viewModel.isSearchViewExpanded
+        menuBinding.searchFileContentsItem.isChecked =
+            Settings.FILE_LIST_SEARCH_FILE_CONTENTS.valueCompat
     }
 
     private fun share() {
@@ -3303,6 +3328,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val viewSortItem: MenuItem,
         val selectAllItem: MenuItem,
         val showHiddenFilesItem: MenuItem,
+        val searchFileContentsItem: MenuItem,
         val archiveFileNameEncodingItem: MenuItem
     ) {
         companion object {
@@ -3312,6 +3338,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     menu, menu.findItem(R.id.action_search), menu.findItem(R.id.action_view_sort),
                     menu.findItem(R.id.action_select_all),
                     menu.findItem(R.id.action_show_hidden_files),
+                    menu.findItem(R.id.action_search_file_contents),
                     menu.findItem(R.id.action_archive_file_name_encoding)
                 )
             }
