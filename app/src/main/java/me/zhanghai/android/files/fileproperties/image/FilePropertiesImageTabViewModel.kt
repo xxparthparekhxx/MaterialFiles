@@ -22,15 +22,23 @@ class FilePropertiesImageTabViewModel(val path: Path, val mimeType: MimeType) : 
         _imageInfoLiveData.loadValue()
     }
 
-    suspend fun removeExif(): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            ExifRemover.removeExif(path)
-            reload()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
+    suspend fun removeExif(): Result<Unit> {
+        val result = withContext(Dispatchers.IO) {
+            try {
+                ExifRemover.removeExif(path)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Result.failure(e)
+            }
         }
+        if (result.isSuccess) {
+            // The value of the live data can only be set on the main thread.
+            withContext(Dispatchers.Main) {
+                reload()
+            }
+        }
+        return result
     }
 
     override fun onCleared() {

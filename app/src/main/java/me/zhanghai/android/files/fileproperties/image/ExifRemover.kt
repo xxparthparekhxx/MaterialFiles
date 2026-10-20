@@ -16,10 +16,13 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java8.nio.file.Path
+import java8.nio.file.StandardCopyOption
 import java8.nio.file.StandardOpenOption
 import me.zhanghai.android.files.app.application
+import me.zhanghai.android.files.provider.common.deleteIfExists
 import me.zhanghai.android.files.provider.common.newInputStream
 import me.zhanghai.android.files.provider.common.newOutputStream
+import me.zhanghai.android.files.provider.common.moveTo
 
 object ExifRemover {
     @Throws(IOException::class)
@@ -36,14 +39,29 @@ object ExifRemover {
 
             stripMetadata(tempInputFile, tempOutputFile)
 
-            tempOutputFile.inputStream().buffered().use { tempIn ->
-                path.newOutputStream(
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE
-                ).use { pathOut ->
-                    tempIn.copyTo(pathOut)
+            // The result is written to a new file next to the original, which is only replaced
+            // when the new file is complete. Writing over the original would destroy it as soon
+            // as it is opened, so that a failed write would lose the image.
+            val newPath = path.resolveSibling(
+                "${path.fileName ?: "image"}.exif-removing-${System.nanoTime()}"
+            )
+            try {
+                tempOutputFile.inputStream().buffered().use { tempIn ->
+                    newPath.newOutputStream(
+                        StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE
+                    ).use { newOut ->
+                        tempIn.copyTo(newOut)
+                    }
                 }
+                newPath.moveTo(path, StandardCopyOption.REPLACE_EXISTING)
+            } catch (e: Exception) {
+                // The original was not touched, so the incomplete file is removed.
+                try {
+                    newPath.deleteIfExists()
+                } catch (e2: Exception) {
+                    e2.printStackTrace()
+                }
+                throw e
             }
         } finally {
             tempInputFile.delete()
