@@ -17,12 +17,16 @@ import java.io.File
 import java.io.FileReader
 
 object MountPoints {
+    // The entries and the directories of the mount table are cached together, so that they are
+    // always from the same fetch.
+    private class MountCache(
+        val entries: List<StructMntent>,
+        val dirs: Set<ByteString>,
+        val fetchTime: Long
+    )
+
     @Volatile
-    private var cachedMountDirs: Set<ByteString>? = null
-    @Volatile
-    private var cachedMountEntries: List<StructMntent>? = null
-    @Volatile
-    private var lastFetchTime = 0L
+    private var cachedMounts: MountCache? = null
     private const val CACHE_TTL_MILLIS = 2000L
 
     @Volatile
@@ -36,16 +40,36 @@ object MountPoints {
         } catch (e: Throwable) {
             System.currentTimeMillis()
         }
-        val entries = cachedMountEntries
-        if (entries != null && now - lastFetchTime < CACHE_TTL_MILLIS) {
-            return entries
+        val cache = cachedMounts
+        if (cache != null && now - cache.fetchTime < CACHE_TTL_MILLIS) {
+            return cache.entries
         }
         val newEntries = fetchMountEntries()
-        cachedMountEntries = newEntries
-        cachedMountDirs = newEntries.mapTo(mutableSetOf()) { it.mnt_dir }
-        lastFetchTime = now
+        cachedMounts = MountCache(
+            newEntries, newEntries.mapTo(mutableSetOf()) { it.mnt_dir }, now
+        )
         return newEntries
     }
+
+    // The kernel escapes the special characters of a mount path as an octal sequence, for
+    // example a space as "\040".
+    private fun unescapeMountPath(path: String): String =
+        buildString {
+            var index = 0
+            while (index < path.length) {
+                val char = path[index]
+                if (char == '\\' && index + 3 < path.length) {
+                    val value = path.substring(index + 1, index + 4).toIntOrNull(8)
+                    if (value != null) {
+                        append(value.toChar())
+                        index += 4
+                        continue
+                    }
+                }
+                append(char)
+                index++
+            }
+        }
 
     private fun fetchMountEntries(): List<StructMntent> {
         try {
@@ -64,7 +88,7 @@ object MountPoints {
                             val parts = line!!.split(" ")
                             if (parts.size >= 4) {
                                 val fsname = parts[0].toByteString()
-                                val dir = parts[1].toByteString()
+                                val dir = unescapeMountPath(parts[1]).toByteString()
                                 val type = parts[2].toByteString()
                                 val opts = parts[3].toByteString()
                                 val freq = parts.getOrNull(4)?.toIntOrNull() ?: 0
@@ -97,7 +121,7 @@ object MountPoints {
 
         val pathBytes = linuxPath.toByteString()
         refreshMountsIfNeeded()
-        if (cachedMountDirs?.contains(pathBytes) == true) {
+        if (cachedMounts?.dirs?.contains(pathBytes) == true) {
             return true
         }
 
