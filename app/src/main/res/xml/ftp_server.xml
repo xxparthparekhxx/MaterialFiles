@@ -72,5 +72,13 @@
             android:title="@string/ftp_server_expose_all_storages_title"
             android:summary="@string/ftp_server_expose_all_storages_summary"
             android:defaultValue="@bool/pref_default_value_ftp_server_expose_all_storages" />
+
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_ftp_server_tls"
+            android:title="@string/ftp_server_tls_title"
+            android:defaultValue="@string/pref_default_value_ftp_server_tls"
+            android:entries="@array/ftp_server_tls_entries"
+            android:entryValues="@array/pref_entry_values_ftp_server_tls"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>

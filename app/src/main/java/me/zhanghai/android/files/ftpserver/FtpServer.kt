@@ -7,6 +7,7 @@ package me.zhanghai.android.files.ftpserver
 
 import java8.nio.file.Path
 import org.apache.ftpserver.ConnectionConfigFactory
+import org.apache.ftpserver.DataConnectionConfigurationFactory
 import org.apache.ftpserver.FtpServer
 import org.apache.ftpserver.FtpServerFactory
 import org.apache.ftpserver.ftplet.FtpException
@@ -31,16 +32,30 @@ class FtpServer(
     private val password: String?,
     private val port: Int,
     private val homeDirectory: Path,
-    private val writable: Boolean
+    private val writable: Boolean,
+    private val tls: FtpServerTls
 ) {
     private lateinit var server: FtpServer
 
     @Throws(FtpException::class, RuntimeException::class)
     fun start() {
+        val ssl = if (tls.isEnabled) FtpServerTlsConfiguration.createSslConfiguration() else null
         server = FtpServerFactory()
             .apply {
                 val listener = ListenerFactory()
-                    .apply { port = this@FtpServer.port }
+                    .apply {
+                        port = this@FtpServer.port
+                        if (ssl != null) {
+                            sslConfiguration = ssl
+                            isImplicitSsl = tls == FtpServerTls.IMPLICIT
+                            dataConnectionConfiguration = DataConnectionConfigurationFactory()
+                                .apply {
+                                    sslConfiguration = ssl
+                                    isImplicitSsl = tls == FtpServerTls.IMPLICIT
+                                }
+                                .createDataConnectionConfiguration()
+                        }
+                    }
                     .createListener()
                 addListener("default", listener)
                 val user = BaseUser().apply {

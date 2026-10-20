@@ -17,6 +17,7 @@ import me.zhanghai.android.files.filelist.FileSortOptions
 import me.zhanghai.android.files.filelist.FileViewType
 import me.zhanghai.android.files.filelist.OpenApkDefaultAction
 import me.zhanghai.android.files.filelist.RecentFile
+import me.zhanghai.android.files.ftpserver.FtpServerTls
 import me.zhanghai.android.files.navigation.BookmarkDirectory
 import me.zhanghai.android.files.navigation.StandardDirectorySettings
 import me.zhanghai.android.files.provider.root.RootStrategy
@@ -214,6 +215,12 @@ object Settings {
         BooleanSettingLiveData(
             R.string.pref_key_ftp_server_expose_all_storages,
             R.bool.pref_default_value_ftp_server_expose_all_storages
+        )
+
+    val FTP_SERVER_TLS: SettingLiveData<FtpServerTls> =
+        EnumSettingLiveData(
+            R.string.pref_key_ftp_server_tls, R.string.pref_default_value_ftp_server_tls,
+            FtpServerTls::class.java
         )
 
     val THEME_COLOR: SettingLiveData<ThemeColor> =

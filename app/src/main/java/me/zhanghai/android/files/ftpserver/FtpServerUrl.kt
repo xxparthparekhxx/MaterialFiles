@@ -69,7 +69,12 @@ object FtpServerUrl {
         }
         val host = address.hostAddress
         val port = Settings.FTP_SERVER_PORT.valueCompat
-        return "ftp://${if (username != null) "$username@" else ""}$host:$port/"
+        val scheme = when (Settings.FTP_SERVER_TLS.valueCompat) {
+            FtpServerTls.NONE -> "ftp"
+            FtpServerTls.EXPLICIT -> "ftpes"
+            FtpServerTls.IMPLICIT -> "ftps"
+        }
+        return "$scheme://${if (username != null) "$username@" else ""}$host:$port/"
     }
 
     // The URL for every network interface that has an IPv4 address, such as Wi-Fi and Wi-Fi
