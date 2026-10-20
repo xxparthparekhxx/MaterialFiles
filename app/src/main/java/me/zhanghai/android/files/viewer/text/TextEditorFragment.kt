@@ -320,10 +320,16 @@ class TextEditorFragment : Fragment(), ConfirmReloadDialogFragment.Listener,
         }
         // Replacing through the Editable instead of setting the whole text again keeps the undo
         // history, which the Undo menu drives.
+        val ranges = mutableListOf<IntRange>()
         var index = text.indexOf(query)
         while (index >= 0) {
-            editable.replace(index, index + query.length, replacement)
-            index = editable.toString().indexOf(query, index + replacement.length)
+            ranges.add(index until index + query.length)
+            index = text.indexOf(query, index + query.length)
+        }
+        // The replacements are done from the end, so that the positions of the earlier ones stay
+        // the same.
+        for (range in ranges.asReversed()) {
+            editable.replace(range.first, range.last + 1, replacement)
         }
         viewModel.updateDraft(editable.toString())
         viewModel.isTextChanged.value = true
