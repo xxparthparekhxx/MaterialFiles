@@ -80,5 +80,11 @@
             android:entries="@array/ftp_server_tls_entries"
             android:entryValues="@array/pref_entry_values_ftp_server_tls"
             app:useSimpleSummaryProvider="true" />
+
+        <me.zhanghai.android.files.settings.NonNegativeIntegerPreference
+            android:key="@string/pref_key_ftp_server_http_port"
+            android:title="@string/ftp_server_http_port_title"
+            android:defaultValue="@integer/pref_default_value_ftp_server_http_port"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>

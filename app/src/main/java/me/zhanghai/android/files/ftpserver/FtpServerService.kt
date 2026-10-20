@@ -18,6 +18,7 @@ import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.WakeWifiLock
 import me.zhanghai.android.files.util.showToast
 import me.zhanghai.android.files.util.valueCompat
+import org.apache.ftpserver.usermanager.impl.BaseUser
 import java.util.concurrent.Executors
 
 class FtpServerService : Service() {
@@ -34,6 +35,8 @@ class FtpServerService : Service() {
     private val executorService = Executors.newSingleThreadExecutor()
 
     private var server: FtpServer? = null
+
+    private var httpServer: HttpServer? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -115,6 +118,25 @@ class FtpServerService : Service() {
             mainExecutorCompat.execute { onStartError(e) }
             return
         }
+        val httpPort = Settings.FTP_SERVER_HTTP_PORT.valueCompat
+        if (httpPort > 0) {
+            val homeDirectoryUri = homeDirectory.toUri().toString()
+            val httpServer = HttpServer(
+                httpPort, ProviderFileSystemFactory().createFileSystemView(
+                    BaseUser().apply {
+                        name = username
+                        this.homeDirectory = homeDirectoryUri
+                    }
+                )
+            )
+            try {
+                httpServer.start()
+                this.httpServer = httpServer
+            } catch (e: Exception) {
+                e.printStackTrace()
+                mainExecutorCompat.execute { showToast(e.toString()) }
+            }
+        }
         mainExecutorCompat.execute { FtpServerNsd.register(port, tls) }
         postState(State.RUNNING)
     }
@@ -122,6 +144,8 @@ class FtpServerService : Service() {
     @WorkerThread
     private fun doStop() {
         mainExecutorCompat.execute { FtpServerNsd.unregister() }
+        httpServer?.stop()
+        httpServer = null
         val server = server ?: return
         server.stop()
         this.server = null

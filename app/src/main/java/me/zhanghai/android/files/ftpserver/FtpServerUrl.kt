@@ -30,6 +30,17 @@ object FtpServerUrl {
         return createUrl(localAddress)
     }
 
+    // The URL of the HTTP server that serves the same files, or null if it is turned off.
+    fun getHttpUrl(): String? {
+        val httpPort = Settings.FTP_SERVER_HTTP_PORT.valueCompat
+        if (httpPort <= 0) {
+            return null
+        }
+        val localAddress =
+            getHotspotAddress() ?: InetAddress::class.getLocalAddress() ?: return null
+        return "http://${localAddress.hostAddress}:$httpPort/"
+    }
+
     private fun getHotspotAddress(): InetAddress? {
         try {
             NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()

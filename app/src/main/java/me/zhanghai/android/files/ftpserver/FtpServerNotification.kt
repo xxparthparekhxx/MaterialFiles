@@ -46,6 +46,8 @@ class FtpServerNotification(private val service: Service) {
     private fun doStartForeground() {
         val contextText = FtpServerUrl.getUrl()
             ?: service.getString(R.string.ftp_server_notification_text_no_local_inet_address)
+        val httpUrl = FtpServerUrl.getHttpUrl()
+        val text = if (httpUrl != null) "$contextText\n$httpUrl" else contextText
         val contentIntent = FtpServerActivity::class.createIntent()
         val contentPendingIntent = PendingIntent.getActivity(
             service, FtpServerActivity::class.hashCode(), contentIntent,
@@ -57,7 +59,7 @@ class FtpServerNotification(private val service: Service) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = ftpServerServiceNotificationTemplate.createBuilder(service)
-            .setContentText(contextText)
+            .setContentText(text)
             .setContentIntent(contentPendingIntent)
             .addAction(
                 R.drawable.stop_icon_white_24dp, service.getString(R.string.stop), stopPendingIntent
