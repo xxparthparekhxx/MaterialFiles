@@ -59,12 +59,27 @@ object FtpServerTlsConfiguration {
         if (!keystoreFile.exists()) {
             createKeystore(keystoreFile, keystorePassword)
         }
-        return SslConfigurationFactory().apply {
+        return try {
+            createSslConfiguration(keystoreFile, keystorePassword)
+        } catch (e: Exception) {
+            // The keystore cannot be used, for example when its password was lost. Create it
+            // again, otherwise the server could never start again.
+            e.printStackTrace()
+            keystoreFile.delete()
+            createKeystore(keystoreFile, keystorePassword)
+            createSslConfiguration(keystoreFile, keystorePassword)
+        }
+    }
+
+    private fun createSslConfiguration(
+        keystoreFile: File,
+        keystorePassword: String
+    ): SslConfiguration =
+        SslConfigurationFactory().apply {
             this.keystoreFile = keystoreFile
             this.keystorePassword = keystorePassword
             this.keystoreType = KEYSTORE_TYPE
         }.createSslConfiguration()
-    }
 
     private fun getOrCreateKeystorePassword(): String {
         val preferences = application.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)

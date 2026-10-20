@@ -13,6 +13,7 @@ import androidx.annotation.WorkerThread
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import me.zhanghai.android.files.compat.mainExecutorCompat
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.WakeWifiLock
@@ -38,11 +39,29 @@ class FtpServerService : Service() {
 
     private var httpServer: HttpServer? = null
 
+    // The server reads its settings when it starts, so it has to be restarted for a change of
+    // them to take effect.
+    private val settingsObserver = Observer<Any> { restartIfRunning() }
+    private val observedSettings =
+        listOf(
+            Settings.FTP_SERVER_ANONYMOUS_LOGIN,
+            Settings.FTP_SERVER_USERNAME,
+            Settings.FTP_SERVER_PASSWORD,
+            Settings.FTP_SERVER_PORT,
+            Settings.FTP_SERVER_HOME_DIRECTORY,
+            Settings.FTP_SERVER_WRITABLE,
+            Settings.FTP_SERVER_TLS,
+            Settings.FTP_SERVER_HTTP_PORT
+        )
+
     override fun onCreate() {
         super.onCreate()
 
         wakeWifiLock = WakeWifiLock(FtpServerService::class.java.simpleName)
         notification = FtpServerNotification(this)
+        for (setting in observedSettings) {
+            setting.observeForever(settingsObserver)
+        }
         executeStart()
     }
 
@@ -53,8 +72,21 @@ class FtpServerService : Service() {
     override fun onDestroy() {
         super.onDestroy()
 
+        for (setting in observedSettings) {
+            setting.removeObserver(settingsObserver)
+        }
         executeStop()
         executorService.shutdown()
+    }
+
+    private fun restartIfRunning() {
+        if (state != State.RUNNING && state != State.STARTING) {
+            return
+        }
+        executorService.execute {
+            doStop()
+            doStart()
+        }
     }
 
     private fun executeStart() {
