@@ -88,20 +88,27 @@ class AppListFragment : Fragment(), AppListAdapter.Listener {
             val apps = withContext(Dispatchers.IO) {
                 try {
                     val packageManager = requireContext().packageManager
-                    packageManager.getInstalledApplications(0).map { info ->
-                        val size = sequenceOf(info.sourceDir)
-                            .plus(info.splitSourceDirs?.asSequence() ?: emptySequence())
-                            .sumOf {
-                                try {
-                                    File(it).length()
-                                } catch (e: Exception) {
-                                    0L
+                    packageManager.getInstalledApplications(0).mapNotNull { info ->
+                        try {
+                            val size = sequenceOf(info.sourceDir)
+                                .plus(info.splitSourceDirs?.asSequence() ?: emptySequence())
+                                .sumOf {
+                                    try {
+                                        File(it).length()
+                                    } catch (e: Exception) {
+                                        0L
+                                    }
                                 }
-                            }
-                        AppEntry(
-                            info, info.loadLabel(packageManager).toString(),
-                            info.flags and ApplicationInfo.FLAG_SYSTEM != 0, size
-                        )
+                            AppEntry(
+                                info, info.loadLabel(packageManager).toString(),
+                                info.flags and ApplicationInfo.FLAG_SYSTEM != 0, size
+                            )
+                        } catch (e: Exception) {
+                            // An app whose information cannot be read is skipped, so that the
+                            // other apps are still shown.
+                            e.printStackTrace()
+                            null
+                        }
                     }.sortedBy { it.label.lowercase() }
                 } catch (e: Exception) {
                     e.printStackTrace()
