@@ -12,6 +12,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -31,6 +33,11 @@ class MediaPlayerFragment : Fragment() {
 
     private var player: ExoPlayer? = null
 
+    // The position of the playback and whether it is playing, so that they survive a
+    // configuration change.
+    private var position = 0L
+    private var playWhenReady = true
+
     private lateinit var binding: MediaPlayerFragmentBinding
 
     override fun onCreateView(
@@ -44,6 +51,11 @@ class MediaPlayerFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+
+        if (savedInstanceState != null) {
+            position = savedInstanceState.getLong(STATE_POSITION)
+            playWhenReady = savedInstanceState.getBoolean(STATE_PLAY_WHEN_READY, true)
+        }
 
         val path: Path? = args.intent.extraPath
         if (path == null) {
@@ -66,10 +78,21 @@ class MediaPlayerFragment : Fragment() {
         val dataSourceFactory = DefaultDataSource.Factory(context)
         val exoPlayer = ExoPlayer.Builder(context)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                    .build(),
+                // The player asks for the audio focus, so that it does not play over another app.
+                true
+            )
             .build()
         exoPlayer.setMediaItem(MediaItem.fromUri(path.fileProviderUri.toString()))
-        exoPlayer.playWhenReady = true
+        exoPlayer.playWhenReady = playWhenReady
         exoPlayer.prepare()
+        if (position > 0) {
+            exoPlayer.seekTo(position)
+        }
         binding.playerView.player = exoPlayer
         player = exoPlayer
     }
@@ -77,13 +100,24 @@ class MediaPlayerFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        player?.playWhenReady = true
+        // The playback is only continued when it was not paused by the user.
+        player?.playWhenReady = playWhenReady
     }
 
     override fun onStop() {
         super.onStop()
 
+        playWhenReady = player?.playWhenReady ?: playWhenReady
         player?.playWhenReady = false
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        player?.let {
+            outState.putLong(STATE_POSITION, it.currentPosition)
+            outState.putBoolean(STATE_PLAY_WHEN_READY, it.playWhenReady)
+        }
     }
 
     override fun onDestroy() {
@@ -95,4 +129,9 @@ class MediaPlayerFragment : Fragment() {
 
     @Parcelize
     class Args(val intent: Intent) : ParcelableArgs
+
+    companion object {
+        private const val STATE_POSITION = "position"
+        private const val STATE_PLAY_WHEN_READY = "playWhenReady"
+    }
 }

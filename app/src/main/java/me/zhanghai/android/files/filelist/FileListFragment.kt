@@ -120,7 +120,6 @@ import me.zhanghai.android.files.file.fileProviderUri
 import me.zhanghai.android.files.file.intentType
 import me.zhanghai.android.files.file.isApk
 import me.zhanghai.android.files.file.isImage
-import me.zhanghai.android.files.file.isMedia
 import me.zhanghai.android.files.fileaction.FilePasswordDialogFragment
 import me.zhanghai.android.files.filejob.FileJobProgress
 import me.zhanghai.android.files.filejob.FileJobProgresses
@@ -2515,9 +2514,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     }
                     if (override == null &&
                         Settings.OPEN_WITH_BUILT_IN_MEDIA_PLAYER.valueCompat &&
-                        mimeType.isMedia
+                        (mimeType.value.startsWith("audio/") ||
+                            mimeType.value.startsWith("video/"))
                     ) {
-                        // Restrict resolution to our own media player.
+                        // Restrict resolution to our own media player, which only handles the
+                        // audio and video types. A file of another type that is shown with a
+                        // media icon has to be opened by another app.
                         setPackage(requireContext().packageName)
                     }
                     override?.let { component = it }
