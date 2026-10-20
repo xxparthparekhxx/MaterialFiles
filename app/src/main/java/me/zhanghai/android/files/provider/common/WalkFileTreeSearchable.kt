@@ -5,9 +5,6 @@
 
 package me.zhanghai.android.files.provider.common
 
-import androidx.annotation.BoolRes
-import androidx.annotation.StringRes
-import androidx.preference.PreferenceManager
 import java8.nio.file.DirectoryIteratorException
 import java8.nio.file.FileVisitOption
 import java8.nio.file.FileVisitResult
@@ -17,11 +14,8 @@ import java8.nio.file.LinkOption
 import java8.nio.file.Path
 import java8.nio.file.attribute.BasicFileAttributes
 import me.zhanghai.android.files.R
-import me.zhanghai.android.files.provider.root.isRunningAsRoot
-import me.zhanghai.android.files.provider.root.rootContext
-import me.zhanghai.android.files.settings.SettingLiveData
 import me.zhanghai.android.files.settings.Settings
-import me.zhanghai.android.files.util.valueCompat
+import me.zhanghai.android.files.settings.getBooleanSetting
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.util.regex.PatternSyntaxException
@@ -42,29 +36,6 @@ object WalkFileTreeSearchable {
             R.bool.pref_default_value_file_list_search_in_subfolders, true,
             Settings.FILE_LIST_SEARCH_IN_SUBFOLDERS
         )
-
-    // The file system providers run in another process when accessing as root, in which case the
-    // settings have to be read from the shared preferences directly.
-    private fun getBooleanSetting(
-        @StringRes keyRes: Int,
-        @BoolRes defaultValueRes: Int,
-        valueIfFailed: Boolean,
-        setting: SettingLiveData<Boolean>
-    ): Boolean =
-        try {
-            if (isRunningAsRoot) {
-                val sharedPreferences =
-                    PreferenceManager.getDefaultSharedPreferences(rootContext)
-                val key = rootContext.getString(keyRes)
-                val defaultValue = rootContext.resources.getBoolean(defaultValueRes)
-                sharedPreferences.getBoolean(key, defaultValue)
-            } else {
-                setting.valueCompat
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            valueIfFailed
-        }
 
     @Throws(IOException::class)
     fun search(
