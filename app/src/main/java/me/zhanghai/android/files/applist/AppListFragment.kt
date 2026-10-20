@@ -60,10 +60,11 @@ class AppListFragment : Fragment(), AppListAdapter.Listener {
         binding.toolbar.inflateMenu(R.menu.app_list)
         binding.toolbar.setOnMenuItemClickListener { item ->
             val newFilter = when (item.itemId) {
+                R.id.action_filter_all -> Filter.ALL
                 R.id.action_filter_user -> Filter.USER
                 R.id.action_filter_system -> Filter.SYSTEM
-                else -> Filter.ALL
-            }
+                else -> null
+            } ?: return@setOnMenuItemClickListener true
             if (newFilter != filter) {
                 filter = newFilter
                 applyFilter()
