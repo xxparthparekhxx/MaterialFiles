@@ -56,16 +56,14 @@ internal val DIRECTORY_MIME_TYPES = setOf(
     "inode/directory",
     "inode/mount-point",
     "resource/folder",
-    "vnd.android.cursor.dir/*",
+    // The type of a folder of the legacy document picker. The type of a single document of it is
+    // "vnd.android.cursor.dir/item", which is not a directory.
+    "vnd.android.cursor.dir/document",
     "vnd.android.document/directory",
     "vnd.android.document/root"
 )
 
-fun Intent.isDirectoryPick(): Boolean {
-    val mimeType = type
-    return mimeType in DIRECTORY_MIME_TYPES ||
-        (mimeType != null && mimeType.startsWith("vnd.android.cursor.dir/"))
-}
+fun Intent.isDirectoryPick(): Boolean = type in DIRECTORY_MIME_TYPES
 
 fun Intent.isDirectoryView(): Boolean =
     externalStorageRootPath() != null || isDirectoryPick()
