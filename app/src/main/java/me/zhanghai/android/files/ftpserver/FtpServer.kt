@@ -65,6 +65,12 @@ class FtpServer(
                     homeDirectory = this@FtpServer.homeDirectory.toUri().toString()
                 }
                 userManager.save(user)
+                if (tls == FtpServerTls.EXPLICIT) {
+                    // The client asks for the encryption with the AUTH TLS command, but it could
+                    // also log in without it, so the login is rejected unless the session is
+                    // encrypted.
+                    ftplets = (ftplets ?: emptyMap()) + ("requireTls" to RequireTlsFtplet())
+                }
                 fileSystem = ProviderFileSystemFactory()
                 connectionConfig = ConnectionConfigFactory()
                     .apply { isAnonymousLoginEnabled = true }
