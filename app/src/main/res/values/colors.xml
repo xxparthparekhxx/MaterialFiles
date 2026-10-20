@@ -31,6 +31,9 @@
 
     <color name="shortcut_icon_background">#F5F5F5</color>
 
+    <!-- Used by the icon loader for the background of non-adaptive app icons. -->
+    <color name="legacy_icon_background">@color/color_surface</color>
+
     <color name="file_icon_light_blue">#4B86F0</color>
     <color name="file_icon_blue">#4285F4</color>
     <color name="file_icon_cyan">#24C1E0</color>
